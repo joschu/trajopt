@@ -1,4 +1,3 @@
-#SUBDIRS(  BulletSoftBody BulletCollision BulletDynamics LinearMath )
 SUBDIRS(  BulletCollision LinearMath )
 
 IF(BUILD_MULTITHREADING)
