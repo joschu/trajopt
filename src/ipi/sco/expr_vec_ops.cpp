@@ -1,0 +1,14 @@
+#include "expr_vec_ops.hpp"
+namespace ipi {
+namespace sco {
+
+AffExpr varDot(const VectorXd& x, const VarVector& v) {
+
+  AffExpr out;
+  out.constant = 0;
+  out.vars = v;
+  out.coeffs = vector<double>(x.data(), x.data()+x.size());
+  return out;
+}
+
+}}
