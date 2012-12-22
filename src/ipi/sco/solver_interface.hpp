@@ -1,15 +1,16 @@
 #pragma once
-#include <boost/tuple/tuple.hpp>
 #include <boost/shared_ptr.hpp>
 #include <vector>
 #include <string>
 #include "sco_fwd.hpp"
 #include <iosfwd>
 #include <limits>
-/*
- * Interface to convex solvers
- * This is based on Gurobi's nice c++ API (though the Gurobi interface here uses their c api)
- * But it can be used with other solves, which have similar C APIs with Gurobi
+/**
+@file solver_interface.hpp
+@brief Interface to convex solvers
+
+  This is based on Gurobi's nice c++ API (though the SCO Gurobi backend uses the Gurobi c api).
+  However, our intention is to allow for different solvers to be used as backends.
  */
 
 namespace ipi{
@@ -30,6 +31,10 @@ typedef vector<Var> VarVector;
 typedef vector<AffExpr> AffExprVector;
 typedef vector<QuadExpr> QuadExprVector;
 
+/**
+ * Convex optimization problem
+ *
+ */
 class Model {
 public:
   virtual Var addVar(const string& name)=0;
@@ -50,7 +55,6 @@ public:
   virtual vector<double> getVarValues(const VarVector& vars) const;
   virtual string getVarName(const Var&) const = 0;
   virtual CvxOptStatus optimize()=0;
-  virtual CvxOptStatus optimizeFeasRelax() = 0;
 
   virtual void setObjective(const AffExpr&)=0;
   virtual void setObjective(const QuadExpr&)=0;

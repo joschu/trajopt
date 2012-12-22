@@ -1,11 +1,5 @@
 #pragma once
 #include "expr_ops.hpp"
-/*
- * Overloaded arithmetic operations involving
- * Var, AffExpr, QuadExprs and vectors of these types.
- * Though it's preferable to use the functions exprInc, etc for
- * efficiency and procedural clarity
- */
 
 namespace ipi {
 namespace sco {

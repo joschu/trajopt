@@ -3,8 +3,8 @@
 #include <boost/shared_ptr.hpp>
 namespace ipi {
 namespace sco {
-class GurobiInterface;
-typedef boost::shared_ptr<GurobiInterface> GurobiInterfacePtr;
+class GurobiModel;
+typedef boost::shared_ptr<GurobiModel> GurobiModelPtr;
 class ConvexObjective;
 typedef boost::shared_ptr<ConvexObjective> ConvexObjectivePtr;
 class ConvexConstraints;

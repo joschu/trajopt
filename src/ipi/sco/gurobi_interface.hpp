@@ -1,18 +1,26 @@
 #include "solver_interface.hpp"
 
+/**
+
+@file gurobi_interface.hpp
+
+Gurobi backend
+
+*/
+
 struct _GRBmodel;
 typedef struct _GRBmodel GRBmodel;
 
 namespace ipi {
 namespace sco {
 
-class GurobiInterface : public Model {
+class GurobiModel : public Model {
 public:
   GRBmodel* model;
   vector<Var> vars;
   vector<Cnt> cnts;
 
-  GurobiInterface();
+  GurobiModel();
 
   Var addVar(const string& name);
   Var addVar(const string& name, double lower, double upper);
@@ -31,6 +39,7 @@ public:
   double getVarValue(const Var&) const;
   string getVarName(const Var&) const;
   CvxOptStatus optimize();
+  /** Don't use this function, because it adds constraints that aren't tracked  */
   CvxOptStatus optimizeFeasRelax();
 
   void setObjective(const AffExpr&);
@@ -39,7 +48,7 @@ public:
 
   VarVector getVars() const;
 
-  ~GurobiInterface();
+  ~GurobiModel();
 
 };
 

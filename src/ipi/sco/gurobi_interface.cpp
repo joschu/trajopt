@@ -71,12 +71,12 @@ void simplify(vector<int>& inds, vector<double>& vals) {
     IPI_ABORT("GRB error: %s", GRBgeterrormsg(gEnv));\
   }\
 
-ModelPtr createGurobiInterface() {
-  ModelPtr out(new GurobiInterface());
+ModelPtr createGurobiModel() {
+  ModelPtr out(new GurobiModel());
   return out;
 }
 
-GurobiInterface::GurobiInterface() {
+GurobiModel::GurobiModel() {
   if (!gEnv) {
     GRBloadenv(&gEnv, NULL);
     if (logging::filter() < IPI_LEVEL_DEBUG) {
@@ -93,14 +93,14 @@ static vector<int> vars2inds(const vector<Var>& vars) {
   return inds;
 }
 
-Var GurobiInterface::addVar(const string& name) {
+Var GurobiModel::addVar(const string& name) {
   int error = GRBaddvar(model, 0, NULL, NULL, 0, -GRB_INFINITY, GRB_INFINITY, GRB_CONTINUOUS, const_cast<char*>(name.c_str()));
   abortIfError(error);
   vars.push_back(new VarRep(vars.size(), this));
   return vars.back();
 }
 
-Var GurobiInterface::addVar(const string& name, double lb, double ub) {
+Var GurobiModel::addVar(const string& name, double lb, double ub) {
   int error = GRBaddvar(model, 0, NULL, NULL, 0, lb, ub, GRB_CONTINUOUS, const_cast<char*>(name.c_str()));
   abortIfError(error);
   vars.push_back(new VarRep(vars.size(), this));
@@ -108,7 +108,7 @@ Var GurobiInterface::addVar(const string& name, double lb, double ub) {
 }
 
 
-Cnt GurobiInterface::addEqCnt(const AffExpr& expr, const string& name) {
+Cnt GurobiModel::addEqCnt(const AffExpr& expr, const string& name) {
   IPI_LOG_DEBUG("adding ineq: %s <= 0", expr);
   vector<int> inds = vars2inds(expr.vars);
   vector<double> vals = expr.coeffs;
@@ -119,7 +119,7 @@ Cnt GurobiInterface::addEqCnt(const AffExpr& expr, const string& name) {
   cnts.push_back(new CntRep(cnts.size(), this));
   return cnts.back();
 }
-Cnt GurobiInterface::addIneqCnt(const AffExpr& expr, const string& name) {
+Cnt GurobiModel::addIneqCnt(const AffExpr& expr, const string& name) {
   IPI_LOG_DEBUG("adding ineq: %s <= 0", expr);
   vector<int> inds = vars2inds(expr.vars);
   vector<double> vals = expr.coeffs;
@@ -134,7 +134,7 @@ Cnt GurobiInterface::addIneqCnt(const AffExpr& expr, const string& name) {
   cnts.push_back(new CntRep(cnts.size(), this));
   return cnts.back();
 }
-Cnt GurobiInterface::addIneqCnt(const QuadExpr&, const string& name) {
+Cnt GurobiModel::addIneqCnt(const QuadExpr&, const string& name) {
   IPI_ABORT("NOT IMPLEMENTED");
   return 0;
 }
@@ -146,40 +146,40 @@ void resetIndices(vector<Cnt>& cnts) {
   for (size_t i=0; i < cnts.size(); ++i) cnts[i].cnt_rep[i].index = i;
 }
 
-void GurobiInterface::removeVar(const Var& var) {
+void GurobiModel::removeVar(const Var& var) {
   int error = GRBdelvars(model, 1, &var.var_rep->index);
   abortIfError(error);
   var.var_rep->removed = true;
 }
 
-void GurobiInterface::removeCnt(const Cnt& cnt) {
+void GurobiModel::removeCnt(const Cnt& cnt) {
   int error = GRBdelconstrs(model, 1, &cnt.cnt_rep->index);
   abortIfError(error);
   cnt.cnt_rep->removed = true;
 }
 
 
-void GurobiInterface::setVarBounds(const Var& var, double lower, double upper) {
+void GurobiModel::setVarBounds(const Var& var, double lower, double upper) {
   int error = GRBsetdblattrelement(model, GRB_DBL_ATTR_LB, var.var_rep->index, lower);
   abortIfError(error);
   error = GRBsetdblattrelement(model, GRB_DBL_ATTR_UB, var.var_rep->index, upper);
   abortIfError(error);
 }
 
-double GurobiInterface::getVarValue(const Var& var) const {
+double GurobiModel::getVarValue(const Var& var) const {
   double out;
   int error = GRBgetdblattrelement(model, GRB_DBL_ATTR_X, var.var_rep->index, &out);
   abortIfError(error);
   return out;
 }
-string GurobiInterface::getVarName(const Var& var) const {
+string GurobiModel::getVarName(const Var& var) const {
   char* value;
   int error = GRBgetstrattrelement(model, GRB_STR_ATTR_VARNAME, var.var_rep->index, &value);
   abortIfError(error);
   return std::string(value);
 }
 
-CvxOptStatus GurobiInterface::optimize(){
+CvxOptStatus GurobiModel::optimize(){
   int error = GRBoptimize(model);
   abortIfError(error);
   int status;
@@ -192,14 +192,14 @@ CvxOptStatus GurobiInterface::optimize(){
   else if (status == GRB_INFEASIBLE) return CVX_INFEASIBLE;
   else return CVX_FAILED;
 }
-CvxOptStatus GurobiInterface::optimizeFeasRelax(){
+CvxOptStatus GurobiModel::optimizeFeasRelax(){
   double lbpen=GRB_INFINITY, ubpen = GRB_INFINITY,  rhspen=1;
   int error = GRBfeasrelax(model, 0/*sum of viol*/, 0/*just minimize cost of viol*/, &lbpen, &ubpen, &rhspen, NULL);
   abortIfError(error);
   return optimize();
 }
 
-void GurobiInterface::setObjective(const AffExpr& expr) {
+void GurobiModel::setObjective(const AffExpr& expr) {
   GRBdelq(model);
 
   int nvars;
@@ -220,7 +220,7 @@ void GurobiInterface::setObjective(const AffExpr& expr) {
   GRBsetdblattr(model, "ObjCon", expr.constant);
 }
 
-void GurobiInterface::setObjective(const QuadExpr& quad_expr) {
+void GurobiModel::setObjective(const QuadExpr& quad_expr) {
   setObjective(quad_expr.affexpr);
   vector<int> inds1 = vars2inds(quad_expr.vars1);
   vector<int> inds2 = vars2inds(quad_expr.vars2);
@@ -228,13 +228,13 @@ void GurobiInterface::setObjective(const QuadExpr& quad_expr) {
       const_cast<int*>(inds2.data()), const_cast<double*>(quad_expr.coeffs.data()));
 }
 
-void GurobiInterface::writeToFile(const string& fname) {
+void GurobiModel::writeToFile(const string& fname) {
   int error = GRBwrite(model, fname.c_str());
   abortIfError(error);
 }
 
 
-void GurobiInterface::update() {
+void GurobiModel::update() {
   int error = GRBupdatemodel(model);
   abortIfError(error);
 
@@ -264,11 +264,11 @@ void GurobiInterface::update() {
   }
 }
 
-VarVector GurobiInterface::getVars() const {
+VarVector GurobiModel::getVars() const {
   return vars;
 }
 
-GurobiInterface::~GurobiInterface() {
+GurobiModel::~GurobiModel() {
   int error = GRBfreemodel(model);
   abortIfError(error);
 }

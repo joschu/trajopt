@@ -2,9 +2,13 @@
 #include "modeling.hpp"
 #include "num_diff.hpp"
 
-/*
- * Utilities for creating Cost and Constraint objects given a scalar or vector-valued function
- * using analytic or numerical derivatives
+/**
+@file modeling_utils.hpp
+@brief Build problem from user-defined functions
+Utilities for creating Cost and Constraint objects from functions
+using numerical derivatives or user-defined analytic derivatives.
+
+
  */
 
 

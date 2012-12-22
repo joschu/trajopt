@@ -1,0 +1,79 @@
+/**
+
+\mainpage Sequential Convex Optimization (SCO)
+
+\section overview Motivation
+
+This is a software package for solving non-convex optimization problems.
+The methods implemented here solve the original non-convex problem by repeatedly making convex approximations to the cost and constraint functions and solving the resulting convex problems.
+
+Our motivations for creating this software rather than using an existing non-convex optimization program are as follows:
+- Make it easy to exploit problem-specific approximations to costs and constraint functions
+- Most non-convex optimization software requires the problem to be specified in one of the following formats: (1) functions that return sparse matrices (2) a high-level mathematical modeling language such as AMPL. We aim to provide a middle ground that allows user-defined cost and constraint functions but (like a modling language) allows the user to specify which problem variables they depend on, making it easy to programatically construct a complex problem without having to keep track of indices.
+- Provide a testbed where different non-convex optimization algorithms can be applied to the same set of problems.
+
+If you are concerned with maximal efficiency, this software is best suited to problems where the costs and constraints, and their convexifications, are nontrivial to compute, so that the time required to solve the convex subproblems does not dominate the solver's computation time. This software was motivated by robotic motion planning, where collision checking takes at least as long as solving the convex subproblem. In that domain, problems with 50-100 variables can be optimized to convergence in a few tens of milliseconds. (Note that those problems are sparse, since only variables at adjacent timesteps are coupled. The QP solver we use exploits this sparsity.)
+
+\section nco Optimization concepts
+
+We are concerned with non-convex optimization with the following form:
+
+\f{align}{
+&\text{minimize } f(x)\\
+&\text{subject to}\\
+ &\ \ g_i(x) \le 0, \ \ i=1,2,\dots,n_{ineq}\\
+ &\ \ h_i(x) = 0, \ \ i=1,2,\dots,n_{eq}
+\f}
+where \f$f, g_i, h_i\f$, are each scalar functions.
+
+A convex optimization problem is defined as the minimization of a convex function over a convex set. The above problem is only convex if \f$f\f$ is convex, each \f$g_i\f$ is convex, and each \f$h_i\f$ is affine. In a quadratic program, \f$f\f$ is quadratic and each \f$\tilde g_i\f$ is affine.
+
+For most classes of non-convex optimization problems, we have no hope of finding the guaranteed optimal solution in a reasonable amount of time. (This is in contrast to convex problems, for which there are algorithms that are guaranteed to converge in a small number of iterations, while providing bounds on the non-optimality of the current iterate.)
+
+
+Sequential convex optimization solves a non-convex optimization problem by repeatedly constructing a convex subproblem--an approximation to the problem around the current iterate \f$x_i\f$. The subproblem is used to generate a step \f$\Delta x\f$ that makes progress on the original problem.
+The most naive algorithm would repeatedly replace \f$f, g_i, h_i\f$ by convex/affine approximations to these functions \f$\tilde f, \tilde g_i, \tilde h_i\f$ However, this naive algorithm would often fail for the following reasons:
+- the approximations are only valid locally around the current iterate \f$x\f$, so the solution to the convex problem might not improve the cost and constraint violation of the original non-convex problem.
+- the convex subproblem might be infeasible, i.e., there is no point that satisfies all of the constraints.
+
+
+
+
+
+@section api API overview
+
+To set up your optimization problem, you will likely need to interact with the following classes
+- \ref ipi::sco::OptProb: stores a \b non-convex optimization problem, which has a set of \ref ipi::sco::Cost and \ref ipi::sco::Constraint functions.
+- \ref ipi::sco::Model: stores a \b convex optimization problem.
+- \ref ipi::sco::Optimizer solves an OptProb.
+
+While the solver uses Cost and Constraint objects, which enable a user-defined problem convexification, it's usually most convenient to write functions (instead of classes). The file \ref modeling_utils.hpp contains some tools for constructing Cost and Constraint objects based on user-defined functions (and, optionally, gradients and hessians.)
+
+Todo: description of trust-region SQP methods that use L1 penalties
+
+\section Installation
+
+This code has been tested on Linux and OSX. 
+
+Dependencies:
+- CMake
+- boost
+- Eigen
+- Gurobi (though in the future we plan to support other solvers and provide a custom solver)
+
+Instructions
+- install CMake, boost, Eigen, e.g. using apt-get (Debian/Ubuntu) or homebrew (Mac).
+- download and install Gurobi from <a href="http://www.gurobi.com">www.gurobi.com</a>. You'll need to make an account and obtain a license.
+- set the environment variable \c GUROBI_HOME to point to the folder of your Gurobi directory that contains \c include, \c lib, etc. One my development machines, these are \c /Library/gurobi501/mac64 or \c /home/username/Src/gurobi502/linux64. 
+- Follow the usual CMake procedure:
+  - mkdir build_dir
+  - cd build_dir
+  - cmake /path/to/source_root
+  - make -j
+  - wait and pray
+  - <b>DON'T</b> make install
+   
+
+\section References
+
+*/
