@@ -18,7 +18,7 @@ void ConvexObjective::addQuadExpr(const QuadExpr& quadexpr) {
   exprInc(quad_, quadexpr);
 }
 void ConvexObjective::addHinge(const AffExpr& affexpr, double coeff) {
-  Var hinge = model_->addVar("", 0, INFINITY);
+  Var hinge = model_->addVar("hinge", 0, INFINITY);
   vars_.push_back(hinge);
   ineqs_.push_back(affexpr);
   exprDec(ineqs_.back(), hinge);
@@ -26,8 +26,8 @@ void ConvexObjective::addHinge(const AffExpr& affexpr, double coeff) {
   exprInc(quad_, hinge_cost);
 }
 void ConvexObjective::addAbs(const AffExpr& affexpr, double coeff) {
-  Var neg = model_->addVar("", 0, INFINITY);
-  Var pos = model_->addVar("", 0, INFINITY);
+  Var neg = model_->addVar("abs", 0, INFINITY);
+  Var pos = model_->addVar("abs", 0, INFINITY);
   vars_.push_back(neg);
   vars_.push_back(pos);
   AffExpr neg_plus_pos;
@@ -52,7 +52,7 @@ void ConvexObjective::addL2Norm(const AffExprVector& ev) {
   for (size_t i=0; i < ev.size(); ++i) exprInc(quad_, exprSquare(ev[i]));
 }
 void ConvexObjective::addMax(const AffExprVector& ev) {
-  Var m = model_->addVar("m", -INFINITY, INFINITY);
+  Var m = model_->addVar("max", -INFINITY, INFINITY);
   for (size_t i=0; i < ev.size(); ++i) {
     ineqs_.push_back(ev[i]);
     exprDec(ineqs_.back(), m);
@@ -101,16 +101,6 @@ void ConvexConstraints::removeFromModel() {
   model_ = NULL;
 }
 
-vector<double> ConvexConstraints::violations() {
-  DblVec out;
-  out.reserve(eqs_.size() + ineqs_.size());
-  BOOST_FOREACH(const AffExpr& aff, eqs_) out.push_back(fabs(aff.value()));
-  BOOST_FOREACH(const AffExpr& aff, ineqs_) out.push_back(pospart(aff.value()));
-  return out;
-}
-double ConvexConstraints::violation() {
-  return vecSum(violations());
-}
 vector<double> ConvexConstraints::violations(const vector<double>& x) {
   DblVec out;
   out.reserve(eqs_.size() + ineqs_.size());
@@ -125,9 +115,7 @@ double ConvexConstraints::violation(const vector<double>& x) {
 ConvexConstraints::~ConvexConstraints() {
   if (inModel()) removeFromModel();
 }
-double ConvexObjective::value() {
-  return quad_.value();
-}
+
 double ConvexObjective::value(const vector<double>& x)  {
   return quad_.value(x);
 }
@@ -177,15 +165,15 @@ void OptProb::addCost(CostPtr cost) {
   costs_.push_back(cost);
 }
 void OptProb::addConstr(ConstraintPtr cnt) {
-  if (cnt->type() == Constraint::EQ) addEqConstr(cnt);
+  if (cnt->type() == EQ) addEqConstr(cnt);
   else addIneqConstr(cnt);
 }
 void OptProb::addEqConstr(ConstraintPtr cnt) {
-  assert (cnt->type() == Constraint::EQ);
+  assert (cnt->type() == EQ);
   eqcnts_.push_back(cnt);
 }
 void OptProb::addIneqConstr(ConstraintPtr cnt) {
-  assert (cnt->type() == Constraint::INEQ);
+  assert (cnt->type() == INEQ);
   ineqcnts_.push_back(cnt);
 }
 vector<ConstraintPtr> OptProb::getConstraints() const {
@@ -195,6 +183,12 @@ vector<ConstraintPtr> OptProb::getConstraints() const {
   out.insert(out.end(), ineqcnts_.begin(), ineqcnts_.end());
   return out;
 }
+void OptProb::addLinearConstr(const AffExpr& expr, ConstraintType type) {
+  if (type == EQ) model_->addEqCnt(expr, "");
+  else model_->addIneqCnt(expr, "");
+}
+
+
 
 }
 }

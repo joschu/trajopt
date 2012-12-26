@@ -1,22 +1,19 @@
-find_package(json_spirit REQUIRED)
-
 include_directories(
   ${BULLET_INCLUDE_DIRS}  
   ${Boost_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
   ${OpenRAVE_INCLUDE_DIRS}
-  ${json_spirit_INCLUDE_DIR}
+  ${JSON_INCLUDE_DIRS}
 )
-message("poo ${json_spirit_INCLUDE_DIR}")
 add_library(trajopt SHARED 
+	json_marshal.cpp
 	problem_description.cpp
 	bullet_collision_checker.cpp 
 	kinematic_constraints.cpp 
 	robot_and_dof.cpp 
 	utils.cpp
 )
-
-target_link_libraries(trajopt ${BULLET_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY} sco util)
+target_link_libraries(trajopt ${BULLET_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY} sco util json)
 
 # set(CMAKE_SHARED_LINKER_FLAGS "-export-symbols-regex,'^foo_'")
 

@@ -37,7 +37,7 @@ public:
   void setVarBounds(const Var&, double lower, double upper);
 
   double getVarValue(const Var&) const;
-  string getVarName(const Var&) const;
+  vector<double> getVarValues(const vector<Var>&) const;
   CvxOptStatus optimize();
   /** Don't use this function, because it adds constraints that aren't tracked  */
   CvxOptStatus optimizeFeasRelax();

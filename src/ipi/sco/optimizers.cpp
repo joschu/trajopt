@@ -53,17 +53,17 @@ static vector<ConvexConstraintsPtr> convexifyConstraints(vector<ConstraintPtr>& 
   return out;
 }
 
-DblVec evaluateModelCosts(vector<ConvexObjectivePtr>& costs) {
+DblVec evaluateModelCosts(vector<ConvexObjectivePtr>& costs, const DblVec& x) {
   DblVec out(costs.size());
   for (size_t i=0; i < costs.size(); ++i) {
-    out[i] = costs[i]->value();
+    out[i] = costs[i]->value(x);
   }
   return out;
 }
-DblVec evaluateModelCntViols(vector<ConvexConstraintsPtr>& cnts) {
+DblVec evaluateModelCntViols(vector<ConvexConstraintsPtr>& cnts, const DblVec& x) {
   DblVec out(cnts.size());
   for (size_t i=0; i < cnts.size(); ++i) {
-    out[i] = cnts[i]->violation();
+    out[i] = cnts[i]->violation(x);
   }
   return out;
 }
@@ -133,7 +133,7 @@ void BasicTrustRegionSQP::initParameters() {
   improve_ratio_threshold_ = .25;
   min_trust_box_size_ = 1e-4;
   min_approx_improve_= 1e-4;
-  min_approx_improve_frac_ = 0;
+  min_approx_improve_frac_ = -INFINITY;
   max_iter_ = 50;
   trust_shrink_ratio_=.1;
   trust_expand_ratio_ = 1.5;
@@ -142,29 +142,32 @@ void BasicTrustRegionSQP::initParameters() {
 
 void BasicTrustRegionSQP::setProblem(OptProbPtr prob) {
   Optimizer::setProblem(prob);
-  model_ = prob->model_;
+  model_ = prob->getModel();
 }
 
 void BasicTrustRegionSQP::adjustTrustRegion(double ratio) {
   trust_box_size_ *= ratio;
 }
 void BasicTrustRegionSQP::setTrustBoxConstraints(const DblVec& x) {
-  vector<Var>& vars = prob_->vars_;
+  vector<Var>& vars = prob_->getVars();
   assert(vars.size() == x.size());
+  DblVec& lb=prob_->getLowerBounds(), ub=prob_->getUpperBounds();
   for (size_t i=0; i < x.size(); ++i) {
-    model_->setVarBounds(vars[i], fmax(x[i] - trust_box_size_, prob_->lower_bounds_[i]),
-                                  fmin(x[i] + trust_box_size_, prob_->upper_bounds_[i]));
+    model_->setVarBounds(vars[i], fmax(x[i] - trust_box_size_, lb[i]),
+                                  fmin(x[i] + trust_box_size_, ub[i]));
   }
 }
 
 OptStatus BasicTrustRegionSQP::optimize() {
 
-  assert(x_.size() == prob_->vars_.size());
-  assert(prob_->costs_.size() > 0 || prob_->eqcnts_.size() > 0 || prob_->ineqcnts_.size() > 0);
 
-  vector<string> cost_names = getCostNames(prob_->costs_);
+  vector<string> cost_names = getCostNames(prob_->getCosts());
   vector<ConstraintPtr> constraints = prob_->getConstraints();
   vector<string> cnt_names = getCntNames(constraints);
+
+  assert(x_.size() == prob_->getVars().size());
+  assert(prob_->getCosts().size() > 0 || constraints.size() > 0);
+
 
   DblVec new_cost_vals, new_cnt_viols;
 
@@ -173,10 +176,10 @@ OptStatus BasicTrustRegionSQP::optimize() {
     IPI_LOG_INFO("iteration %i", iter);
 
     // speed optimization: if you just evaluated the cost when doing the line search, use that
-    DblVec cost_vals = new_cost_vals.empty() ? evaluateCosts(prob_->costs_, x_) : new_cost_vals;
+    DblVec cost_vals = new_cost_vals.empty() ? evaluateCosts(prob_->getCosts(), x_) : new_cost_vals;
     DblVec cnt_viols = new_cnt_viols.empty() ? evaluateConstraintViols(constraints,  x_) : new_cnt_viols;
 
-    vector<ConvexObjectivePtr> cost_models = convexifyCosts(prob_->costs_, x_, model_.get());
+    vector<ConvexObjectivePtr> cost_models = convexifyCosts(prob_->getCosts(), x_, model_.get());
     vector<ConvexConstraintsPtr> cnt_models = convexifyConstraints(constraints, x_, model_.get());
     model_->update();
     BOOST_FOREACH(ConvexObjectivePtr& cost, cost_models) cost->addConstraintsToModel();
@@ -211,21 +214,20 @@ OptStatus BasicTrustRegionSQP::optimize() {
       if (status != CVX_SOLVED) {
         if (solving_slack_problem) IPI_ABORT("inequalities turned into penalties but problem is still infeasible");
         IPI_LOG_WARNING("problem was infeasible. optimizing relaxed problem");
-        model_->writeToFile("/tmp/infeas.lp");
-        IPI_LOG_WARNING("infeasible model written to /tmp/infeas.lp");
+//        model_->writeToFile("/tmp/infeas.lp");
+//        IPI_LOG_WARNING("infeasible model written to /tmp/infeas.lp");
 
         BOOST_FOREACH(ConvexConstraintsPtr& cnt, cnt_models) cnt->removeFromModel();
         cnt_cost_models = cntsToCosts(cnt_models, merit_error_coeff_, model_.get());
         model_->update();
         BOOST_FOREACH(ConvexObjectivePtr& cost, cnt_cost_models) cost->addConstraintsToModel();
         model_->update();
-        QuadExpr cnt_objective;
-        exprInc(cnt_objective, objective);
+        QuadExpr cnt_objective = objective; // cnt_objective = orig objective + constraint penalties
         BOOST_FOREACH(ConvexObjectivePtr& co, cnt_cost_models) exprInc(cnt_objective, co->quad_);
         model_->setObjective(cnt_objective);
         model_->update();
-        IPI_LOG_INFO("relaxed model written to /tmp/relaxed.lp");
-        model_->writeToFile("/tmp/relaxed.lp");
+//        IPI_LOG_INFO("relaxed model written to /tmp/relaxed.lp");
+//        model_->writeToFile("/tmp/relaxed.lp");
         solving_slack_problem = true;
         continue;
       }
@@ -235,17 +237,20 @@ OptStatus BasicTrustRegionSQP::optimize() {
         model_->writeToFile("/tmp/fail.lp");
         return OPT_FAILED;
       }
-      DblVec new_x = model_->getVarValues(prob_->vars_);
+      DblVec model_var_vals = model_->getVarValues(model_->getVars());
 
-      DblVec model_cost_vals = evaluateModelCosts(cost_models);
-      DblVec model_cnt_viols = evaluateModelCntViols(cnt_models);
+      DblVec model_cost_vals = evaluateModelCosts(cost_models, model_var_vals);
+      DblVec model_cnt_viols = evaluateModelCntViols(cnt_models, model_var_vals);
+
+      // the n variables of the OptProb happen to be the first n variables in the Model
+      DblVec new_x(model_var_vals.begin(), model_var_vals.begin() + x_.size());
 
       if (solving_slack_problem && logging::filter() >= IPI_LEVEL_DEBUG) {
-        DblVec model_cnt_viols2 = evaluateModelCosts(cnt_cost_models);
+        DblVec model_cnt_viols2 = evaluateModelCosts(cnt_cost_models, model_var_vals);
         IPI_LOG_DEBUG("SHOULD BE THE SAME: %.2f*%s ?= %s", merit_error_coeff_, Str(model_cnt_viols), Str(model_cnt_viols2));
       }
 
-      new_cost_vals = evaluateCosts(prob_->costs_, new_x);
+      new_cost_vals = evaluateCosts(prob_->getCosts(), new_x);
       new_cnt_viols = evaluateConstraintViols(constraints, new_x);
 
 
@@ -296,7 +301,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
     }
   }
   IPI_ABORT("shouldn't reach this point");
-  return OPT_FAILED; // should never be reached
+  return OPT_FAILED; // unreachable
 
 }
 

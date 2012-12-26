@@ -14,6 +14,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(BULLET_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/bullet/src)
 set(BULLET_LIBRARIES BulletCollision LinearMath)
 set(GTEST_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/gtest/include)
+set(JSON_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/json/include)
 
 enable_testing()
 

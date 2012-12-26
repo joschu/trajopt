@@ -20,9 +20,8 @@ using namespace Eigen;
 
 
 
-void setupProblem(ModelPtr& modelptr, OptProbPtr& probptr, size_t nvars) {
+void setupProblem(OptProbPtr& probptr, size_t nvars) {
   probptr.reset(new OptProb());
-  modelptr = probptr->model_;
   vector<string> var_names;
   for (size_t i=0; i < nvars; ++i) {
     var_names.push_back( (boost::format("x_%i")%i).str() );
@@ -43,10 +42,9 @@ double f_QuadraticSeparable(const VectorXd& x) {
 }
 TEST(BasicTrustRegionSQP, QuadraticSeparable)  {
   // if the problem is exactly a QP, it should be solved in one iteration
-  ModelPtr model;
   OptProbPtr prob;
-  setupProblem(model, prob, 3);
-  prob->addCost(CostPtr(new CostFromNumDiff(&f_QuadraticSeparable, model->getVars())));
+  setupProblem(prob, 3);
+  prob->addCost(CostPtr(new CostFromNumDiff(&f_QuadraticSeparable, prob->getVars())));
   BasicTrustRegionSQP solver(prob);
   solver.trust_box_size_ = 100;
   vector<double> x = list_of(3)(4)(5);
@@ -60,10 +58,9 @@ double f_QuadraticNonseparable(const VectorXd& x) {
   return sq(x(0) - x(1) + 3*x(2)) + sq(x(0)-1) + sq(x(2) - 2);
 }
 TEST(BasicTrustRegionSQP, QuadraticNonseparable)  {
-  ModelPtr model;
   OptProbPtr prob;
-  setupProblem(model, prob, 3);
-  prob->addCost(CostPtr(new CostFromNumDiff(&f_QuadraticNonseparable, model->getVars(), true)));
+  setupProblem(prob, 3);
+  prob->addCost(CostPtr(new CostFromNumDiff(&f_QuadraticNonseparable, prob->getVars(), true)));
   BasicTrustRegionSQP solver(prob);
   solver.trust_box_size_ = 100;
   solver.min_trust_box_size_ = 1e-5;
@@ -77,15 +74,14 @@ TEST(BasicTrustRegionSQP, QuadraticNonseparable)  {
 }
 
 
-void testProblem(const ScalarOfVector& f, const VectorOfVector& g, Constraint::Type_t cnt_type,
+void testProblem(const ScalarOfVector& f, const VectorOfVector& g, ConstraintType cnt_type,
   const DblVec& init, const DblVec& sol) {
-    ModelPtr model;
     OptProbPtr prob;
     size_t n = init.size();
     assert (sol.size() == n);
-    setupProblem(model, prob, n);
-    prob->addCost(CostPtr(new CostFromNumDiff(f, model->getVars(), true)));
-    prob->addConstr(ConstraintPtr(new ConstraintFromNumDiff(g, model->getVars(), cnt_type,"")));
+    setupProblem(prob, n);
+    prob->addCost(CostPtr(new CostFromNumDiff(f, prob->getVars(), true)));
+    prob->addConstr(ConstraintPtr(new ConstraintFromNumDiff(g, prob->getVars(), cnt_type,"")));
     BasicTrustRegionSQP solver(prob);
     solver.max_iter_ = 1000;
     solver.min_trust_box_size_ = 1e-5;
@@ -140,17 +136,14 @@ VectorXd g_TP7(const VectorXd& x) {
 }
 
 TEST(BasicTrustRegionSQP, TP1) {
-  testProblem(f_TP1, g_TP1, Constraint::INEQ, list_of(-2)(1), list_of(1)(1));
+  testProblem(f_TP1, g_TP1, INEQ, list_of(-2)(1), list_of(1)(1));
 }
 TEST(BasicTrustRegionSQP, TP3) {
-  testProblem(f_TP3, g_TP3, Constraint::INEQ, list_of(10)(1), list_of(0)(0));
+  testProblem(f_TP3, g_TP3, INEQ, list_of(10)(1), list_of(0)(0));
 }
 TEST(BasicTrustRegionSQP, TP6) {
-  testProblem(f_TP6, g_TP6, Constraint::EQ, list_of(10)(1), list_of(1)(1));
+  testProblem(f_TP6, g_TP6, EQ, list_of(10)(1), list_of(1)(1));
 }
-#if 1
-//hard problem for this solver..
 TEST(BasicTrustRegionSQP, TP7) {
-  testProblem(f_TP7, g_TP7, Constraint::EQ, list_of(2)(2), list_of(0.)(sqrtf(3.)));
+  testProblem(f_TP7, g_TP7, EQ, list_of(2)(2), list_of(0.)(sqrtf(3.)));
 }
-#endif

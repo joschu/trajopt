@@ -21,14 +21,6 @@ double AffExpr::value(const vector<double>& x) const {
   }
   return out;
 }
-double AffExpr::value() const {
-  assert(coeffs.size() == vars.size());
-  double out = constant;
-  for (size_t i=0; i < size(); ++i) {
-    out += coeffs[i] * vars[i].value();
-  }
-  return out;
-}
 double QuadExpr::value(const vector<double>& x) const {
   double out = affexpr.value(x);
   for (size_t i=0; i < size(); ++i) {
@@ -43,13 +35,13 @@ double QuadExpr::value(const double* x) const {
   }
   return out;
 }
-double QuadExpr::value() const {
-  double out = affexpr.value();
-  for (size_t i=0; i < size(); ++i) {
-    out += coeffs[i] * vars1[i].value() * vars2[i].value();
-  }
-  return out;
-}
+//double QuadExpr::value() const {
+//  double out = affexpr.value();
+//  for (size_t i=0; i < size(); ++i) {
+//    out += coeffs[i] * vars1[i].value() * vars2[i].value();
+//  }
+//  return out;
+//}
 
 Var Model::addVar(const string& name, double lb, double ub) {
   Var v = addVar(name);
@@ -73,13 +65,13 @@ vector<double> Model::getVarValues(const VarVector& vars) const {
 
 ostream& operator<<(ostream& o, const Var& v) {
   if (v.var_rep != NULL)
-    o << v.var_rep->solver_interface->getVarName(v);
+    o << v.var_rep->name;
   else
     o << "nullvar";
   return o;
 }
 ostream& operator<<(ostream& o, const Cnt& c) {
-  IPI_ABORT("NOT IMPLEMENTED");
+  o << c.cnt_rep->expr << ((c.cnt_rep->type == EQ) ? " == 0" : " <= 0");
   return o;
 }
 ostream& operator<<(ostream& o, const AffExpr& e) {

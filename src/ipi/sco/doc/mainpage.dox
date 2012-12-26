@@ -28,7 +28,7 @@ where \f$f, g_i, h_i\f$, are each scalar functions.
 
 A convex optimization problem is defined as the minimization of a convex function over a convex set. The above problem is only convex if \f$f\f$ is convex, each \f$g_i\f$ is convex, and each \f$h_i\f$ is affine. In a quadratic program, \f$f\f$ is quadratic and each \f$\tilde g_i\f$ is affine.
 
-For most classes of non-convex optimization problems, we have no hope of finding the guaranteed optimal solution in a reasonable amount of time. (This is in contrast to convex problems, for which there are algorithms that are guaranteed to converge in a small number of iterations, while providing bounds on the non-optimality of the current iterate.)
+For most classes of non-convex optimization problems, we can't use an algorithm that is guaranteed to to find the optimal solution in a reasonable amount of time. (This is in contrast to convex problems, for which there are algorithms that are guaranteed to converge in a small number of iterations, while providing bounds on the non-optimality of the current iterate.)
 
 
 Sequential convex optimization solves a non-convex optimization problem by repeatedly constructing a convex subproblem--an approximation to the problem around the current iterate \f$x_i\f$. The subproblem is used to generate a step \f$\Delta x\f$ that makes progress on the original problem.
@@ -36,20 +36,16 @@ The most naive algorithm would repeatedly replace \f$f, g_i, h_i\f$ by convex/af
 - the approximations are only valid locally around the current iterate \f$x\f$, so the solution to the convex problem might not improve the cost and constraint violation of the original non-convex problem.
 - the convex subproblem might be infeasible, i.e., there is no point that satisfies all of the constraints.
 
-
-
-
+Todo: description of trust-region SQP methods that use L1 penalties
 
 @section api API overview
 
 To set up your optimization problem, you will likely need to interact with the following classes
-- \ref ipi::sco::OptProb: stores a \b non-convex optimization problem, which has a set of \ref ipi::sco::Cost and \ref ipi::sco::Constraint functions.
-- \ref ipi::sco::Model: stores a \b convex optimization problem.
+- \ref ipi::sco::Model: serves as the interface to a convex optimization program; each Model object stores a convex optimization problems with a set of variables and constraints.
+- \ref ipi::sco::OptProb: stores a \b non-convex optimization problem, which has a set of \ref ipi::sco::Cost and \ref ipi::sco::Constraint functions. In the current implementation, an OptProb internally has \ref ipi::sco::Model, and the variables actually belong to the model.
 - \ref ipi::sco::Optimizer solves an OptProb.
 
 While the solver uses Cost and Constraint objects, which enable a user-defined problem convexification, it's usually most convenient to write functions (instead of classes). The file \ref modeling_utils.hpp contains some tools for constructing Cost and Constraint objects based on user-defined functions (and, optionally, gradients and hessians.)
-
-Todo: description of trust-region SQP methods that use L1 penalties
 
 \section Installation
 

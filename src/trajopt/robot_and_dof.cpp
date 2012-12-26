@@ -6,13 +6,26 @@ namespace trajopt {
 void RobotAndDOF::SetDOFValues(const DblVec& dofs) {
   if (affinedofs != 0) {
     OR::Transform T;
-    RaveGetTransformFromAffineDOFValues(T, dofs.begin()+joint_inds.size(), affinedofs, rotationaxis, true);
+    OR::RaveGetTransformFromAffineDOFValues(T, dofs.begin()+joint_inds.size(), affinedofs, rotationaxis, true);
     robot->SetDOFValues(dofs, T, false);
   }
   else {
     robot->SetDOFValues(dofs, false);
   }
 }
+
+DblVec RobotAndDOF::GetDOFValues() {
+  DblVec out;
+  robot->GetDOFValues(out, joint_inds);
+  if (affinedofs != 0) {
+    out.resize(GetDOF());
+    OR::Transform T = robot->GetTransform();
+    OR::RaveGetAffineDOFValuesFromTransform(out.begin() + joint_inds.size(), T, affinedofs, rotationaxis);
+  }
+  return out;
+}
+
+
 void RobotAndDOF::GetDOFLimits(DblVec& lower, DblVec& upper) const {
   robot->GetDOFLimits(lower, upper, joint_inds);
   const int translation_dofs[3] = {DOF_X, DOF_Y, DOF_Z};

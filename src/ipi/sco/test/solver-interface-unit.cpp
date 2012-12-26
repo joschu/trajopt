@@ -44,7 +44,7 @@ TEST(solver_interface, setup_problem) {
   for (int i=0; i < 3; ++i) {
     soln[i] = solver->getVarValue(vars[i]);
   }
-  EXPECT_NEAR(aff.value(), 0, 1e-6);
+  EXPECT_NEAR(aff.value(soln), 0, 1e-6);
 
   solver->removeVar(vars[2]);
   solver->update();

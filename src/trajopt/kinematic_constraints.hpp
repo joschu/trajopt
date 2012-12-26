@@ -12,12 +12,12 @@ typedef BasicArray<Var> VarArray;
 void makeTrajVariablesAndBounds(int n_steps, const RobotAndDOF& manip, OptProb& prob_out, VarArray& vars_out);
 
 CostPtr makeCartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs,
-    const Vector3d& pos_coeffs, const RobotAndDOF& manip, KinBody::LinkPtr link);
-ConstraintPtr makeCartPoseConstraint(const VarVector& vars, const OR::Transform& pose, const RobotAndDOF& manip, KinBody::LinkPtr link);
-ConstraintPtr makeCartPositionConstraint(const VarVector& vars, const Vector3d& position, const RobotAndDOF& manip, KinBody::LinkPtr link);
+    const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link);
+ConstraintPtr makeCartPoseConstraint(const VarVector& vars, const OR::Transform& pose, RobotAndDOFPtr manip, KinBody::LinkPtr link);
+ConstraintPtr makeCartPositionConstraint(const VarVector& vars, const Vector3d& position, RobotAndDOFPtr manip, KinBody::LinkPtr link);
 
-CostPtr makeUpCost(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, double coeff, const RobotAndDOF& manip, KinBody::LinkPtr link);
-ConstraintPtr makeUpConstraint(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, const RobotAndDOF& manip, KinBody::LinkPtr link);
+CostPtr makeUpCost(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, double coeff, RobotAndDOFPtr manip, KinBody::LinkPtr link);
+ConstraintPtr makeUpConstraint(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, RobotAndDOFPtr manip, KinBody::LinkPtr link);
 
 class JointVelCost : public Cost {
 public:

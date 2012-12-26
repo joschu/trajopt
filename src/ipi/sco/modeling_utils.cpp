@@ -78,7 +78,7 @@ ConvexObjectivePtr CostFromNumDiff::convex(const vector<double>& xin, Model* mod
   return out;
 }
 
-CostFromNumDiffErr::CostFromNumDiffErr(const VectorOfVector& f, const VarVector& vars, const VectorXd& coeffs, Penalty_t pen_type, const std::string& name) :
+CostFromNumDiffErr::CostFromNumDiffErr(const VectorOfVector& f, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const std::string& name) :
     f_(f), vars_(vars), coeffs_(coeffs), pen_type_(pen_type), name_(name) {}
 double CostFromNumDiffErr::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
@@ -107,7 +107,7 @@ ConvexObjectivePtr CostFromNumDiffErr::convex(const vector<double>& xin, Model* 
 }
 
 
-ConstraintFromNumDiff::ConstraintFromNumDiff(const VectorOfVector& f, const VarVector& vars, Constraint::Type_t type, const std::string& name) : f_(f), vars_(vars), type_(type), name_(name) {}
+ConstraintFromNumDiff::ConstraintFromNumDiff(const VectorOfVector& f, const VarVector& vars, ConstraintType type, const std::string& name) : f_(f), vars_(vars), type_(type), name_(name) {}
 vector<double> ConstraintFromNumDiff::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
   return toDblVec(f_(x));

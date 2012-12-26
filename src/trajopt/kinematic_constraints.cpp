@@ -29,10 +29,10 @@ Eigen::Matrix3d toRot(const OR::Vector& rq) {
 }
 
 
-void makeTrajVariablesAndBounds(int n_steps, const RobotAndDOF& manip, OptProb& prob_out, VarArray& vars_out) {
-  int n_dof = manip.GetDOF();
+void makeTrajVariablesAndBounds(int n_steps, RobotAndDOFPtr manip, OptProb& prob_out, VarArray& vars_out) {
+  int n_dof = manip->GetDOF();
   DblVec lower, upper;
-  manip.GetDOFLimits(lower, upper);
+  manip->GetDOFLimits(lower, upper);
   IPI_LOG_INFO("Dof limits: %s, %s", Str(lower), Str(upper));
   vector<double> vlower, vupper;
   vector<string> names;
@@ -45,7 +45,7 @@ void makeTrajVariablesAndBounds(int n_steps, const RobotAndDOF& manip, OptProb& 
   }
 
   prob_out.createVariables(names, vlower, vupper);
-  vars_out = VarArray(n_steps, n_dof, prob_out.vars_.data());
+  vars_out = VarArray(n_steps, n_dof, prob_out.getVars().data());
 
 }
 
@@ -129,16 +129,16 @@ Vector3d rotVec(const OR::Vector& q) {
 
 struct CartPoseErrCalculator {
   OR::Transform pose_inv_;
-  RobotAndDOF manip_;
+  RobotAndDOFPtr manip_;
   OR::KinBody::LinkPtr link_;
-  CartPoseErrCalculator(const OR::Transform& pose, const RobotAndDOF& manip, OR::KinBody::LinkPtr link) :
+  CartPoseErrCalculator(const OR::Transform& pose, RobotAndDOFPtr manip, OR::KinBody::LinkPtr link) :
   pose_inv_(pose.inverse()),
   manip_(manip),
   link_(link)
   {}
 //  CartPoseCostCalculator(const CartPoseCostCalculator& other) : pose_(other.pose_), manip_(other.manip_), rs_(other.rs_) {}
   VectorXd operator()(const VectorXd& dof_vals) {
-    manip_.SetDOFValues(toDblVec(dof_vals));
+    manip_->SetDOFValues(toDblVec(dof_vals));
     OR::Transform newpose = link_->GetTransform();
 
     OR::Transform pose_err = newpose * pose_inv_;
@@ -149,48 +149,48 @@ struct CartPoseErrCalculator {
 };
 
 
-CostPtr makeCartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs, const Vector3d& pos_coeffs, const RobotAndDOF& manip, KinBody::LinkPtr link) {
+CostPtr makeCartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs, const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link) {
   VectorOfVector f = CartPoseErrCalculator(pose, manip, link);
   VectorXd coeffs(6);
   coeffs << rot_coeffs, pos_coeffs;
-  return CostPtr(new CostFromNumDiffErr(f, vars, coeffs, CostFromNumDiffErr::ABS, "CartPose"));
+  return CostPtr(new CostFromNumDiffErr(f, vars, coeffs, ABS, "CartPose"));
 }
 
-ConstraintPtr makeCartPoseConstraint(const VarVector& vars, const OR::Transform& pose, const RobotAndDOF& manip, KinBody::LinkPtr link) {
+ConstraintPtr makeCartPoseConstraint(const VarVector& vars, const OR::Transform& pose, RobotAndDOFPtr manip, KinBody::LinkPtr link) {
   VectorOfVector f = CartPoseErrCalculator(pose, manip, link);
-  return ConstraintPtr(new ConstraintFromNumDiff(f, vars, Constraint::EQ, "CartPose"));
+  return ConstraintPtr(new ConstraintFromNumDiff(f, vars, EQ, "CartPose"));
 }
 
 struct CartPositionErrCalculator {
   Vector3d pt_world_;
-  RobotAndDOF manip_;
+  RobotAndDOFPtr manip_;
   OR::KinBody::LinkPtr link_;
-  CartPositionErrCalculator(const Vector3d& pt_world, const RobotAndDOF& manip, OR::KinBody::LinkPtr link) :
+  CartPositionErrCalculator(const Vector3d& pt_world, RobotAndDOFPtr manip, OR::KinBody::LinkPtr link) :
   pt_world_(pt_world),
   manip_(manip),
   link_(link)
   {}
 //  CartPoseCostCalculator(const CartPoseCostCalculator& other) : pose_(other.pose_), manip_(other.manip_), rs_(other.rs_) {}
   VectorXd operator()(const VectorXd& dof_vals) {
-    manip_.SetDOFValues(toDblVec(dof_vals));
+    manip_->SetDOFValues(toDblVec(dof_vals));
     OR::Transform newpose = link_->GetTransform();
     return pt_world_ - toVector3d(newpose.trans);
   }
 };
 
-ConstraintPtr makeCartPositionConstraint(const VarVector& vars, const Vector3d& pt, const RobotAndDOF& manip, KinBody::LinkPtr link) {
+ConstraintPtr makeCartPositionConstraint(const VarVector& vars, const Vector3d& pt, RobotAndDOFPtr manip, KinBody::LinkPtr link) {
   VectorOfVector f = CartPositionErrCalculator(pt, manip, link);
-  return ConstraintPtr(new ConstraintFromNumDiff(f, vars, Constraint::EQ, "CartPosition"));
+  return ConstraintPtr(new ConstraintFromNumDiff(f, vars, EQ, "CartPosition"));
 }
 
 
 struct UpErrorCalculator {
   Vector3d dir_local_;
   Vector3d goal_dir_world_;
-  RobotAndDOF manip_;
+  RobotAndDOFPtr manip_;
   OR::KinBody::LinkPtr link_;
   MatrixXd perp_basis_; // 2x3 matrix perpendicular to goal_dir_world
-  UpErrorCalculator(const Vector3d& dir_local, const Vector3d& goal_dir_world, const RobotAndDOF& manip, KinBody::LinkPtr link) :
+  UpErrorCalculator(const Vector3d& dir_local, const Vector3d& goal_dir_world, RobotAndDOFPtr manip, KinBody::LinkPtr link) :
     dir_local_(dir_local),
     goal_dir_world_(goal_dir_world),
     manip_(manip),
@@ -203,21 +203,21 @@ struct UpErrorCalculator {
     perp_basis_.row(1) = perp1.transpose();
   }
   VectorXd operator()(const VectorXd& dof_vals) {
-    manip_.SetDOFValues(toDblVec(dof_vals));
+    manip_->SetDOFValues(toDblVec(dof_vals));
     OR::Transform newpose = link_->GetTransform();
     return perp_basis_*(toRot(newpose.rot) * dir_local_ - goal_dir_world_);
   }
 };
 
-CostPtr makeUpCost(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, double coeff, const RobotAndDOF& manip, KinBody::LinkPtr link) {
+CostPtr makeUpCost(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, double coeff, RobotAndDOFPtr manip, KinBody::LinkPtr link) {
   VectorOfVector f = UpErrorCalculator(dir_local, goal_dir_world, manip, link);
   // why does this work without a copy constructor?
-  return CostPtr(new CostFromNumDiffErr(f, vars, coeff*Vector2d::Ones(), CostFromNumDiffErr::ABS, "Up"));
+  return CostPtr(new CostFromNumDiffErr(f, vars, coeff*Vector2d::Ones(), ABS, "Up"));
 }
 
-ConstraintPtr makeUpConstraint(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, const RobotAndDOF& manip, KinBody::LinkPtr link) {
+ConstraintPtr makeUpConstraint(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, RobotAndDOFPtr manip, KinBody::LinkPtr link) {
   VectorOfVector f = UpErrorCalculator(dir_local, goal_dir_world, manip, link);
-  return ConstraintPtr(new ConstraintFromNumDiff(f, vars, Constraint::EQ, "Up"));
+  return ConstraintPtr(new ConstraintFromNumDiff(f, vars, EQ, "Up"));
 }
 
 

@@ -11,6 +11,7 @@ public:
 
   void SetDOFValues(const DblVec& dofs);
   void GetDOFLimits(DblVec& lower, DblVec& upper) const;
+  DblVec GetDOFValues();
   int GetDOF() const;
   IntVec GetJointIndices() const {return joint_inds;}
   Matrix CalculatePositionJacobian() const;
@@ -23,5 +24,6 @@ private:
   int affinedofs;
   OR::Vector rotationaxis;
 };
+typedef shared_ptr<RobotAndDOF> RobotAndDOFPtr;
 
 }

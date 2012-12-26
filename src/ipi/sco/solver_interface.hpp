@@ -21,6 +21,14 @@ using boost::shared_ptr;
 using std::vector;
 using std::ostream;
 
+typedef vector<double> DblVec;
+typedef vector<int> IntVec;
+
+enum ConstraintType {
+  EQ,
+  INEQ
+};
+
 enum CvxOptStatus {
   CVX_SOLVED,
   CVX_INFEASIBLE,
@@ -31,9 +39,11 @@ typedef vector<Var> VarVector;
 typedef vector<AffExpr> AffExprVector;
 typedef vector<QuadExpr> QuadExprVector;
 
-/**
- * Convex optimization problem
- *
+/** @Brief Convex optimization problem
+ 
+Gotchas:
+- after adding a variable, need to call update() before doing anything else with that variable
+ 
  */
 class Model {
 public:
@@ -53,7 +63,6 @@ public:
   virtual void setVarBounds(const Var& var, double lower, double upper)=0;
   virtual double getVarValue(const Var& var) const=0;
   virtual vector<double> getVarValues(const VarVector& vars) const;
-  virtual string getVarName(const Var&) const = 0;
   virtual CvxOptStatus optimize()=0;
 
   virtual void setObjective(const AffExpr&)=0;
@@ -67,10 +76,11 @@ public:
 };
 
 struct VarRep {
-  VarRep(int index, Model* si) : index(index), removed(false), solver_interface(si) {}
+  VarRep(int _index, const string& _name, void* _creator) : index(_index), name(_name), removed(false), creator(_creator) {}
   int index;
+  string name;
   bool removed;
-  Model* solver_interface;
+  void* creator;
 };
 
 struct Var {
@@ -78,16 +88,17 @@ struct Var {
   Var() : var_rep(NULL) {}
   Var(VarRep* var_rep) : var_rep(var_rep) {}
   Var(const Var& other) : var_rep(other.var_rep) {}
-  double value() const {return var_rep->solver_interface->getVarValue(*this);}
   double value(const double* x) const {return x[var_rep->index];}
   double value(const vector<double>& x) const {assert(var_rep->index < (int)x.size()); return x[var_rep->index];}
 };
 
 struct CntRep {
-  CntRep(int index, Model* si) : index(index), removed(false), solver_interface(si){}
+  CntRep(int _index, void* _creator) : index(_index), removed(false), creator(_creator){}
   int index;
   bool removed;
-  Model* solver_interface;
+  void* creator;
+  ConstraintType type;
+  string expr; // todo placeholder
 };
 
 struct Cnt {
@@ -107,7 +118,6 @@ struct AffExpr { // affine expression
   AffExpr(const AffExpr& other) :
     constant(other.constant), coeffs(other.coeffs), vars(other.vars) {}
   size_t size() const {return coeffs.size();}
-  double value() const;
   double value(const double* x) const;
   double value(const vector<double>& x) const;
 };
@@ -122,7 +132,6 @@ struct QuadExpr {
   explicit QuadExpr(const Var& v) : affexpr(v) {}
   explicit QuadExpr(const AffExpr& aff) : affexpr(aff) {}
   size_t size() const {return coeffs.size();}
-  double value() const;
   double value(const double* x) const;
   double value(const vector<double>& x) const;
 };
