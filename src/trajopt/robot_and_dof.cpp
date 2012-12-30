@@ -1,5 +1,9 @@
-#include "robot_and_dof.hpp"
+#include "trajopt/robot_and_dof.hpp"
+#include <boost/foreach.hpp>
+#include "trajopt/rave_utils.hpp"
+#include "utils/math.hpp"
 using namespace OpenRAVE;
+using namespace util;
 
 namespace trajopt {
 
@@ -64,12 +68,59 @@ void RobotAndDOF::GetDOFLimits(DblVec& lower, DblVec& upper) const {
 int RobotAndDOF::GetDOF() const {
   return joint_inds.size() + RaveGetAffineDOF(affinedofs);
 }
-Matrix RobotAndDOF::CalculatePositionJacobian() const {
-  throw OR::openrave_exception("not implemented", OR::ORE_NotImplemented);
+DblMatrix RobotAndDOF::PositionJacobian(int link_ind, const OR::Vector& pt) const {
+  robot->SetActiveDOFs(joint_inds, affinedofs);
+  vector<double> jacdata;
+  robot->CalculateActiveJacobian(link_ind, pt, jacdata);
+  return Eigen::Map<DblMatrix>(jacdata.data(), 3, GetDOF());
 }
-Matrix RobotAndDOF::CalculateRotationJacobian() const {
-  throw OR::openrave_exception("not implemented", OR::ORE_NotImplemented);
+bool RobotAndDOF::DoesAffect(const KinBody::Link& link) {
+  if (affinedofs > 0) return true;
+  else if (link.GetParent() == GetRobot()) return trajopt::DoesAffect(*GetRobot(), joint_inds, GetRobotLinkIndex(*GetRobot(), link));
+  else return false;
 }
+
+std::vector<KinBody::LinkPtr> RobotAndDOF::GetAffectedLinks() {
+  vector<int> inds;
+  std::vector<KinBody::LinkPtr> out;
+  GetAffectedLinks(out,inds);
+  return out;
+}
+
+void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, vector<int>& link_inds) {
+  links.clear();
+  link_inds.clear();
+
+  BOOST_FOREACH(KinBody::LinkPtr& link, links) link_inds.push_back(link->GetIndex());
+
+  vector<KinBodyPtr> grabbed;
+  robot->GetGrabbed(grabbed);
+  BOOST_FOREACH(const KinBodyPtr& body, grabbed) {
+    KinBody::LinkPtr grabberLink = robot->IsGrabbing(body);
+    assert(grabberLink);
+    BOOST_FOREACH(const KinBody::LinkPtr& link, body->GetLinks()) {
+      if (link->GetGeometries().size() > 0) {
+        links.push_back(link);
+        link_inds.push_back(grabberLink->GetIndex());
+      }
+    }
+  }
+
+}
+
+DblVec RobotAndDOF::RandomDOFValues() {
+  int ndof = GetDOF();
+  DblVec lower, upper;
+  GetDOFLimits(lower, upper);
+  DblVec out(ndof);
+  for (int i=0; i < ndof; ++i) {
+    lower[i] = fmax(lower[i], 2*M_PI);
+    upper[i] = fmin(upper[i], 2*M_PI);
+    out[i] = lower[i] + randf() * (upper[i] - lower[i]);
+  }
+  return out;
+}
+
 
 
 }

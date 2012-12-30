@@ -2,7 +2,6 @@
 
 #include "sco_fwd.hpp"
 #include "solver_interface.hpp"
-#include <boost/foreach.hpp>
 
 namespace ipi {
 namespace sco {

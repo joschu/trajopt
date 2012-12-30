@@ -1,6 +1,5 @@
 #pragma once
-#include <boost/foreach.hpp>
-#include <vector>
+  #include <vector>
 #include <cmath>
 
 namespace ipi {
@@ -11,12 +10,12 @@ typedef vector<double> DblVec;
 
 inline double vecSum(const DblVec& v) {
   double out = 0;
-  BOOST_FOREACH(const double& x, v) out += x;
+  for (int i=0; i < v.size(); ++i) out += v[i];
   return out;
 }
 inline double vecAbsSum(const DblVec& v) {
   double out = 0;
-  BOOST_FOREACH(const double& x, v) out += fabs(x);
+  for (int i=0; i < v.size(); ++i) out += fabs(v[i]);
   return out;
 }
 inline double pospart(double x) {
@@ -27,7 +26,7 @@ inline double sq(double x) {
 }
 inline double vecHingeSum(const DblVec& v) {
   double out = 0;
-  BOOST_FOREACH(const double& x, v) out += pospart(x);
+  for (int i=0; i < v.size(); ++i) out += pospart(v[i]);
   return out;
 }
 

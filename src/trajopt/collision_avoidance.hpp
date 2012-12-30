@@ -26,12 +26,12 @@ public:
   void CalcDistExpressions(vector<AffExpr>& exprs, DblVec& weights); // appends to this vector
 private:
   // parameters:
-  double m_coeff;
-  double m_safe_dist;
-  EnvironmentBasePtr m_env;
+  OR::EnvironmentBasePtr m_env;
   CollisionCheckerPtr m_cc;
   RobotAndDOFPtr m_rad;
   sco::VarVector m_vars;
+  CollisionPairIgnorer m_ignorer;
+  std::map<OR::KinBody::Link*, int> m_link2ind;
 };
 
 class CollisionCost : public Cost {

@@ -3,10 +3,16 @@
 #include "expr_ops.hpp"
 #include <iostream>
 #include <Eigen/Eigenvalues>
+#include "utils/eigen_conversions.hpp"
 using namespace std;
+using namespace util;
+
 
 namespace ipi {
 namespace sco {
+
+const double DEFAULT_EPSILON = 1e-5;
+
 
 VectorXd getVec(const vector<double>& x, const VarVector& vars) {
   VectorXd out(vars.size());
@@ -14,8 +20,14 @@ VectorXd getVec(const vector<double>& x, const VarVector& vars) {
   return out;
 }
 
+DblVec getDblVec(const vector<double>& x, const VarVector& vars) {
+  DblVec out(vars.size());
+  for (unsigned i=0; i < vars.size(); ++i) out[i] = x[vars[i].var_rep->index];
+  return out;
+}
+
 CostFromNumDiff::CostFromNumDiff(const ScalarOfVector& f, const VarVector& vars, bool full_hessian) :
-    f_(f), vars_(vars), full_hessian_(full_hessian) {}
+    f_(f), vars_(vars), full_hessian_(full_hessian), epsilon_(DEFAULT_EPSILON) {}
 
 double CostFromNumDiff::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
@@ -30,7 +42,7 @@ ConvexObjectivePtr CostFromNumDiff::convex(const vector<double>& xin, Model* mod
   if (!full_hessian_) {
     double val;
     VectorXd grad,hess;
-    calcGradAndDiagHess(f_, x, epsilon, val, grad, hess);
+    calcGradAndDiagHess(f_, x, epsilon_, val, grad, hess);
     hess = hess.cwiseMax(VectorXd::Zero(hess.size()));
     QuadExpr& quad = out->quad_;
     quad.affexpr.constant = val - grad.dot(x) + .5*x.dot(hess.cwiseProduct(x));
@@ -44,7 +56,7 @@ ConvexObjectivePtr CostFromNumDiff::convex(const vector<double>& xin, Model* mod
     double val;
     VectorXd grad;
     MatrixXd hess;
-    calcGradHess(f_, x, epsilon, val, grad, hess);
+    calcGradHess(f_, x, epsilon_, val, grad, hess);
 
     MatrixXd pos_hess = MatrixXd::Zero(x.size(), x.size());
     Eigen::SelfAdjointEigenSolver<MatrixXd> es(hess);
@@ -79,7 +91,7 @@ ConvexObjectivePtr CostFromNumDiff::convex(const vector<double>& xin, Model* mod
 }
 
 CostFromNumDiffErr::CostFromNumDiffErr(const VectorOfVector& f, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const std::string& name) :
-    f_(f), vars_(vars), coeffs_(coeffs), pen_type_(pen_type), name_(name) {}
+    f_(f), vars_(vars), coeffs_(coeffs), pen_type_(pen_type), name_(name), epsilon_(DEFAULT_EPSILON) {}
 double CostFromNumDiffErr::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
   VectorXd scaled_err = f_(x).cwiseProduct(coeffs_);
@@ -87,7 +99,7 @@ double CostFromNumDiffErr::value(const vector<double>& xin) {
 }
 ConvexObjectivePtr CostFromNumDiffErr::convex(const vector<double>& xin, Model* model) {
   VectorXd x = getVec(xin, vars_);
-  MatrixXd jac = calcForwardNumJac(f_, x, epsilon);
+  MatrixXd jac = calcForwardNumJac(f_, x, epsilon_);
   ConvexObjectivePtr out(new ConvexObjective(model));
   VectorXd y = f_(x);
   for (int i=0; i < jac.rows(); ++i) {
@@ -107,14 +119,15 @@ ConvexObjectivePtr CostFromNumDiffErr::convex(const vector<double>& xin, Model* 
 }
 
 
-ConstraintFromNumDiff::ConstraintFromNumDiff(const VectorOfVector& f, const VarVector& vars, ConstraintType type, const std::string& name) : f_(f), vars_(vars), type_(type), name_(name) {}
+ConstraintFromNumDiff::ConstraintFromNumDiff(const VectorOfVector& f, const VarVector& vars, ConstraintType type, const std::string& name) :
+    f_(f), vars_(vars), type_(type), name_(name), epsilon_(DEFAULT_EPSILON) {}
 vector<double> ConstraintFromNumDiff::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
   return toDblVec(f_(x));
 }
 ConvexConstraintsPtr ConstraintFromNumDiff::convex(const vector<double>& xin, Model* model) {
   VectorXd x = getVec(xin, vars_);
-  MatrixXd jac = calcForwardNumJac(f_, x, epsilon);
+  MatrixXd jac = calcForwardNumJac(f_, x, epsilon_);
   ConvexConstraintsPtr out(new ConvexConstraints(model));
   VectorXd y = f_(x);
   for (int i=0; i < jac.rows(); ++i) {

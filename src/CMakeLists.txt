@@ -1,4 +1,3 @@
-
 include_directories(
   ${CMAKE_SOURCE_DIR}/ext
   ${CMAKE_SOURCE_DIR}/src
@@ -20,3 +19,4 @@ set(OpenRAVE_BOTH_LIBRARIES ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES})
 add_subdirectory(ipi)
 add_subdirectory(trajopt)
 add_subdirectory(utils)
+add_subdirectory(osgviewer)

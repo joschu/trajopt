@@ -11,7 +11,7 @@
 #include <gtest/gtest.h>
 #include <Eigen/Dense>
 #include <sstream>
-#include "utils/general_utils.hpp"
+#include "utils/stl_to_string.hpp"
 using namespace util;
 using namespace std;
 using namespace boost::assign;

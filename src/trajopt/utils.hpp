@@ -6,6 +6,19 @@ namespace trajopt {
 
 TrajArray getTraj(const vector<double>& x, const VarArray& vars);
 
+inline Vector3d toVector3d(const OR::Vector& v) {
+  return Vector3d(v.x, v.y, v.z);
+}
+inline Vector4d toVector4d(const OR::Vector& v) {
+  return Vector4d(v.x, v.y, v.z, v.w);
+}
+Eigen::Matrix3d toRot(const OR::Vector& rq);
+
+inline OR::Transform toRaveTransform(const Vector4d& q, const Vector3d& p) {
+  return OR::Transform(OR::Vector(q[0], q[1], q[2], q[3]),
+                       OR::Vector(p[0], p[1], p[2]));
+}
 
 
 }
+

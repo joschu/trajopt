@@ -1,5 +1,6 @@
 #pragma once
 #include "ipi/sco/modeling.hpp"
+#include "ipi/sco/modeling_utils.hpp"
 #include "ipi/sco/sco_fwd.hpp"
 #include <Eigen/Core>
 #include "trajopt/common.hpp"
@@ -11,13 +12,42 @@ typedef BasicArray<Var> VarArray;
 
 void makeTrajVariablesAndBounds(int n_steps, const RobotAndDOF& manip, OptProb& prob_out, VarArray& vars_out);
 
-CostPtr makeCartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs,
-    const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link);
-ConstraintPtr makeCartPoseConstraint(const VarVector& vars, const OR::Transform& pose, RobotAndDOFPtr manip, KinBody::LinkPtr link);
-ConstraintPtr makeCartPositionConstraint(const VarVector& vars, const Vector3d& position, RobotAndDOFPtr manip, KinBody::LinkPtr link);
-
+#if 0
 CostPtr makeUpCost(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, double coeff, RobotAndDOFPtr manip, KinBody::LinkPtr link);
 ConstraintPtr makeUpConstraint(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, RobotAndDOFPtr manip, KinBody::LinkPtr link);
+#endif
+
+struct PoseErrPlotter : public Plotter {
+  KinBody::LinkPtr link;
+  OR::Transform target;
+  RobotAndDOFPtr rad;
+  PoseErrPlotter(KinBody::LinkPtr _link, OR::Transform _target, RobotAndDOFPtr _rad) :
+    link(_link), target(_target), rad(_rad) {}
+  void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
+};
+
+class CartPoseCost : public CostFromNumDiffErr, public Plotter {
+public:
+  CartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs, const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link);
+  void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
+  CartPoseErrCalculator& calc;
+};
+class CartPoseConstraint : public ConstraintFromNumDiff, public Plotter {
+public:
+  CartPoseConstraint(const VarVector& vars, const OR::Transform& pose, RobotAndDOFPtr manip, KinBody::LinkPtr link);
+  void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
+};
+
+#if 0
+class CartPositionCost : public CostFromNumDiffErr, public Plottable {
+  CartPoseCost(const VarVector& vars, const OR::Vector& position, const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link);
+};
+class CartPositionConstraint : public ConstraintFromNumDiffErr, public Plottable {
+  CartPositionConstraint(const VarVector& vars, const Vector3d& pt, RobotAndDOFPtr manip, KinBody::LinkPtr link);
+};
+#endif
+
+
 
 class JointVelCost : public Cost {
 public:

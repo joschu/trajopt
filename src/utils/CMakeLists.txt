@@ -1,1 +1,1 @@
-add_library(utils general_utils.cpp)
+add_library(utils stl_to_string.cpp clock.cpp)

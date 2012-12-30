@@ -18,7 +18,7 @@ namespace json_marshal {
   }}\
 
 
-
+IMPLEMENT_READ_PRIMITIVE(bool, boolValue, asBool)
 IMPLEMENT_READ_PRIMITIVE(int, intValue, asInt)
 IMPLEMENT_READ_PRIMITIVE(double, realValue, asDouble)
 IMPLEMENT_READ_PRIMITIVE(string, stringValue, asString)

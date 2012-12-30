@@ -21,34 +21,27 @@ enum PenaltyType {
   ABS
 };
 
-#define DEFAULT_EPSILON 1e-5;
-
 using Eigen::VectorXd;
 using Eigen::MatrixXd;
 
-inline vector<double> toDblVec(const VectorXd& x) {
-  return vector<double>(x.data(), x.data()+x.size());
-}
-inline VectorXd toVectorXd(const vector<double>& x) {
-  return Eigen::Map<const VectorXd>(x.data(), x.size());
-}
 VectorXd getVec(const vector<double>& x, const VarVector& vars);
+DblVec getDblVec(const vector<double>& x, const VarVector& vars);
 
 
 class CostFromNumDiff : public Cost {
-  ScalarOfVector f_;
-  VarVector vars_;
-  bool full_hessian_;
 public:
-  const static double epsilon = DEFAULT_EPSILON;
   CostFromNumDiff(const ScalarOfVector& f, const VarVector& vars, bool full_hessian=false);
   double value(const vector<double>& x);
   ConvexObjectivePtr convex(const vector<double>& x, Model* model);
+private:
+  ScalarOfVector f_;
+  VarVector vars_;
+  bool full_hessian_;
+  double epsilon_;
 };
 
 class CostFromNumDiffErr : public Cost {
 public:
-  const static double epsilon = DEFAULT_EPSILON;
   CostFromNumDiffErr(const VectorOfVector& f, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const string&  name);
   double value(const vector<double>& x);
   ConvexObjectivePtr convex(const vector<double>& x, Model* model);
@@ -59,20 +52,22 @@ protected:
   VectorXd coeffs_;
   PenaltyType pen_type_;
   string name_;
+  double epsilon_;
 };
 
 class ConstraintFromNumDiff : public Constraint {
-  VectorOfVector f_;
-  VarVector vars_;
-  ConstraintType type_;
-  std::string name_;
 public:
-  const static double epsilon = DEFAULT_EPSILON;
   ConstraintFromNumDiff(const VectorOfVector& f, const VarVector& vars, ConstraintType type, const std::string& name);
   vector<double> value(const vector<double>& x);
   ConvexConstraintsPtr convex(const vector<double>& x, Model* model);
   ConstraintType type() {return type_;}
   string name() {return name_;}
+private:
+  VectorOfVector f_;
+  VarVector vars_;
+  ConstraintType type_;
+  std::string name_;
+  double epsilon_;
 };
 
 

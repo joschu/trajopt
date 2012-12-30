@@ -5,6 +5,7 @@ include_directories(
   ${OpenRAVE_INCLUDE_DIRS}
   ${JSON_INCLUDE_DIRS}
 )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 add_library(trajopt SHARED 
 	json_marshal.cpp
 	problem_description.cpp
@@ -12,8 +13,9 @@ add_library(trajopt SHARED
 	kinematic_constraints.cpp 
 	robot_and_dof.cpp 
 	utils.cpp
+	rave_utils.cpp
 )
-target_link_libraries(trajopt ${BULLET_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY} sco util json)
+target_link_libraries(trajopt ${BULLET_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY} sco utils json)
 
 # set(CMAKE_SHARED_LINKER_FLAGS "-export-symbols-regex,'^foo_'")
 

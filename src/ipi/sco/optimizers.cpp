@@ -8,7 +8,7 @@
 #include <cmath>
 #include <cstdio>
 #include "sco_common.hpp"
-#include "utils/general_utils.hpp"
+#include "utils/stl_to_string.hpp"
 using namespace std;
 using namespace util;
 
@@ -119,6 +119,14 @@ vector<ConvexObjectivePtr> cntsToCosts(const vector<ConvexConstraintsPtr>& cnts,
   return out;
 }
 
+void Optimizer::addCallback(const Callback& cb) {
+  callbacks_.push_back(cb);
+}
+void Optimizer::callCallbacks() {
+  for (int i=0; i < callbacks_.size(); ++i) {
+    callbacks_[i](x());
+  }
+}
 
 BasicTrustRegionSQP::BasicTrustRegionSQP() {
   initParameters();
@@ -160,7 +168,6 @@ void BasicTrustRegionSQP::setTrustBoxConstraints(const DblVec& x) {
 
 OptStatus BasicTrustRegionSQP::optimize() {
 
-
   vector<string> cost_names = getCostNames(prob_->getCosts());
   vector<ConstraintPtr> constraints = prob_->getConstraints();
   vector<string> cnt_names = getCntNames(constraints);
@@ -172,6 +179,9 @@ OptStatus BasicTrustRegionSQP::optimize() {
   DblVec new_cost_vals, new_cnt_viols;
 
   for (size_t iter = 1; ; ++iter) {
+    callCallbacks();
+
+
     IPI_LOG_DEBUG("current iterate: %s", Str(x_));
     IPI_LOG_INFO("iteration %i", iter);
 

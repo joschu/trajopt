@@ -14,10 +14,14 @@ public:
   DblVec GetDOFValues();
   int GetDOF() const;
   IntVec GetJointIndices() const {return joint_inds;}
-  Matrix CalculatePositionJacobian() const;
-  Matrix CalculateRotationJacobian() const;
+  DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const;
+  DblMatrix RotationJacobian(int link_ind) const;
   OR::RobotBasePtr GetRobot() const {return robot;}
-
+  OR::RobotBase::RobotStateSaver Save() {return OR::RobotBase::RobotStateSaver(robot, /*just save trans*/ 1);}
+  bool DoesAffect(const KinBody::Link& link);
+  std::vector<KinBody::LinkPtr> GetAffectedLinks();
+  void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, vector<int>& link_inds);
+  DblVec RandomDOFValues();
 private:
   OR::RobotBasePtr robot;
   IntVec joint_inds;

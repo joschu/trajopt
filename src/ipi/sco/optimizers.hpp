@@ -1,5 +1,6 @@
 #include <string>
 #include "modeling.hpp"
+#include <boost/function.hpp>
 /*
  * Algorithms for non-convex, constrained optimization
  */
@@ -36,7 +37,12 @@ public:
   virtual void setProblem(OptProbPtr prob) {prob_ = prob;}
   void initialize(const vector<double>& x) {x_ = x;}
   vector<double>& x() {return x_;}
+
+  typedef boost::function<void(const DblVec&)> Callback;
+  void addCallback(const Callback& f); // called before each iteration
 protected:
+  vector<Callback> callbacks_;
+  void callCallbacks();
   OptProbPtr prob_;
   vector<double> x_; // current solution for all variables
 };

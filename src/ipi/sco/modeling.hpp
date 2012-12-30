@@ -9,8 +9,8 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include "sco_fwd.hpp"
-#include "solver_interface.hpp"
+#include "ipi/sco/sco_fwd.hpp"
+#include "ipi/sco/solver_interface.hpp"
 
 namespace ipi {
 namespace sco {

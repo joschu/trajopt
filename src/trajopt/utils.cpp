@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include "ipi/sco/solver_interface.hpp"
+#include <Eigen/Geometry>
 namespace trajopt {
 TrajArray getTraj(const vector<double>& x, const VarArray& vars) {
   TrajArray out(vars.rows(), vars.cols());
@@ -10,5 +11,13 @@ TrajArray getTraj(const vector<double>& x, const VarArray& vars) {
   }
   return out;
 }
+
+Eigen::Matrix3d toRot(const OR::Vector& rq) {
+  Eigen::Affine3d T;
+  T = Eigen::Quaterniond(rq[0], rq[1], rq[2], rq[3]);
+  return T.rotation();
+}
+
+
 
 }
