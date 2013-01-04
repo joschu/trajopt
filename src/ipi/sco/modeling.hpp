@@ -86,10 +86,16 @@ private:
 
 class Cost {
 public:
-  virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model) = 0;
   virtual double value(const vector<double>&) = 0;
+  virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model) = 0;
+
+  string name() {return name_;}
+  void setName(const string& name) {name_=name;}
+  Cost() : name_("unnamed") {}
+  Cost(const string& name) : name_(name) {}
   virtual ~Cost() {}
-  virtual string name() {return "Unnamed";}
+protected:
+  string name_;
 };
 
 class Constraint {
@@ -98,12 +104,18 @@ public:
   virtual ConstraintType type() = 0;
   virtual vector<double> value(const vector<double>& x) = 0;
   virtual ConvexConstraintsPtr convex(const vector<double>& x, Model* model) = 0;
-  virtual string name() {return "Unnamed";}
-  virtual ~Constraint() {}
 
   vector<double> violations(const vector<double>& x);
   double violation(const vector<double>& x);
 
+  string name() {return name_;}
+  void setName(const string& name) {name_=name;}
+  Constraint() : name_("unnamed") {}
+  Constraint(const string& name) : name_(name) {}
+  virtual ~Constraint() {}
+
+protected:
+  string name_;
 };
 
 class EqConstraint : public Constraint{
@@ -144,6 +156,8 @@ public:
   DblVec& getUpperBounds() {return upper_bounds_;}
   ModelPtr getModel() {return model_;}
   vector<Var>& getVars() {return vars_;}
+  int getNumCosts() {return costs_.size();}
+  int getNumConstraints() {return eqcnts_.size() + ineqcnts_.size();}
 
 protected:
   ModelPtr model_;

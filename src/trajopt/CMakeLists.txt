@@ -14,8 +14,11 @@ add_library(trajopt SHARED
 	robot_and_dof.cpp 
 	utils.cpp
 	rave_utils.cpp
+	collision_avoidance.cpp
+	collision_checker.cpp
+	plot_callback.cpp
 )
-target_link_libraries(trajopt ${BULLET_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY} sco utils json)
+target_link_libraries(trajopt ${BULLET_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY} sco utils json osgviewer)
 
 # set(CMAKE_SHARED_LINKER_FLAGS "-export-symbols-regex,'^foo_'")
 

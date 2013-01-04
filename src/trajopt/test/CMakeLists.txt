@@ -6,5 +6,9 @@ target_link_libraries(collision-checker-unit trajopt gtest gtest_main ${Boost_SY
 add_test(collision-checker-unit ${CMAKE_BINARY_DIR}/bin/collision-checker-unit)
 
 add_executable(planning-unit planning-unit.cpp)
-target_link_libraries(planning-unit trajopt gtest gtest_main ${Boost_SYSTEM_LIBRARY} osgviewer)
+target_link_libraries(planning-unit trajopt gtest gtest_main ${Boost_SYSTEM_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} osgviewer)
 add_test(planning-unit ${CMAKE_BINARY_DIR}/bin/planning-unit)
+
+
+add_executable(render-collision-test render_collision_test.cpp)
+target_link_libraries(render-collision-test trajopt ${Boost_SYSTEM_LIBRARY} osgviewer)

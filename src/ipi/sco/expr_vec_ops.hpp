@@ -1,14 +1,10 @@
-#include <Eigen/Dense>
 #include "solver_interface.hpp"
+#include <Eigen/Core>
 
 namespace ipi {
 namespace sco {
 
-using Eigen::Matrix3d;
-using Eigen::Vector3d;
 using Eigen::MatrixXd;
-using Eigen::MatrixXd;
-using std::vector;
 using Eigen::VectorXd;
 
 #if 0

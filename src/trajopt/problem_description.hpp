@@ -2,6 +2,8 @@
 #include "json_marshal.hpp"
 #include <boost/function.hpp>
 
+namespace ipi{namespace sco{struct OptResults;}}
+
 namespace trajopt {
 
 using namespace json_marshal;
@@ -17,8 +19,16 @@ typedef boost::shared_ptr<CntInfo> CntInfoPtr;
 class TrajOptProb;
 typedef boost::shared_ptr<TrajOptProb> TrajOptProbPtr;
 class ProblemConstructionInfo;
+class TrajOptResult;
+typedef boost::shared_ptr<TrajOptResult> TrajOptResultPtr;
+
 
 TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo&);
+TrajOptProbPtr ConstructProblem(const Json::Value&, OpenRAVE::EnvironmentBasePtr env);
+TrajOptResultPtr OptimizeProblem(TrajOptProbPtr, bool plot);
+void HandlePlanningRequest(OR::EnvironmentBasePtr env, TrajOptRequest&, TrajOptResponse&);
+
+
 
 
 /**
@@ -38,11 +48,25 @@ public:
   int GetNumSteps() {return m_traj_vars.rows();}
   int GetNumDOF() {return m_traj_vars.cols();}
   RobotAndDOFPtr GetRAD() {return m_rad;}
+  OR::EnvironmentBasePtr GetEnv() {return m_rad->GetRobot()->GetEnv();}
+
+  void SetInitTraj(const TrajArray& x) {m_init_traj = x;}
+  TrajArray GetInitTraj() {return m_init_traj;}
+
 
   friend TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo&);
 private:
   VarArray m_traj_vars;
   RobotAndDOFPtr m_rad;
+  TrajArray m_init_traj;
+  typedef std::pair<string,string> StringPair;
+};
+
+struct TrajOptResult {
+  vector<string> cost_names, cnt_names;
+  vector<double> cost_vals, cnt_viols;
+  TrajArray traj;
+  TrajOptResult(OptResults& opt, TrajOptProb& prob);
 };
 
 
@@ -50,28 +74,28 @@ struct BasicInfo  {
   bool start_fixed;
   int n_steps;
   string manip;
-  string robot;
-  bool fromJson(const Json::Value& v);
+  string robot; // optional
+  IntVec dofs_fixed; // optional
+  void fromJson(const Json::Value& v);
 };
 
 struct InitInfo {
-  enum Mode {
-    GIVEN_TRAJ,
+  enum Type {
     STATIONARY,
-    IK_STRAIGHT_LINE
+    GIVEN_TRAJ,
   };
-  Mode mode;
-  bool fromJson(const Json::Value& v);
+  Type type;
+  TrajArray data;
+  void fromJson(const Json::Value& v);
 };
 
 struct CostInfo  {
 
-  string type;
   string name;
-  virtual bool fromJson(const Json::Value& v);
+  virtual void fromJson(const Json::Value& v)=0;
 
   static CostInfoPtr fromName(const string& type);
-  virtual CostPtr hatch(TrajOptProb& prob) = 0;
+  virtual void hatch(TrajOptProb& prob) = 0;
   typedef CostInfoPtr (*MakerFunc)();
 
   /**
@@ -86,12 +110,11 @@ private:
 };
 
 struct CntInfo  {
-  string type;
   string name;
-  virtual bool fromJson(const Json::Value& v);
+  virtual void fromJson(const Json::Value& v) = 0;
 
   static CntInfoPtr fromName(const string& type);
-  virtual ConstraintPtr hatch(TrajOptProb& prob) = 0;
+  virtual void hatch(TrajOptProb& prob) = 0;
   typedef CntInfoPtr (*MakerFunc)();
 
   static void RegisterMaker(const std::string& type, MakerFunc);
@@ -101,8 +124,8 @@ private:
   static std::map<string, MakerFunc> name2maker;
 };
 
-bool fromJson(const Json::Value& v, CostInfoPtr&);
-bool fromJson(const Json::Value& v, CntInfoPtr&);
+void fromJson(const Json::Value& v, CostInfoPtr&);
+void fromJson(const Json::Value& v, CntInfoPtr&);
 
 struct ProblemConstructionInfo {
 public:
@@ -115,7 +138,7 @@ public:
   RobotAndDOFPtr rad;
 
   ProblemConstructionInfo(OR::EnvironmentBasePtr _env) : env(_env) {}
-  bool fromJson(const Value& v);
+  void fromJson(const Value& v);
 
 };
 
@@ -127,18 +150,16 @@ struct PoseCostInfo : public CostInfo {
   Vector3d pos_coeffs, rot_coeffs;
   double coeff;
   KinBody::LinkPtr link;
-  TrajOptProb* prob;
-  bool fromJson(const Value& v);
-  CostPtr hatch(TrajOptProb& prob);
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
   static CostInfoPtr create();
 };
 struct PositionCostInfo : public CostInfo {
   int timestep;
   Vector3d xyz;
   double coeff;
-  TrajOptProb* prob;
-  bool fromJson(const Value& v);
-  CostPtr hatch(TrajOptProb& prob);
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
   static CostInfoPtr create();
 };
 struct JointVelCostInfo : public CostInfo {
@@ -146,17 +167,25 @@ struct JointVelCostInfo : public CostInfo {
    * v = dx/dt and dt = (1/T)
    * */
   DblVec coeffs;
-  TrajOptProb* prob;
-  bool fromJson(const Value& v);
-  CostPtr hatch(TrajOptProb& prob);
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
+  static CostInfoPtr create();
+};
+struct CollisionCostInfo : public CostInfo {
+  DblVec coeffs, dist_pen;
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
   static CostInfoPtr create();
 };
 
-/**
- * pointer to last TrajOptProb created is stored in a global variable
- * please only use this inside CostInfo::fromJson() or CntInfo::fromJson()
- */
-void HandlePlanningRequest(OR::EnvironmentBasePtr env, TrajOptRequest&, TrajOptResponse&);
+
+struct JointConstraintInfo : public CntInfo {
+  DblVec vals;
+  int timestep;
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
+  static CntInfoPtr create();
+};
 
 
 

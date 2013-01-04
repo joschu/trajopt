@@ -1,26 +1,5 @@
-- add unit tests for solver interface
-
-- make sqp solver collect/return more info, e.g. 
-number of function and gradient evaluations
-
-Best result at iteration: ITER = 12
-Objective function value: F(X) = -0.34560000D+04
-Approximation of solution: X =
-0.24000000D+02 0.12000000D+02 0.12000000D+02
-Approximation of multipliers: U =
-0.14400000D+03 0.00000000D+00 0.00000000D+00 0.00000000D+00
-0.00000000D+00 0.00000000D+00 0.00000000D+00 0.00000000D+00
-Constraint values: G(X) =
-0.00000000D+00 0.72000000D+02
-Distance from lower bound: XL-X =
--0.24000000D+02 -0.12000000D+02 -0.12000000D+02
-Distance from upper bound: XU-X =
-0.18000000D+02 0.30000000D+02 0.30000000D+02
-Number of function calls: NFUNC = 14
-Number of gradient calls: NGRAD = 12
-Number of calls of QP solver: NQL = 12
-
-
-
+Add unit tests for solver interface
 
 Linear vs nonlinear costs
+
+Improve SQP algorithm performance in infeasible-start case

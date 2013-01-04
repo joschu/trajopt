@@ -14,5 +14,8 @@ int GetRobotLinkIndex(const OR::RobotBase& robot, const OR::KinBody::Link& link)
 bool DoesAffect(const OR::RobotBase& robot, const std::vector<int>& dof_inds, int link_ind);
 void PlotAxes(OR::EnvironmentBase& env, const OR::Transform& T, float size, std::vector<OR::GraphHandlePtr>& handles);
 
+OR::UserDataPtr GetUserData(const OR::EnvironmentBase& env, const std::string& key);
+void SetUserData(OR::EnvironmentBase& env, const std::string& key, OR::UserDataPtr val);
+
 }
 

@@ -1,0 +1,19 @@
+Make collision checker only check moving stuff
+
+Make collision checker able to remove objects
+
+Write function to check trajectory safety
+
+Make an example where you plan the base position
+
+Fix self collisions
+
+More validation on initialization
+
+Body vs all: more efficient version
+Don't allow non-robot kinbodies to collide
+
+Partition links into groups and do broadphase filtering
+Really make sure you're only looking at links we're using now
+do we really need to set the ignorer each time?
+for arm planning, we just need to check arm links

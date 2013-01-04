@@ -18,6 +18,9 @@ inline OR::Transform toRaveTransform(const Vector4d& q, const Vector3d& p) {
   return OR::Transform(OR::Vector(q[0], q[1], q[2], q[3]),
                        OR::Vector(p[0], p[1], p[2]));
 }
+inline DblVec trajToDblVec(const TrajArray& x) {
+  return DblVec(x.data(), x.data()+x.rows()*x.cols());
+}
 
 
 }

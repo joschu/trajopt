@@ -30,7 +30,6 @@ class CartPoseCost : public CostFromNumDiffErr, public Plotter {
 public:
   CartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs, const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link);
   void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
-  CartPoseErrCalculator& calc;
 };
 class CartPoseConstraint : public ConstraintFromNumDiff, public Plotter {
 public:
@@ -54,7 +53,6 @@ public:
   JointVelCost(const VarArray& traj, const VectorXd& coeffs);
   virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model);
   virtual double value(const vector<double>&);
-  std::string name() {return "JointVel";}
 private:
   VarArray vars_;
   VectorXd coeffs_;
@@ -67,7 +65,6 @@ public:
   JointAccCost(const VarArray& traj, const VectorXd& coeffs);
   virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model);
   virtual double value(const vector<double>&);
-  std::string name() {return "JointAcc";}
 private:
   VarArray vars_;
   VectorXd coeffs_;

@@ -1,4 +1,4 @@
-#include "osgviewer/osgviewer.h"
+#include "osgviewer/osgviewer.hpp"
 #include <openrave-core.h>
 using namespace OpenRAVE;
 using namespace std;
@@ -7,7 +7,8 @@ using namespace std;
 int main() {
   RaveInitialize(true, OpenRAVE::Level_Debug);
   EnvironmentBasePtr env = RaveCreateEnvironment();
-  bool success = env->Load("/Users/joschu/Desktop/pumaarm.dae");
+  bool success = env->Load("data/pr2test2.env.xml");
+
   vector<RobotBasePtr> robots;
   env->GetRobots(robots);
   RobotBasePtr robot = robots[0];

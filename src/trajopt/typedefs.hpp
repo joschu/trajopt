@@ -13,6 +13,7 @@ namespace trajopt {
 
 namespace OR = OpenRAVE;
 using OR::KinBody;
+using OR::RobotBase;
 using std::vector;
 using std::map;
 

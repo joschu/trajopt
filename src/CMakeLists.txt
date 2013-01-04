@@ -20,3 +20,7 @@ add_subdirectory(ipi)
 add_subdirectory(trajopt)
 add_subdirectory(utils)
 add_subdirectory(osgviewer)
+
+if(NOT APPLE)
+	add_subdirectory(cloudproc)
+endif()

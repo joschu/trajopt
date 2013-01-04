@@ -4,13 +4,13 @@ project(trajoptrave)
 include(cmake/main.cmake)
 
 find_package(Eigen REQUIRED)
-find_package(Boost COMPONENTS system python thread REQUIRED)
+find_package(Boost COMPONENTS system python thread program_options REQUIRED)
 find_package(OpenRAVE REQUIRED)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-
+set(BUILD_SHARED_LIBS true)
 set(BULLET_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/bullet/src)
 set(BULLET_LIBRARIES BulletCollision LinearMath)
 set(GTEST_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/gtest/include)

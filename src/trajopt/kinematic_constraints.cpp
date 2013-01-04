@@ -54,7 +54,8 @@ void makeTrajVariablesAndBounds(int n_steps, RobotAndDOFPtr manip, OptProb& prob
 }
 
 
-JointVelCost::JointVelCost(const VarArray& vars, const VectorXd& coeffs) : vars_(vars), coeffs_(coeffs) {
+JointVelCost::JointVelCost(const VarArray& vars, const VectorXd& coeffs) :
+    Cost("JointVel"), vars_(vars), coeffs_(coeffs) {
   for (int i=0; i < vars.rows()-1; ++i) {
     for (int j=0; j < vars.cols(); ++j) {
       AffExpr vel;
@@ -81,7 +82,8 @@ ConvexObjectivePtr JointVelCost::convex(const vector<double>& x, Model* model) {
 
 
 
-JointAccCost::JointAccCost(const VarArray& vars, const VectorXd& coeffs) : vars_(vars), coeffs_(coeffs) {
+JointAccCost::JointAccCost(const VarArray& vars, const VectorXd& coeffs) :
+    Cost("JointAcc"), vars_(vars), coeffs_(coeffs) {
   for (int i=0; i < vars.rows()-2; ++i) {
     for (int j=0; j < vars.cols(); ++j) {
       AffExpr acc;
@@ -113,7 +115,7 @@ Vector3d rotVec(const OR::Vector& q) {
 }
 
 
-struct CartPoseErrCalculator {
+struct CartPoseErrCalculator : public VectorOfVector {
   OR::Transform pose_inv_;
   RobotAndDOFPtr manip_;
   OR::KinBody::LinkPtr link_;
@@ -123,13 +125,12 @@ struct CartPoseErrCalculator {
   link_(link)
   {}
 //  CartPoseCostCalculator(const CartPoseCostCalculator& other) : pose_(other.pose_), manip_(other.manip_), rs_(other.rs_) {}
-  VectorXd operator()(const VectorXd& dof_vals) {
+  VectorXd operator()(const VectorXd& dof_vals) const {
     manip_->SetDOFValues(toDblVec(dof_vals));
     OR::Transform newpose = link_->GetTransform();
 
     OR::Transform pose_err = pose_inv_ * newpose;
-    VectorXd err(6);
-    err << rotVec(pose_err.rot), toVector3d(pose_err.trans);
+    VectorXd err = concat(rotVec(pose_err.rot), toVector3d(pose_err.trans));
     return err;
   }
 };
@@ -144,18 +145,38 @@ void PoseErrPlotter::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector
 
 CartPoseCost::CartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs,
     const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link) :
-    CostFromNumDiffErr(CartPoseErrCalculator(pose, manip, link), vars,
-        concat(rot_coeffs, pos_coeffs), ABS, "CartPose")
+    CostFromNumDiffErr(VectorOfVectorPtr(new CartPoseErrCalculator(pose, manip, link)),
+        vars, concat(rot_coeffs, pos_coeffs), ABS, "CartPose")
 {}
 void CartPoseCost::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles) {
-  OR::RobotBase::RobotStateSaver rss =
+  CartPoseErrCalculator* calc = static_cast<CartPoseErrCalculator*>(f_.get());
+  DblVec dof_vals = getDblVec(x, vars_);
+  calc->manip_->SetDOFValues(dof_vals);
+  OR::Transform target = calc->pose_inv_.inverse(), cur = calc->link_->GetTransform();
+  PlotAxes(env, cur, .1,  handles);
+  PlotAxes(env, target, .1,  handles);
+  handles.push_back(env.drawarrow(cur.trans, target.trans, .01, OR::Vector(1,0,1,1)));
 }
 
 
 CartPoseConstraint::CartPoseConstraint(const VarVector& vars, const OR::Transform& pose,
     RobotAndDOFPtr manip, KinBody::LinkPtr link) :
-    ConstraintFromNumDiff(CartPoseErrCalculator(pose, manip, link), vars, EQ, "CartPose")
+    ConstraintFromNumDiff(VectorOfVectorPtr(new CartPoseErrCalculator(pose, manip, link)),
+        vars, EQ, "CartPose")
 {}
+
+void CartPoseConstraint::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles) {
+  // IDENTITCAL TO CartPoseCost::Plot
+  CartPoseErrCalculator* calc = static_cast<CartPoseErrCalculator*>(f_.get());
+  calc->manip_->SetDOFValues(x);
+  DblVec dof_vals = getDblVec(x, vars_);
+  OR::Transform target = calc->pose_inv_.inverse(), cur = calc->link_->GetTransform();
+  calc->manip_->SetDOFValues(dof_vals);
+  PlotAxes(env, cur, .1,  handles);
+  PlotAxes(env, target, .1,  handles);
+  handles.push_back(env.drawarrow(cur.trans, target.trans, .01, OR::Vector(1,0,1,1)));
+}
+
 
 struct CartPositionErrCalculator {
   Vector3d pt_world_;

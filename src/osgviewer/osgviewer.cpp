@@ -1,4 +1,4 @@
-#include "osgviewer.h"
+#include "osgviewer.hpp"
 #include <boost/foreach.hpp>
 #include <osg/MatrixTransform>
 #include <osg/ShapeDrawable>
@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <osg/Array>
 #include <osg/BlendFunc>
+#include <osg/io_utils>
+#include <iostream>
 
 using namespace osg;
 using namespace OpenRAVE;
@@ -75,7 +77,6 @@ Node* osgNodeFromGeom(const KinBody::Link::Geometry& geom) {
   case KinBody::Link::GEOMPROPERTIES::GeomBox: {
 
     osg::Box* box = new osg::Box();
-    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
 
     OpenRAVE::Vector v = geom.GetBoxExtents();
     box->setHalfLengths(osg::Vec3(v.x,v.y,v.z));
@@ -110,9 +111,9 @@ Node* osgNodeFromGeom(const KinBody::Link::Geometry& geom) {
   osg::StateSet* state = geode->getOrCreateStateSet();
   osg::Material* mat = new osg::Material;
   OpenRAVE::Vector diffuse = geom.GetDiffuseColor();
-  mat->setDiffuse( osg::Material::FRONT_AND_BACK, osg::Vec4(diffuse.x,diffuse.y,diffuse.z,1) );
-  OpenRAVE::Vector amb = geom.GetDiffuseColor();
-  mat->setAmbient( osg::Material::FRONT_AND_BACK, osg::Vec4(amb.x,amb.y,amb.z,1) );
+  mat->setDiffuse( osg::Material::FRONT_AND_BACK, osg::Vec4(diffuse.x, diffuse.y, diffuse.z, 1) );
+  OpenRAVE::Vector amb = geom.GetAmbientColor();
+  mat->setAmbient( osg::Material::FRONT_AND_BACK, osg::Vec4(amb.x,amb.y,amb.z,1)*.5 );
   mat->setTransparency(osg::Material::FRONT_AND_BACK,geom.GetTransparency());
   state->setAttribute(mat);
 
@@ -133,10 +134,8 @@ MatrixTransform* osgNodeFromLink(const KinBody::Link& link) {
     osg::MatrixTransform* mt = new osg::MatrixTransform;
     mt->setMatrix(m);
     mt->addChild(geom_node);
-
-    link_node->addChild(geom_node);
+    link_node->addChild(mt);
   }
-  link_node->setMatrix(Matrix::identity());
   return link_node;
 }
 
@@ -178,9 +177,10 @@ void AddLights(osg::Group* group) {
     light->setPosition(osg::Vec4(-4,0,4,1));
     osg::LightSource* lightSource = new osg::LightSource;
     lightSource->setLight(light);
-    light->setDiffuse(osg::Vec4(1,.9,.9,1)*1);
+    light->setDiffuse(osg::Vec4(1,.9,.9,1)*.5);
+    light->setAmbient(osg::Vec4(1,1,1,1)*.3);
     light->setConstantAttenuation(0);
-    light->setLinearAttenuation(.25);
+    light->setLinearAttenuation(.15);
     group->addChild(lightSource);
     group->getOrCreateStateSet()->setMode(GL_LIGHT0, osg::StateAttribute::ON);
   }
@@ -191,9 +191,9 @@ void AddLights(osg::Group* group) {
     light->setPosition(osg::Vec4(4,0,4,1));
     osg::ref_ptr<osg::LightSource> lightSource = new osg::LightSource;
     lightSource->setLight(light);
-    light->setDiffuse(osg::Vec4(.9,.9,1,1)*1);
+    light->setDiffuse(osg::Vec4(.9,.9,1,1)*.5);
     light->setConstantAttenuation(0);
-    light->setLinearAttenuation(.25);
+    light->setLinearAttenuation(.15);
     group->addChild(lightSource.get());
     group->getOrCreateStateSet()->setMode(GL_LIGHT1, osg::StateAttribute::ON);
   }
@@ -202,48 +202,70 @@ void AddLights(osg::Group* group) {
 
 
 // http://forum.openscenegraph.org/viewtopic.php?t=7806
-void   AddCylinderBetweenPoints(osg::Vec3   StartPoint, osg::Vec3   EndPoint, float radius, osg::Vec4   CylinderColor, osg::Group   *pAddToThisGroup)
+void   AddCylinderBetweenPoints(const osg::Vec3& StartPoint, osg::Vec3 EndPoint, float radius, const osg::Vec4& CylinderColor, osg::Group *pAddToThisGroup, bool use_cone)
 {
-    osg::Vec3   center;
-    float      height;
+  osg::Vec3   z = osg::Vec3(0,0,1);
+  osg::Vec3 p = (StartPoint - EndPoint);
+  if (p.length() == 0) {
+    cerr << "tried to draw a cylinder of length 0" << endl;
+    return;
+  }
+  p.normalize();
 
-   osg::ref_ptr<osg::Cylinder> cylinder;
-   osg::ref_ptr<osg::ShapeDrawable> cylinderDrawable;
-   osg::ref_ptr<osg::Material> pMaterial;
-   osg::ref_ptr<osg::Geode> geode;
+  osg::Vec3   t;
+  double angle = acos( (z * p) );
+  if (angle < 1e-6) t = z;
+  else if (M_PI - angle < 1e-6) t = osg::Vec3(1,0,0);
+  else {
+    t = z ^  p;
+    t.normalize();
+  }
 
-   height = (StartPoint- EndPoint).length();
-    center = osg::Vec3( (StartPoint.x() + EndPoint.x()) / 2,  (StartPoint.y() + EndPoint.y()) / 2,  (StartPoint.z() + EndPoint.z()) / 2);
+  if (use_cone) {
+    osg::Vec3 pdir = p;
+    pdir.normalize();
+    EndPoint += pdir * 2*radius;
+  }
+
+   float height = (StartPoint- EndPoint).length();
+   osg::Vec3 center = (StartPoint + EndPoint)/2;
 
    // This is the default direction for the cylinders to face in OpenGL
-   osg::Vec3   z = osg::Vec3(0,0,1);
+   osg::Cylinder* cylinder = new osg::Cylinder(center,radius,height);
+   cylinder->setRotation(osg::Quat(angle, t));
 
-   // Get diff between two points you want cylinder along
-   osg::Vec3 p = (StartPoint - EndPoint);
-
-   // Get CROSS product (the axis of rotation)
-   osg::Vec3   t = z ^  p;
-
-   // Get angle. length is magnitude of the vector
-   double angle = acos( (z * p) / p.length());
-
-   //   Create a cylinder between the two points with the given radius
-    cylinder = new osg::Cylinder(center,radius,height);
-   cylinder->setRotation(osg::Quat(angle, osg::Vec3(t.x(), t.y(), t.z())));
+   TessellationHints* hints = new TessellationHints;
+   hints->setDetailRatio(.1);
 
    //   A geode to hold our cylinder
-   geode = new osg::Geode;
-   cylinderDrawable = new osg::ShapeDrawable(cylinder );
+   osg::Geode* geode = new osg::Geode;
+   osg::ShapeDrawable* cylinderDrawable = new osg::ShapeDrawable(cylinder, hints );
     geode->addDrawable(cylinderDrawable);
 
+    if (use_cone) {
+      osg::Vec3 cone_center = EndPoint;
+      float cone_radius = 2*radius;
+      float cone_height = -2*radius;
+      osg::Cone* cone = new osg::Cone(cone_center, cone_radius, cone_height);
+      cone->setRotation(osg::Quat(angle, t));
+      osg::ShapeDrawable* coneDrawable = new osg::ShapeDrawable(cone, hints);
+      geode->addDrawable(coneDrawable);
+
+      osg::Sphere* sphere = new osg::Sphere(StartPoint, cone_radius);
+      osg::ShapeDrawable* sphereDrawable = new osg::ShapeDrawable(sphere, hints);
+      geode->addDrawable(sphereDrawable);
+
+    }
+
    //   Set the color of the cylinder that extends between the two points.
-   pMaterial = new osg::Material;
+   osg::Material* pMaterial = new osg::Material;
    pMaterial->setDiffuse( osg::Material::FRONT, CylinderColor);
    geode->getOrCreateStateSet()->setAttribute( pMaterial, osg::StateAttribute::OVERRIDE );
 
    //   Add the cylinder between the two points to an existing group
    pAddToThisGroup->addChild(geode);
 }
+
 
 class SetColorsVisitor : public osg::NodeVisitor
 {
@@ -337,7 +359,7 @@ bool OSGViewer::EventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GU
 
 
 OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false) {
-
+  m_name = "osg";
   m_root = new Group;
 //  m_viewer = new osgViewer::Viewer();
   m_viewer.setSceneData(m_root.get());
@@ -356,7 +378,8 @@ OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false) 
 
 int OSGViewer::main(bool bShow) {
   UpdateSceneData();
-  return m_viewer.run();
+  while (!m_viewer.done()) m_viewer.frame();
+  return 0;
 }
 
 void OSGViewer::Idle() {
@@ -462,14 +485,20 @@ void SetTransparency(GraphHandlePtr handle, float alpha) {
   }
 }
 
+void OSGViewer::SetAllTransparency(float alpha) {
+  SetTransparencyVisitor visitor(alpha);
+  m_root->accept(visitor);
+}
+
 OpenRAVE::GraphHandlePtr OSGViewer::drawarrow(const RaveVectorf& p1, const RaveVectorf& p2, float fwidth, const RaveVectorf& color) {
   osg::Group* group = new osg::Group;
-  AddCylinderBetweenPoints(toOsgVec3(p1), toOsgVec3(p2), fwidth, toOsgVec4(color), group);
+  AddCylinderBetweenPoints(toOsgVec3(p1), toOsgVec3(p2), fwidth, toOsgVec4(color), group, true);
   return GraphHandlePtr(new OsgGraphHandle(group, m_root.get()));
 }
 
 
 GraphHandlePtr OSGViewer::PlotKinBody(KinBodyPtr body) {
+  UpdateSceneData();
   KinBodyGroup* orig = GetOsgGroup(*body);
   /* Note: we could easily plot a kinbody that's not part of the environment, but
     there would be a problem if you plot something and then add it later
@@ -506,9 +535,74 @@ GraphHandlePtr OSGViewer::PlotAxes(const OpenRAVE::Transform& T, float size) {
   osg::Vec3 x = o + Vec3(m(0,0), m(1,0), m(2,0))*size;
   osg::Vec3 y = o + Vec3(m(0,1), m(1,1), m(2,1))*size;
   osg::Vec3 z = o + Vec3(m(0,2), m(1,2), m(2,2))*size;
-  AddCylinderBetweenPoints(o, x, size/10, osg::Vec4(1,0,0,1), group);
-  AddCylinderBetweenPoints(o, y, size/10, osg::Vec4(0,1,0,1), group);
-  AddCylinderBetweenPoints(o, z, size/10, osg::Vec4(0,0,1,1), group);
+  AddCylinderBetweenPoints(o, x, size/10, osg::Vec4(1,0,0,1), group, false);
+  AddCylinderBetweenPoints(o, y, size/10, osg::Vec4(0,1,0,1), group, false);
+  AddCylinderBetweenPoints(o, z, size/10, osg::Vec4(0,0,1,1), group, false);
   return GraphHandlePtr(new OsgGraphHandle(group, m_root.get()));
 }
+
+OpenRAVE::GraphHandlePtr OSGViewer::drawtrimesh (const float *ppoints, int stride, const int *pIndices, int numTriangles, const RaveVectorf &color) {
+
+  osg::DrawElementsUInt* deui = new osg::DrawElementsUInt(GL_TRIANGLES);
+  osg::Vec3Array* vec = new osg::Vec3Array();
+  osg::Vec3Array& points = *vec;
+
+  if (pIndices == NULL) {
+    vec->resize(numTriangles * 3);
+    for (int i = 0; i < 3 * numTriangles; ++i) {
+      points[i].set(ppoints[0], ppoints[1], ppoints[2]);
+      ppoints = (float*) ((char*) ppoints + stride);
+      deui->push_back(i);
+    }
+  }
+  else {
+    int nverts = *std::max_element(pIndices, pIndices + numTriangles * 3) + 1;
+    vec->resize(nverts);
+    cout << "number of vertices: " << nverts << endl;
+    for (int i = 0; i < nverts; ++i) {
+      const float* p = ppoints + i*stride/sizeof(float);
+      points[i].set(p[0], p[1], p[2]);
+    }
+    for (int i = 0; i < numTriangles * 3; ++i) {
+      deui->push_back(pIndices[i]);
+    }
+  }
+
+
+
+  osg::Vec4Array* colors = new osg::Vec4Array();
+  colors->push_back( osg::Vec4( color[0],color[1], color[2], color[3] ) );
+
+  osg::Geometry* geom = new osg::Geometry;
+  geom->setVertexArray( vec );
+  geom->setColorArray( colors );
+  geom->setColorBinding( osg::Geometry::BIND_OVERALL );
+
+  geom->addPrimitiveSet( deui );
+
+  osg::Geode* geode = new osg::Geode;
+  geode->addDrawable(geom);
+
+  osg::StateSet* state = geode->getOrCreateStateSet();
+  osg::Material* mat = new osg::Material;
+  OpenRAVE::Vector diffuse = color;
+  mat->setDiffuse( osg::Material::FRONT_AND_BACK, osg::Vec4(diffuse.x, diffuse.y, diffuse.z, 1) );
+  OpenRAVE::Vector amb = color;
+  mat->setAmbient( osg::Material::FRONT_AND_BACK, osg::Vec4(amb.x,amb.y,amb.z,1)*.5 );
+  mat->setTransparency(osg::Material::FRONT_AND_BACK,color[3]);
+  state->setAttribute(mat);
+
+  osgUtil::SmoothingVisitor sv;
+  geode->accept(sv);
+
+  if (color[3] < 1) {
+    state->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
+    state->setRenderingHint(osg::StateSet::TRANSPARENT_BIN );
+  }
+
+
+
+  return GraphHandlePtr(new OsgGraphHandle(geode, m_root.get()));
+}
+
 

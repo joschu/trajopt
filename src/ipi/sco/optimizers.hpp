@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 #include "modeling.hpp"
 #include <boost/function.hpp>
@@ -15,17 +16,37 @@ using std::vector;
 enum OptStatus {
   OPT_CONVERGED,
   OPT_ITERATION_LIMIT, // hit iteration limit before convergence
-  OPT_FAILED
+  OPT_FAILED,
+  INVALID
 };
 static const char* OptStatus_strings[]  = {
   "CONVERGED",
   "ITERATION_LIMIT",
-  "FAILED"
+  "FAILED",
+  "INVALID"
 };
 inline string statusToString(OptStatus status) {
   return OptStatus_strings[status];
 }
 
+
+struct OptResults {
+  DblVec x; // solution estimate
+  OptStatus status;
+  vector<double> cost_vals;
+  DblVec cnt_viols;
+  int n_func_evals, n_qp_solves;
+  void clear() {
+    x.clear();
+    status = INVALID;
+    cost_vals.clear();
+    cnt_viols.clear();
+    n_func_evals = 0;
+    n_qp_solves = 0;
+  }
+  OptResults() {clear();}
+};
+std::ostream& operator<<(std::ostream& o, const OptResults& r);
 
 class Optimizer {
   /*
@@ -35,16 +56,17 @@ public:
   virtual OptStatus optimize() = 0;
   virtual ~Optimizer() {}
   virtual void setProblem(OptProbPtr prob) {prob_ = prob;}
-  void initialize(const vector<double>& x) {x_ = x;}
-  vector<double>& x() {return x_;}
+  void initialize(const vector<double>& x) {results_.clear(); results_.x = x;}
+  vector<double>& x() {return results_.x;}
+  OptResults& results() {return results_;}
 
   typedef boost::function<void(const DblVec&)> Callback;
   void addCallback(const Callback& f); // called before each iteration
 protected:
   vector<Callback> callbacks_;
-  void callCallbacks();
+  void callCallbacks(const DblVec& x);
   OptProbPtr prob_;
-  vector<double> x_; // current solution for all variables
+  OptResults results_;
 };
 
 class BasicTrustRegionSQP : public Optimizer {

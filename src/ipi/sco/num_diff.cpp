@@ -5,6 +5,29 @@ using namespace ipi::sco;
 namespace ipi {
 namespace sco {
 
+ScalarOfVectorPtr ScalarOfVector::construct(const boost_func& f) {
+  struct F : public ScalarOfVector {
+    boost_func f;
+    F(const boost_func& _f) : f(_f) {}
+    double operator()(const VectorXd& x) const {
+      return f(x);
+    }
+  };
+  ScalarOfVector* sov = new F(f); // to avoid erroneous clang warning
+  return ScalarOfVectorPtr(sov);
+}
+VectorOfVectorPtr VectorOfVector::construct(const boost_func& f) {
+  struct F : public VectorOfVector {
+    boost_func f;
+    F(const boost_func& _f) : f(_f) {}
+    VectorXd operator()(const VectorXd& x) const {
+      return f(x);
+    }
+  };
+  VectorOfVector* vov = new F(f); // to avoid erroneous clang warning
+  return VectorOfVectorPtr(vov);
+}
+
 VectorXd calcForwardNumGrad(const ScalarOfVector& f, const VectorXd& x, double epsilon) {
   VectorXd out(x.size());
   VectorXd xpert = x;
@@ -47,39 +70,39 @@ void calcGradAndDiagHess(const ScalarOfVector& f, const VectorXd& x,
   }
 }
 
-void calcGradHess(const ScalarOfVector& f, const VectorXd& x, double epsilon,
+void calcGradHess(ScalarOfVectorPtr f, const VectorXd& x, double epsilon,
     double& y, VectorXd& grad, MatrixXd& hess) {
-  VectorOfVector grad_func = forwardNumGrad(f, epsilon);
-  y = f(x);
-  grad = grad_func(x);
-  hess = calcForwardNumJac(grad_func, x, epsilon);
+  y = f->call(x);
+  VectorOfVectorPtr grad_func = forwardNumGrad(f, epsilon);
+  grad = grad_func->call(x);
+  hess = calcForwardNumJac(*grad_func, x, epsilon);
   hess = (hess + hess.transpose())/2;
 }
 
 
-struct ForwardNumGrad {
-  ScalarOfVector f_;
+struct ForwardNumGrad : public VectorOfVector {
+  ScalarOfVectorPtr f_;
   double epsilon_;
-  ForwardNumGrad(const ScalarOfVector& f, double epsilon) : f_(f), epsilon_(epsilon) {}
-  VectorXd operator()(const VectorXd& x) {
-    return calcForwardNumGrad(f_, x, epsilon_);
+  ForwardNumGrad(ScalarOfVectorPtr f, double epsilon) : f_(f), epsilon_(epsilon) {}
+  VectorXd operator()(const VectorXd& x) const {
+    return calcForwardNumGrad(*f_, x, epsilon_);
   }
 };
 
-struct ForwardNumJac {
-  VectorOfVector f_;
+struct ForwardNumJac : public MatrixOfVector {
+  VectorOfVectorPtr f_;
   double epsilon_;
-  ForwardNumJac(const VectorOfVector& f, double epsilon) : f_(f), epsilon_(epsilon) {}
-  MatrixXd operator()(const VectorXd& x) {
-    return calcForwardNumJac(f_, x, epsilon_);
+  ForwardNumJac(VectorOfVectorPtr f, double epsilon) : f_(f), epsilon_(epsilon) {}
+  MatrixXd operator()(const VectorXd& x) const {
+    return calcForwardNumJac(*f_, x, epsilon_);
   }
 };
 
-VectorOfVector forwardNumGrad(const ScalarOfVector& f, double epsilon) {
-  return ForwardNumGrad(f, epsilon);
+VectorOfVectorPtr forwardNumGrad(ScalarOfVectorPtr f, double epsilon) {
+  return VectorOfVectorPtr(new ForwardNumGrad(f, epsilon));
 }
-MatrixOfVector forwardNumJac(const VectorOfVector& f, double epsilon) {
-  return ForwardNumJac(f, epsilon);
+MatrixOfVectorPtr forwardNumJac(VectorOfVectorPtr f, double epsilon) {
+  return MatrixOfVectorPtr(new ForwardNumJac(f, epsilon));
 }
 
 

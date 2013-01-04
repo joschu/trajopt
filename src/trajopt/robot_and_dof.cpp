@@ -11,10 +11,11 @@ void RobotAndDOF::SetDOFValues(const DblVec& dofs) {
   if (affinedofs != 0) {
     OR::Transform T;
     OR::RaveGetTransformFromAffineDOFValues(T, dofs.begin()+joint_inds.size(), affinedofs, rotationaxis, true);
-    robot->SetDOFValues(dofs, T, false);
+    robot->SetTransform(T);
+    robot->SetDOFValues(dofs, false, joint_inds);
   }
   else {
-    robot->SetDOFValues(dofs, false);
+    robot->SetDOFValues(dofs, false, joint_inds);
   }
 }
 
@@ -90,8 +91,12 @@ std::vector<KinBody::LinkPtr> RobotAndDOF::GetAffectedLinks() {
 void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, vector<int>& link_inds) {
   links.clear();
   link_inds.clear();
-
-  BOOST_FOREACH(KinBody::LinkPtr& link, links) link_inds.push_back(link->GetIndex());
+  BOOST_FOREACH(const KinBody::LinkPtr& link, GetRobot()->GetLinks()) {
+    if (this->DoesAffect(*link)) {
+      links.push_back(link);
+      link_inds.push_back(link->GetIndex());
+    }
+  }
 
   vector<KinBodyPtr> grabbed;
   robot->GetGrabbed(grabbed);

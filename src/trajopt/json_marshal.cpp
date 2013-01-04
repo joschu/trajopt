@@ -7,15 +7,13 @@ using namespace std;
 namespace json_marshal {
 
 #define IMPLEMENT_READ_PRIMITIVE(T, jsonT, cvtFunc)\
-    bool fromJson(const Json::Value& v, T& ref) {\
+    void fromJson(const Json::Value& v, T& ref) {\
   try {\
     ref = v.cvtFunc();\
-    return true;\
   }\
-  catch (std::runtime_error&) {\
-    std::cerr << "expected " << #T << ": " << v << endl;\
-    return false;\
-  }}\
+  catch (MY_EXCEPTION&) {\
+    throw MY_EXCEPTION( (boost::format("expected: %s, got %s")%(#T)%(v)).str() );\
+  }}
 
 
 IMPLEMENT_READ_PRIMITIVE(bool, boolValue, asBool)

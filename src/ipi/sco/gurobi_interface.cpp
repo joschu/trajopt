@@ -68,7 +68,7 @@ void simplify(vector<int>& inds, vector<double>& vals) {
 #define ENSURE_SUCCESS(expr) do {\
     bool error = expr;\
     if (error) {\
-      printf("GRB error: %s while evaluating %s at %s:%i", GRBgeterrormsg(gEnv), #expr, __FILE__,__LINE__);\
+      printf("GRB error: %s while evaluating %s at %s:%i\n", GRBgeterrormsg(gEnv), #expr, __FILE__,__LINE__);\
       abort();\
     }\
 } while(0)

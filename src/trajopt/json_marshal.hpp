@@ -1,64 +1,71 @@
 #pragma once
 #include <json/json.h>
 #include <vector>
+#include <boost/format.hpp>
+
+class runtime_error_print : public std::runtime_error {
+public:
+  runtime_error_print(const std::string& s) :
+    std::runtime_error(s) {
+    std::cerr << "\033[1;31mERROR " << s << "\033[0m\n";
+  }
+};
+
+#define MY_EXCEPTION runtime_error_print
 
 namespace json_marshal {
 
-bool fromJson(const Json::Value& v, bool& ref);
-bool fromJson(const Json::Value& v, int& ref);
-bool fromJson(const Json::Value& v, double& ref);
-bool fromJson(const Json::Value& v, std::string& ref);
+void fromJson(const Json::Value& v, bool& ref);
+void fromJson(const Json::Value& v, int& ref);
+void fromJson(const Json::Value& v, double& ref);
+void fromJson(const Json::Value& v, std::string& ref);
 template <class T>
-inline bool fromJson(const Json::Value& v, T& ref) {
-  return ref.fromJson(v);
+inline void fromJson(const Json::Value& v, T& ref) {
+  ref.fromJson(v);
 }
 template <class T>
-bool fromJsonArray(const Json::Value& parent, std::vector<T>& ref) {
-  bool ok = true;
+void fromJsonArray(const Json::Value& parent, std::vector<T>& ref) {
   ref.clear();
   ref.reserve(parent.size());
   for (Json::Value::const_iterator it = parent.begin(); it != parent.end(); ++it) {
     T t;
-    ok &= fromJson(*it, t);
+    fromJson(*it, t);
     ref.push_back(t);
   }
-  return ok;
 }
 template <class T>
-bool fromJsonArray(const Json::Value& parent, std::vector<T>& ref, int size) {
+void fromJsonArray(const Json::Value& parent, std::vector<T>& ref, int size) {
   if (parent.size() != size) {
     std::cerr << "expected size: " << size << " got: " << parent << std::endl;
-    return false;
+    throw MY_EXCEPTION("wrong");
   }
   else {
-    return fromJsonArray(parent, ref);
+    fromJsonArray(parent, ref);
   }
 }
 template <class T>
-inline bool fromJson(const Json::Value& v, std::vector<T>& ref) {
-  return fromJsonArray(v, ref);
+inline void fromJson(const Json::Value& v, std::vector<T>& ref) {
+  fromJsonArray(v, ref);
 }
 
 template <class T>
-bool childFromJson(const Json::Value& parent, T& ref, const char* name, const T& df) {
+void childFromJson(const Json::Value& parent, T& ref, const char* name, const T& df) {
   if (parent.isMember(name)) {
     const Json::Value& v = parent[name];
-    return fromJson(v, ref);
+    fromJson(v, ref);
   }
   else {
     ref = df;
-    return true;
   }
 }
 template <class T>
-bool childFromJson(const Json::Value& parent, T& ref, const char* name) {
+void childFromJson(const Json::Value& parent, T& ref, const char* name) {
   if (parent.isMember(name)) {
     const Json::Value& v = parent[name];
-    return fromJson(v, ref);
+    fromJson(v, ref);
   }
   else {
-    std::cerr << "missing field: " << name << std::endl;
-    return false;
+    throw MY_EXCEPTION((boost::format("missing field: %s")%name).str());
   }
 }
 

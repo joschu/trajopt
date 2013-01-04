@@ -22,7 +22,7 @@ void ConvexObjective::addHinge(const AffExpr& affexpr, double coeff) {
   vars_.push_back(hinge);
   ineqs_.push_back(affexpr);
   exprDec(ineqs_.back(), hinge);
-  AffExpr hinge_cost(hinge);
+  AffExpr hinge_cost = exprMult(AffExpr(hinge), coeff);
   exprInc(quad_, hinge_cost);
 }
 void ConvexObjective::addAbs(const AffExpr& affexpr, double coeff) {

@@ -18,6 +18,8 @@ public:
   void Draw();
   void Idle();
   void UpdateSceneData();
+  const std::string& GetName() const {return m_name;}
+
 
   // return false if you want to disable the default TrackballManipulator handling
   typedef boost::function<bool(const osgGA::GUIEventAdapter &)> MouseCallback;
@@ -27,6 +29,12 @@ public:
   void PrintHelp();
 
   OpenRAVE::GraphHandlePtr drawarrow(const RaveVectorf& p1, const RaveVectorf& p2, float fwidth, const RaveVectorf& color);
+  OpenRAVE::GraphHandlePtr  drawtrimesh (const float *ppoints, int stride, const int *pIndices, int numTriangles, const RaveVectorf &color);
+//  OpenRAVE::GraphHandlePtr drawtrimesh (const float *ppoints, int stride, const int *pIndices, int numTriangles, const boost::multi_array< float, 2 > &colors);
+
+
+  void SetAllTransparency(float alpha);
+
   OpenRAVE::GraphHandlePtr PlotAxes(const OpenRAVE::Transform& T, float size);
   OpenRAVE::GraphHandlePtr PlotSphere(const OpenRAVE::Vector& x, float radius);
 
@@ -44,14 +52,15 @@ public:
   };
 
 
+  osg::ref_ptr<EventHandler> m_handler;
   private:
 
   osg::ref_ptr<osg::Group> m_root;
 //  osg::ref_ptr<osgViewer::Viewer> m_viewer;
   osg::ref_ptr<osg::Camera> m_cam;
-  osg::ref_ptr<EventHandler> m_handler;
   osgViewer::Viewer m_viewer;
   bool m_idling;
+  std::string m_name;
 
 
 };
