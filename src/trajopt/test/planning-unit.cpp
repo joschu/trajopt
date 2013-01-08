@@ -71,6 +71,7 @@ public:
   static OSGViewerPtr viewer;
 
   void SetUp() {
+    RAVELOG_DEBUG("SetUp\n");
     RobotBasePtr robot = GetRobot(*env);
     robot->SetDOFValues(DblVec(robot->GetDOF(), 0));
     Transform I; I.identity();
@@ -79,17 +80,21 @@ public:
 
 
   static void SetUpTestCase() {
-    RaveInitialize(true, verbose ? Level_Debug : Level_Info);
+    RAVELOG_DEBUG("SetupTestCase\n");
+    RaveInitialize(false, verbose ? Level_Debug : Level_Info);
     env = RaveCreateEnvironment();
     env->StopSimulation();
     env->Load("robots/pr2-beta-static.zae") ;
     env->Load(string(DATA_DIR) + "/table.xml");
-    viewer.reset(new OSGViewer(env));
-    viewer->UpdateSceneData();
-    env->AddViewer(viewer);
+    if (plotting) {
+      viewer.reset(new OSGViewer(env));
+      viewer->UpdateSceneData();
+      env->AddViewer(viewer);
+    }
   }
 
   static void TearDownTestCase() {
+    RAVELOG_DEBUG("TearDownTestCase\n");
     viewer.reset();
     env.reset();
 
@@ -112,10 +117,12 @@ TEST_F(PlanningTest, numerical_ik1) {
   opt.optimize();
   RAVELOG_INFO("planning time: %.3f\n", GetClock()-tStart);
   printf("finally:\n");
-  PlotCallback(*prob)(opt.x());
+  if (plotting) PlotCallback(*prob)(opt.x());
 }
 
 TEST_F(PlanningTest, arm_around_table) {
+  RAVELOG_DEBUG("TEST\n");
+
   RobotBasePtr pr2 = GetRobot(*env);
 
   ProblemConstructionInfo pci(env);
@@ -133,7 +140,7 @@ TEST_F(PlanningTest, arm_around_table) {
   opt.optimize();
   RAVELOG_INFO("planning time: %.3f\n", GetClock()-tStart);
 
-  PlotCallback(*prob)(opt.x());
+  if (plotting) PlotCallback(*prob)(opt.x());
 }
 
 

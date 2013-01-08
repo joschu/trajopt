@@ -17,15 +17,6 @@ CostPtr makeUpCost(const VarVector& vars, const Vector3d& dir_local, const Vecto
 ConstraintPtr makeUpConstraint(const VarVector& vars, const Vector3d& dir_local, const Vector3d& goal_dir_world, RobotAndDOFPtr manip, KinBody::LinkPtr link);
 #endif
 
-struct PoseErrPlotter : public Plotter {
-  KinBody::LinkPtr link;
-  OR::Transform target;
-  RobotAndDOFPtr rad;
-  PoseErrPlotter(KinBody::LinkPtr _link, OR::Transform _target, RobotAndDOFPtr _rad) :
-    link(_link), target(_target), rad(_rad) {}
-  void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
-};
-
 class CartPoseCost : public CostFromNumDiffErr, public Plotter {
 public:
   CartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs, const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link);
@@ -33,7 +24,7 @@ public:
 };
 class CartPoseConstraint : public ConstraintFromNumDiff, public Plotter {
 public:
-  CartPoseConstraint(const VarVector& vars, const OR::Transform& pose, RobotAndDOFPtr manip, KinBody::LinkPtr link);
+  CartPoseConstraint(const VarVector& vars, const OR::Transform& pose, RobotAndDOFPtr manip, KinBody::LinkPtr link, const BoolVec& enabled=BoolVec());
   void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
 };
 

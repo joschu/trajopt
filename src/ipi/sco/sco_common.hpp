@@ -7,6 +7,7 @@ namespace sco {
 
 using std::vector;
 typedef vector<double> DblVec;
+typedef vector<unsigned char> BoolVec;
 
 inline double vecSum(const DblVec& v) {
   double out = 0;

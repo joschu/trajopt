@@ -11,18 +11,33 @@
 #include <Eigen/Geometry>
 #include <openrave/openrave.h>
 #include "utils/eigen_conversions.hpp"
+#include "utils/eigen_slicing.hpp"
 using namespace std;
 using namespace ipi::sco;
 using namespace Eigen;
 using namespace util;
 
 namespace {
+
+
+static MatrixXd diffAxis0(const MatrixXd& in) {
+  return in.middleRows(1, in.rows()-1) - in.middleRows(0, in.rows()-1);
+}
+Vector3d rotVec(const Matrix3d& m) {
+  Quaterniond q; q = m;
+  return Vector3d(q.x(), q.y(), q.z());
+}
+Vector3d rotVec(const OpenRAVE::Vector& q) {
+  return Vector3d(q[1], q[2], q[3]);
+}
+
 VectorXd concat(const VectorXd& a, const VectorXd& b) {
   VectorXd out(a.size()+b.size());
   out.topRows(a.size()) = a;
   out.middleRows(a.size(), b.size()) = b;
   return out;
 }
+
 
 
 }
@@ -66,9 +81,6 @@ JointVelCost::JointVelCost(const VarArray& vars, const VectorXd& coeffs) :
   }
 }
 
-static MatrixXd diffAxis0(const MatrixXd& in) {
-  return in.middleRows(1, in.rows()-1) - in.middleRows(0, in.rows()-1);
-}
 
 double JointVelCost::value(const vector<double>& xvec) {
   MatrixXd traj = getTraj(xvec, vars_);
@@ -106,13 +118,6 @@ ConvexObjectivePtr JointAccCost::convex(const vector<double>& x, Model* model) {
 }
 
 
-Vector3d rotVec(const Matrix3d& m) {
-  Quaterniond q; q = m;
-  return Vector3d(q.x(), q.y(), q.z());
-}
-Vector3d rotVec(const OR::Vector& q) {
-  return Vector3d(q[1], q[2], q[3]);
-}
 
 
 struct CartPoseErrCalculator : public VectorOfVector {
@@ -135,14 +140,6 @@ struct CartPoseErrCalculator : public VectorOfVector {
   }
 };
 
-
-void PoseErrPlotter::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles) {
-  rad->SetDOFValues(x);
-  PlotAxes(env, link->GetTransform(), .1,  handles);
-  PlotAxes(env, target, .1,  handles);
-  handles.push_back(env.drawarrow(link->GetTransform().trans, target.trans, .01, OR::Vector(1,0,1,1)));
-}
-
 CartPoseCost::CartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs,
     const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link) :
     CostFromNumDiffErr(VectorOfVectorPtr(new CartPoseErrCalculator(pose, manip, link)),
@@ -160,18 +157,18 @@ void CartPoseCost::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<O
 
 
 CartPoseConstraint::CartPoseConstraint(const VarVector& vars, const OR::Transform& pose,
-    RobotAndDOFPtr manip, KinBody::LinkPtr link) :
+    RobotAndDOFPtr manip, KinBody::LinkPtr link, const BoolVec& enabled) :
     ConstraintFromNumDiff(VectorOfVectorPtr(new CartPoseErrCalculator(pose, manip, link)),
-        vars, EQ, "CartPose")
-{}
+        vars, EQ, "CartPose", enabled)
+{
+}
 
 void CartPoseConstraint::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles) {
   // IDENTITCAL TO CartPoseCost::Plot
   CartPoseErrCalculator* calc = static_cast<CartPoseErrCalculator*>(f_.get());
-  calc->manip_->SetDOFValues(x);
   DblVec dof_vals = getDblVec(x, vars_);
-  OR::Transform target = calc->pose_inv_.inverse(), cur = calc->link_->GetTransform();
   calc->manip_->SetDOFValues(dof_vals);
+  OR::Transform target = calc->pose_inv_.inverse(), cur = calc->link_->GetTransform();
   PlotAxes(env, cur, .1,  handles);
   PlotAxes(env, target, .1,  handles);
   handles.push_back(env.drawarrow(cur.trans, target.trans, .01, OR::Vector(1,0,1,1)));

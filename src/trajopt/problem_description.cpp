@@ -8,6 +8,7 @@
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/plot_callback.hpp"
 #include "utils/eigen_conversions.hpp"
+#include "utils/eigen_slicing.hpp"
 #include <boost/algorithm/string.hpp>
 using namespace Json;
 using namespace std;
@@ -31,6 +32,7 @@ void RegisterMakers() {
   CostInfo::RegisterMaker("collision", &CollisionCostInfo::create);
 
   CntInfo::RegisterMaker("joint", &JointConstraintInfo::create);
+  CntInfo::RegisterMaker("pose", &PoseCntInfo::create);
 
   gRegisteredMakers = true;
 }
@@ -61,6 +63,11 @@ RobotAndDOFPtr RADFromName(const string& name, RobotBasePtr robot) {
   return RobotAndDOFPtr(new RobotAndDOF(robot, dof_inds, affinedofs, rotationaxis));
 }
 
+BoolVec toMask(const VectorXd& x) {
+  BoolVec out(x.size());
+  for (int i=0; i < x.size(); ++i) out[i] = (x[i] > 0);
+  return out;
+}
 
 }
 
@@ -137,7 +144,7 @@ CntInfoPtr CntInfo::fromName(const string& type) {
     return (*name2maker[type])();
   }
   else {
-    RAVELOG_ERROR("There is no cost of type%s\n", type.c_str());
+    RAVELOG_ERROR("There is no constraint of type%s\n", type.c_str());
     return CntInfoPtr();
   }
 }
@@ -206,6 +213,9 @@ TrajOptResult::TrajOptResult(OptResults& opt, TrajOptProb& prob) :
 
 TrajOptResultPtr OptimizeProblem(TrajOptProbPtr prob, bool plot) {
   BasicTrustRegionSQP opt(prob);
+  opt.max_iter_ = 30;
+  opt.min_approx_improve_frac_ = .001;
+  opt.merit_error_coeff_ = 10;
   if (plot) opt.addCallback(PlotCallback(*prob));
   //  opt.addCallback(boost::bind(&PlotCosts, boost::ref(prob->getCosts()),boost::ref(*prob->GetRAD()), boost::ref(prob->GetVars()), _1));
   opt.initialize(trajToDblVec(prob->GetInitTraj()));
@@ -313,6 +323,31 @@ CostInfoPtr PoseCostInfo::create() {
 void PoseCostInfo::hatch(TrajOptProb& prob) {
   prob.addCost(CostPtr(new CartPoseCost(prob.GetVarRow(timestep), toRaveTransform(wxyz, xyz), rot_coeffs, pos_coeffs, prob.GetRAD(), link)));
 }
+
+void PoseCntInfo::fromJson(const Value& v) {
+  FAIL_IF_FALSE(v.isMember("params"));
+  const Value& params = v["params"];
+  childFromJson(params, timestep, "timestep", gPCI->basic_info.n_steps-1);
+  childFromJson(params, xyz,"xyz");
+  childFromJson(params, wxyz,"wxyz");
+  childFromJson(params, pos_coeffs,"pos_coeffs", (Vector3d)Vector3d::Ones());
+  childFromJson(params, rot_coeffs,"rot_coeffs", (Vector3d)Vector3d::Ones());
+
+  string linkstr;
+  childFromJson(params, linkstr, "link");
+  link = gPCI->rad->GetRobot()->GetLink(linkstr);
+  if (!link) {
+    throw MY_EXCEPTION( (boost::format("invalid link name: %s")%linkstr).str());
+  }
+}
+CntInfoPtr PoseCntInfo::create() {
+  return CntInfoPtr(new PoseCntInfo());
+}
+void PoseCntInfo::hatch(TrajOptProb& prob) {
+  VectorXd coeffs(6); coeffs << rot_coeffs, pos_coeffs;
+  prob.addConstr(ConstraintPtr(new CartPoseConstraint(prob.GetVarRow(timestep), toRaveTransform(wxyz, xyz), prob.GetRAD(), link, toMask(coeffs))));
+}
+
 
 
 void JointVelCostInfo::fromJson(const Value& v) {

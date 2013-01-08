@@ -18,7 +18,7 @@ function(boost_python_module NAME)
     PROPERTIES
     OUTPUT_NAME ${NAME}
     COMPILE_FLAGS "${FASTIDIOUS_FLAGS}"
-    LINK_FLAGS -shared-libgcc
+    LINK_FLAGS -dynamic
     PREFIX ""
   )
   if( WIN32 )

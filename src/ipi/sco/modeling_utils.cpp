@@ -103,24 +103,26 @@ ConvexObjectivePtr CostFromNumDiffErr::convex(const vector<double>& xin, Model* 
   ConvexObjectivePtr out(new ConvexObjective(model));
   VectorXd y = f_->call(x);
   for (int i=0; i < jac.rows(); ++i) {
-    AffExpr aff;
-    aff.constant = y[i] - jac.row(i).dot(x);
-    aff.coeffs = toDblVec(jac.row(i));
-    aff.vars = vars_;
-    aff = cleanupAff(aff);
-    if (pen_type_ == SQUARED) {
-      out->addQuadExpr(exprMult(exprSquare(aff), coeffs_[i]));
-    }
-    else {
-      out->addAbs(aff, coeffs_[i]);
+    if (coeffs_[i] > 0) {
+      AffExpr aff;
+      aff.constant = y[i] - jac.row(i).dot(x);
+      aff.coeffs = toDblVec(jac.row(i));
+      aff.vars = vars_;
+      aff = cleanupAff(aff);
+      if (pen_type_ == SQUARED) {
+        out->addQuadExpr(exprMult(exprSquare(aff), coeffs_[i]));
+      }
+      else {
+        out->addAbs(aff, coeffs_[i]);
+      }
     }
   }
   return out;
 }
 
 
-ConstraintFromNumDiff::ConstraintFromNumDiff(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name) :
-    Constraint(name), f_(f), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON) {}
+ConstraintFromNumDiff::ConstraintFromNumDiff(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name, const BoolVec& enabled) :
+    Constraint(name), f_(f), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON), enabled_(enabled) {}
 vector<double> ConstraintFromNumDiff::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
   return toDblVec(f_->call(x));
@@ -131,13 +133,15 @@ ConvexConstraintsPtr ConstraintFromNumDiff::convex(const vector<double>& xin, Mo
   ConvexConstraintsPtr out(new ConvexConstraints(model));
   VectorXd y = f_->call(x);
   for (int i=0; i < jac.rows(); ++i) {
-    AffExpr aff;
-    aff.constant = y[i] - jac.row(i).dot(x);
-    aff.coeffs = toDblVec(jac.row(i));
-    aff.vars = vars_;
-    aff = cleanupAff(aff);
-    if (type() == INEQ) out->addIneqCnt(aff);
-    else out->addEqCnt(aff);
+    if (enabled_.empty() || enabled_[i]) {
+      AffExpr aff;
+      aff.constant = y[i] - jac.row(i).dot(x);
+      aff.coeffs = toDblVec(jac.row(i));
+      aff.vars = vars_;
+      aff = cleanupAff(aff);
+      if (type() == INEQ) out->addIneqCnt(aff);
+      else out->addEqCnt(aff);
+    }
   }
   return out;
 }

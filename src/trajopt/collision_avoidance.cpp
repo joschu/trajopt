@@ -14,31 +14,27 @@ using namespace std;
 
 namespace trajopt {
 
-SingleTimestepCollisionEvaluator::SingleTimestepCollisionEvaluator(RobotAndDOFPtr rad, const VarVector& vars, const CollisionPairIgnorer* extra_ignores) :
+SingleTimestepCollisionEvaluator::SingleTimestepCollisionEvaluator(RobotAndDOFPtr rad, const VarVector& vars) :
   m_env(rad->GetRobot()->GetEnv()),
   m_cc(CollisionChecker::GetOrCreate(*m_env)),
   m_rad(rad),
   m_vars(vars),
-  m_ignorer(),
-  m_link2ind() {
-  if (extra_ignores != NULL) m_ignorer.AddExcludes(*extra_ignores);
+  m_link2ind(),
+  m_links() {
   RobotBasePtr robot = rad->GetRobot();
   const vector<KinBody::LinkPtr>& robot_links = robot->GetLinks();
-  const std::set<int>& pairhashes = robot->GetAdjacentLinks();
-  BOOST_FOREACH(const int& p, pairhashes) {
-    m_ignorer.ExcludePair(*robot_links[p & 0xffff], *robot_links[p >> 16]);
-  }
-  m_cc->IgnoreZeroStateSelfCollisions(robot, m_ignorer);
   vector<KinBody::LinkPtr> links;
   vector<int> inds;
-  rad->GetAffectedLinks(links, inds);
-  RAVELOG_INFO("affected links: \n");
-  for (int i=0; i < links.size(); ++i) {
-    RAVELOG_INFO("%s\n", links[i]->GetName().c_str());
-    m_link2ind[links[i].get()] = inds[i];
+  rad->GetAffectedLinks(m_links, true, inds);
+  for (int i=0; i < m_links.size(); ++i) {
+    m_link2ind[m_links[i].get()] = inds[i];
   }
 
 }
+
+#if 0
+
+#endif
 
 void SingleTimestepCollisionEvaluator::GetCollisionsCached(const DblVec& x, vector<Collision>& collisions) {
   double key = vecSum(x);
@@ -47,7 +43,7 @@ void SingleTimestepCollisionEvaluator::GetCollisionsCached(const DblVec& x, vect
     collisions = *it;
   }
   else {
-    m_cc->BodyVsAll(*m_rad->GetRobot(), &m_ignorer, collisions);
+    m_cc->LinksVsAll(m_links, collisions);
     m_cache.put(key, collisions);
   }
 }
@@ -64,8 +60,6 @@ void SingleTimestepCollisionEvaluator::CalcDists(const DblVec& x, DblVec& dists,
     Link2Int::iterator itA = m_link2ind.find(col.linkA),
                        itB = m_link2ind.find(col.linkB);
     if (itA != m_link2ind.end() || itB != m_link2ind.end()) {
-//      cout << "xxx" << col.distance << " " << col.linkA->GetName() << " " << col.linkB->GetName()
-//          << " " << col.weight << endl;
       dists.push_back(col.distance);
       weights.push_back(col.weight);
     }
@@ -96,13 +90,11 @@ void SingleTimestepCollisionEvaluator::CalcDistExpressions(const DblVec& x, vect
       exprInc(dist, -dist_grad.dot(toVectorXd(dofvals)));
     }
     if (itA != m_link2ind.end() || itB != m_link2ind.end()) {
-//      cout << col.distance << " " << col.linkA->GetName() << " " << col.linkB->GetName()
-//          << " " << col.weight << endl;
       exprs.push_back(dist);
       weights.push_back(col.weight);
     }
   }
-  RAVELOG_INFO("%i distance expressions\n", exprs.size());
+  RAVELOG_DEBUG("%i distance expressions\n", exprs.size());
 
 }
 
@@ -117,7 +109,7 @@ void PlotCollisions(const std::vector<Collision>& collisions, OR::EnvironmentBas
 
 CollisionCost::CollisionCost(double dist_pen, double coeff, RobotAndDOFPtr rad, const VarVector& vars) :
     Cost("collision"),
-    m_calc(rad, vars, NULL), m_dist_pen(dist_pen), m_coeff(coeff)
+    m_calc(rad, vars), m_dist_pen(dist_pen), m_coeff(coeff)
 {}
 
 ConvexObjectivePtr CollisionCost::convex(const vector<double>& x, Model* model) {
@@ -144,7 +136,7 @@ double CollisionCost::value(const vector<double>& x) {
 void CollisionCost::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles) {
   m_calc.m_rad->SetDOFValues(getDblVec(x, m_calc.m_vars));
   vector<Collision> collisions;
-  m_calc.m_cc->BodyVsAll(*m_calc.m_rad->GetRobot(), &m_calc.m_ignorer, collisions);
+  m_calc.m_cc->BodyVsAll(*m_calc.m_rad->GetRobot(), collisions);
   PlotCollisions(collisions, env, handles, m_dist_pen);
 }
 

@@ -84,15 +84,15 @@ bool RobotAndDOF::DoesAffect(const KinBody::Link& link) {
 std::vector<KinBody::LinkPtr> RobotAndDOF::GetAffectedLinks() {
   vector<int> inds;
   std::vector<KinBody::LinkPtr> out;
-  GetAffectedLinks(out,inds);
+  GetAffectedLinks(out,false,inds);
   return out;
 }
 
-void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, vector<int>& link_inds) {
+void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds) {
   links.clear();
   link_inds.clear();
   BOOST_FOREACH(const KinBody::LinkPtr& link, GetRobot()->GetLinks()) {
-    if (this->DoesAffect(*link)) {
+    if (this->DoesAffect(*link) && !(only_with_geom && link->GetGeometries().empty())) {
       links.push_back(link);
       link_inds.push_back(link->GetIndex());
     }

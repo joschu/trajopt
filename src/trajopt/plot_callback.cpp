@@ -17,11 +17,16 @@ void PlotTraj(OSGViewer& viewer, RobotAndDOF& rad, const TrajArray& x, vector<Gr
   }
 }
 
-void PlotCosts(OSGViewer& viewer, vector<CostPtr>& costs, RobotAndDOF& rad, const VarArray& vars, const DblVec& x) {
+void PlotCosts(OSGViewer& viewer, vector<CostPtr>& costs, vector<ConstraintPtr>& cnts, RobotAndDOF& rad, const VarArray& vars, const DblVec& x) {
   vector<GraphHandlePtr> handles;
   handles.clear();
   BOOST_FOREACH(CostPtr& cost, costs) {
     if (Plotter* plotter = dynamic_cast<Plotter*>(cost.get())) {
+      plotter->Plot(x, *rad.GetRobot()->GetEnv(), handles);
+    }
+  }
+  BOOST_FOREACH(ConstraintPtr& cnt, cnts) {
+    if (Plotter* plotter = dynamic_cast<Plotter*>(cnt.get())) {
       plotter->Plot(x, *rad.GetRobot()->GetEnv(), handles);
     }
   }
@@ -37,8 +42,10 @@ Optimizer::Callback PlotCallback(TrajOptProb& prob) {
     viewer.reset(new OSGViewer(prob.GetEnv()));
     prob.GetEnv()->AddViewer(viewer);
   }
+  vector<ConstraintPtr> cnts = prob.getConstraints();
   return boost::bind(&PlotCosts, boost::ref(*viewer),
                       boost::ref(prob.getCosts()),
+                      cnts,
                       boost::ref(*prob.GetRAD()),
                       boost::ref(prob.GetVars()),
                       _1);

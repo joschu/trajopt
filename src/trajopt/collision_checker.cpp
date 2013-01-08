@@ -1,6 +1,7 @@
 #include "trajopt/collision_checker.hpp"
 #include "trajopt/rave_utils.hpp"
 #include <boost/foreach.hpp>
+#include "utils/eigen_conversions.hpp"
 using namespace OpenRAVE;
 
 namespace trajopt {
@@ -34,28 +35,30 @@ bool CollisionPairIgnorer::CanCollide(const KinBody::Link& link1, const KinBody:
   return m_pairs.find(LinkPair(&link1, &link2)) == m_pairs.end();
 }
 
-void CollisionChecker::IgnoreZeroStateSelfCollisions(OpenRAVE::KinBodyPtr body, CollisionPairIgnorer& ignorer) {
+void CollisionChecker::IgnoreZeroStateSelfCollisions(OpenRAVE::KinBodyPtr body) {
+  RAVELOG_DEBUG("IgnoreZeroStateSelfCollisions for %s\n", body->GetName().c_str());
   KinBody::KinBodyStateSaver saver(body);
   body->SetDOFValues(DblVec(body->GetDOF(), 0));
-  body->SetTransform(Transform(Vector(1,0,0,0), (Vector(-999,-999,-999))));
+  body->SetTransform(Transform(Vector(1,0,0,0), (Vector(0,0,10))));
 
 
   vector<Collision> collisions;
-  BodyVsAll(*body, &ignorer, collisions);
+  BodyVsAll(*body,  collisions);
   RAVELOG_DEBUG("%i extra self collisions in zero state\n", collisions.size());
   for(int i=0; i < collisions.size(); ++i) {
     RAVELOG_DEBUG("ignoring self-collision: %s %s\n", collisions[i].linkA->GetName().c_str(), collisions[i].linkB->GetName().c_str());
-    ignorer.ExcludePair(*collisions[i].linkA, *collisions[i].linkB);
+    m_ignorer.ExcludePair(*collisions[i].linkA, *collisions[i].linkB);
   }
+  RAVELOG_DEBUG("------\n");
 }
 
-void CollisionChecker::IgnoreZeroStateSelfCollisions(CollisionPairIgnorer& ignorer) {
+void CollisionChecker::IgnoreZeroStateSelfCollisions() {
 
   vector<KinBodyPtr> bodies;
   GetEnv()->GetBodies(bodies);
 
   BOOST_FOREACH(const KinBodyPtr& body, bodies) {
-    IgnoreZeroStateSelfCollisions(ignorer);
+    IgnoreZeroStateSelfCollisions(body);
   }
 }
 

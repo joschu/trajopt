@@ -30,6 +30,7 @@ typename PointCloud<PointT>::Ptr readPCD(const std::string& pcdfile) {
   return cloud;
 }
 template PointCloud<PointXYZRGB>::Ptr readPCD<PointXYZRGB>(const std::string& pcdfile);
+template PointCloud<PointXYZRGBA>::Ptr readPCD<PointXYZRGBA>(const std::string& pcdfile);
 template PointCloud<PointXYZ>::Ptr readPCD<PointXYZ>(const std::string& pcdfile);
 
 PointCloud<pcl::PointXYZ>::Ptr readPCDXYZ(const std::string& pcdfile) {

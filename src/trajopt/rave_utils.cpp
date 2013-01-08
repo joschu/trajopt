@@ -100,7 +100,7 @@ OR::UserDataPtr GetUserData(const OR::EnvironmentBase& env, const std::string& k
 void SetUserData(OR::EnvironmentBase& env, const std::string& key, OR::UserDataPtr val) {
   UserDataPtr ud = env.GetUserData();
   if (!ud) {
-    RAVELOG_INFO("setting userdata");
+    RAVELOG_INFO("setting userdata\n");
     ud = UserDataPtr(new UserMap());
     env.SetUserData(ud);
   }

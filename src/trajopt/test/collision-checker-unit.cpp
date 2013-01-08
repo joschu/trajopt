@@ -40,43 +40,55 @@ TEST(collision_checker, box_distance) {
   CollisionCheckerPtr checker = CreateCollisionChecker(env);
 
 
-  checker->SetContactDistance(0);
-  box1->SetTransform(Transform(Vector(1,0,0,0), Vector(.9,0,0)));
-  box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
   {
+    checker->SetContactDistance(0);
+    box1->SetTransform(Transform(Vector(1,0,0,0), Vector(.9,0,0)));
+    box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
     vector<Collision> collisions;
-    checker->AllVsAll(NULL, collisions);
+    checker->AllVsAll(collisions);
     PrintCollisions(collisions);
+    EXPECT_EQ(collisions.size(), 1);
+  }
+
+  {
+    checker->SetContactDistance(0);
+    box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
+    box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
+    vector<Collision> collisions;
+    checker->AllVsAll(collisions);
+    PrintCollisions(collisions);
+    EXPECT_EQ(collisions.size(), 0);
+  }
+
+  {
+    checker->SetContactDistance(.04);
+    box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
+    box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
+    vector<Collision> collisions;
+    checker->AllVsAll(collisions);
+    PrintCollisions(collisions);
+    EXPECT_EQ(collisions.size(), 0);
+  }
+
+  {
+    checker->SetContactDistance(.05);
+    box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
+    box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
+    vector<Collision> collisions;
+    checker->AllVsAll(collisions);
+    PrintCollisions(collisions);
+    EXPECT_EQ(collisions.size(), 1);
   }
 
 
-  checker->SetContactDistance(0);
-  box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
-  box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
   {
+    checker->SetContactDistance(.2);
+    box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
+    box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
     vector<Collision> collisions;
-    checker->AllVsAll(NULL, collisions);
+    checker->AllVsAll(collisions);
     PrintCollisions(collisions);
-  }
-
-  checker->SetContactDistance(.05);
-  box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
-  box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
-  {
-    vector<Collision> collisions;
-    checker->AllVsAll(NULL, collisions);
-    PrintCollisions(collisions);
-  }
-
-
-
-  checker->SetContactDistance(.2);
-  box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
-  box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
-  {
-    vector<Collision> collisions;
-    checker->AllVsAll(NULL, collisions);
-    PrintCollisions(collisions);
+    EXPECT_EQ(collisions.size(), 1);
   }
 
 

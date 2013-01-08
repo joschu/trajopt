@@ -154,14 +154,18 @@ struct PoseCostInfo : public CostInfo {
   void hatch(TrajOptProb& prob);
   static CostInfoPtr create();
 };
-struct PositionCostInfo : public CostInfo {
+struct PoseCntInfo : public CntInfo {
   int timestep;
   Vector3d xyz;
+  Vector4d wxyz;
+  Vector3d pos_coeffs, rot_coeffs;
   double coeff;
+  KinBody::LinkPtr link;
   void fromJson(const Value& v);
   void hatch(TrajOptProb& prob);
-  static CostInfoPtr create();
+  static CntInfoPtr create();
 };
+
 struct JointVelCostInfo : public CostInfo {
   /** cost = coeff * v^2
    * v = dx/dt and dt = (1/T)

@@ -45,8 +45,6 @@ class btCollisionDispatcher : public btDispatcher
 
 protected:
 
-    void* m_userData;
-
 	int		m_dispatcherFlags;
 
 	btAlignedObjectArray<btPersistentManifold*>	m_manifoldsPtr;
@@ -65,6 +63,8 @@ protected:
 
 
 public:
+
+	void* m_userData;
 
 	enum DispatcherFlags
 	{

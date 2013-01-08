@@ -5,6 +5,7 @@
 #include <osg/Geometry>
 #include <osgViewer/Viewer>
 #include <osg/Material>
+#include <osg/Point>
 #include <osgUtil/SmoothingVisitor>
 #include <cstdio>
 #include <algorithm>
@@ -496,6 +497,55 @@ OpenRAVE::GraphHandlePtr OSGViewer::drawarrow(const RaveVectorf& p1, const RaveV
   return GraphHandlePtr(new OsgGraphHandle(group, m_root.get()));
 }
 
+OpenRAVE::GraphHandlePtr OSGViewer::drawpoints(float* ppoints, int numPoints, int stride, float pointsize, float* colors) {
+
+  osg::Geometry* geom = new osg::Geometry;
+
+
+  int floats_per_pt = stride / sizeof(float);
+
+  Vec3Array* osgPts = new Vec3Array;
+  osgPts->reserve(numPoints);
+  for (int i=0; i < numPoints; ++i) {
+    float* p = ppoints + i*floats_per_pt;
+    if (isfinite(p[0]))  osgPts->push_back(osg::Vec3(p[0], p[1], p[2]));
+  }
+  osg::StateSet* ss = geom->getOrCreateStateSet();
+  osg::Point *point = new osg::Point();
+  point->setSize(pointsize);
+  ss->setAttribute(point);
+
+  ss->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
+  osg::BlendFunc* blendFunc = new osg::BlendFunc;
+  blendFunc->setFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  ss->setAttributeAndModes(blendFunc);
+  ss->setMode(GL_BLEND, osg::StateAttribute::ON);
+
+  geom->setVertexArray(osgPts);
+  geom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,osgPts->size()));
+//
+//  if (colors != NULL) {
+//    Vec4Array* osgCols = new Vec4Array;
+//    for (int i=0; i < numPoints; ++i) {
+//      float* p = colors + i;
+//      osgCols->push_back(osg::Vec4(p[0], p[1], p[2],1));
+//    }
+//    geom->setColorArray(osgCols);
+//    geom->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+//  }
+
+
+
+
+
+
+  Geode* geode = new osg::Geode();
+  geode->addDrawable(geom);
+
+  return GraphHandlePtr(new OsgGraphHandle(geode, m_root.get()));
+}
+
 
 GraphHandlePtr OSGViewer::PlotKinBody(KinBodyPtr body) {
   UpdateSceneData();
@@ -586,19 +636,19 @@ OpenRAVE::GraphHandlePtr OSGViewer::drawtrimesh (const float *ppoints, int strid
   osg::StateSet* state = geode->getOrCreateStateSet();
   osg::Material* mat = new osg::Material;
   OpenRAVE::Vector diffuse = color;
-  mat->setDiffuse( osg::Material::FRONT_AND_BACK, osg::Vec4(diffuse.x, diffuse.y, diffuse.z, 1) );
+  mat->setDiffuse( osg::Material::FRONT_AND_BACK, toOsgVec4(diffuse) );
   OpenRAVE::Vector amb = color;
-  mat->setAmbient( osg::Material::FRONT_AND_BACK, osg::Vec4(amb.x,amb.y,amb.z,1)*.5 );
+  mat->setAmbient( osg::Material::FRONT_AND_BACK, toOsgVec4(amb)*.5 );
   mat->setTransparency(osg::Material::FRONT_AND_BACK,color[3]);
   state->setAttribute(mat);
-
-  osgUtil::SmoothingVisitor sv;
-  geode->accept(sv);
-
   if (color[3] < 1) {
     state->setAttributeAndModes(new osg::BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) );
     state->setRenderingHint(osg::StateSet::TRANSPARENT_BIN );
   }
+
+  osgUtil::SmoothingVisitor sv;
+  geode->accept(sv);
+
 
 
 

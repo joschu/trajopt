@@ -11,13 +11,12 @@ CollisionCheckerPtr cc;
 vector<GraphHandlePtr> handles;
 EnvironmentBasePtr env;
 OSGViewerPtr viewer;
-CollisionPairIgnorer ignorer;
 void PlotCollisionGeometry(const osgGA::GUIEventAdapter & ea) {
   if (handles.size() == 0) {
 
     cc->PlotCollisionGeometry(handles);
     vector<Collision> collisions;
-    cc->AllVsAll(&ignorer, collisions);
+    cc->AllVsAll(collisions);
     PlotCollisions(collisions, *env, handles, .02);
   }
 
@@ -36,6 +35,7 @@ void AdjustTransparency(float da) {
 int main() {
   RaveInitialize(true, OpenRAVE::Level_Debug);
   env = RaveCreateEnvironment();
+  env->StopSimulation();
   bool success = env->Load("data/pr2test2.env.xml");
   assert(success);
 
@@ -46,7 +46,6 @@ int main() {
 
 
   cc = CollisionChecker::GetOrCreate(*env);
-  cc->IgnoreZeroStateSelfCollisions(robot, ignorer);
   viewer.reset(new OSGViewer(env));
   env->AddViewer(viewer);
 

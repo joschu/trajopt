@@ -235,7 +235,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
       if (status != CVX_SOLVED) {
         if (solving_slack_problem) {
           model_->writeToFile("/tmp/fail.lp");
-          IPI_ABORT("inequalities turned into penalties but problem is still infeasible");
+          IPI_ABORT("inequalities turned into penalties but problem is still infeasible. written to /tmp/fail.lp");
         }
         IPI_LOG_WARNING("problem was infeasible. optimizing relaxed problem");
 //        model_->writeToFile("/tmp/infeas.lp");

@@ -31,7 +31,7 @@ public:
   OpenRAVE::GraphHandlePtr drawarrow(const RaveVectorf& p1, const RaveVectorf& p2, float fwidth, const RaveVectorf& color);
   OpenRAVE::GraphHandlePtr  drawtrimesh (const float *ppoints, int stride, const int *pIndices, int numTriangles, const RaveVectorf &color);
 //  OpenRAVE::GraphHandlePtr drawtrimesh (const float *ppoints, int stride, const int *pIndices, int numTriangles, const boost::multi_array< float, 2 > &colors);
-
+  OpenRAVE::GraphHandlePtr drawpoints(float* ppoints, int numPoints, int stride, float pointsize, float* colors);
 
   void SetAllTransparency(float alpha);
 

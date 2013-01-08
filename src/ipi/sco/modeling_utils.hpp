@@ -1,7 +1,7 @@
 #pragma once
 #include "modeling.hpp"
 #include "num_diff.hpp"
-
+#include "sco_common.hpp"
 /**
 @file modeling_utils.hpp
 @brief Build problem from user-defined functions
@@ -55,7 +55,7 @@ protected:
 
 class ConstraintFromNumDiff : public Constraint {
 public:
-  ConstraintFromNumDiff(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name);
+  ConstraintFromNumDiff(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name, const BoolVec& enabled = BoolVec());
   vector<double> value(const vector<double>& x);
   ConvexConstraintsPtr convex(const vector<double>& x, Model* model);
   ConstraintType type() {return type_;}
@@ -64,6 +64,7 @@ protected:
   VarVector vars_;
   ConstraintType type_;
   double epsilon_;
+  BoolVec enabled_;
 };
 
 

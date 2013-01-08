@@ -3,10 +3,12 @@
 #include "trajopt/problem_description.hpp"
 #include <stdexcept>
 #include <boost/python/exception_translator.hpp>
+#include <boost/foreach.hpp>
 
 using namespace trajopt;
 using namespace Eigen;
 using namespace OpenRAVE;
+using std::vector;
 
 namespace py = boost::python;
 
@@ -20,7 +22,6 @@ public:
   TrajOptProbPtr m_prob;
   PyTrajOptProb(TrajOptProbPtr prob) : m_prob(prob) {}
 };
-typedef boost::shared_ptr<PyTrajOptProb> PyTrajOptProbPtr;
 
 Json::Value readJsonFile(const std::string& doc) {
   Json::Value root;
@@ -30,17 +31,17 @@ Json::Value readJsonFile(const std::string& doc) {
   return root;
 }
 
-PyTrajOptProbPtr PyConstructProblem(const std::string& json_string, py::object py_env) {
+PyTrajOptProb PyConstructProblem(const std::string& json_string, py::object py_env) {
   py::object openravepy = py::import("openravepy");
   int id = py::extract<int>(openravepy.attr("RaveGetEnvironmentId")(py_env));
   EnvironmentBasePtr cpp_env = RaveGetEnvironment(id);
   Json::Value json_root = readJsonFile(json_string);
   TrajOptProbPtr cpp_prob = ConstructProblem(json_root, cpp_env);
-  return PyTrajOptProbPtr(new PyTrajOptProb(cpp_prob));
+  return PyTrajOptProb(cpp_prob);
 }
 
-void SetInteractive(bool b) {
-  gInteractive = b;
+void SetInteractive(py::object b) {
+  gInteractive = py::extract<bool>(b);
 }
 
 class PyTrajOptResult {
@@ -68,17 +69,61 @@ public:
   }
 };
 
-PyTrajOptResult PyOptimizeProblem(PyTrajOptProbPtr prob) {
-  return OptimizeProblem(prob->m_prob, gInteractive);
+PyTrajOptResult PyOptimizeProblem(PyTrajOptProb& prob) {
+  return OptimizeProblem(prob.m_prob, gInteractive);
 }
 
-BOOST_PYTHON_MODULE(trajoptpy) {
 
-//  py::class_<std::runtime_error>("RuntimeError", py::init<std::string>())
-//     .def("__str__", &std::runtime_error::what)
-//     ;
+class PyCollision {
+public:
+  Collision m_c;
+  PyCollision(const Collision& c) : m_c(c) {}
+  float GetDistance() {return m_c.distance;}
+};
 
-  py::class_<PyTrajOptProb,PyTrajOptProbPtr, boost::noncopyable>("TrajOptProb", py::no_init)
+py::list toPyList(const vector<Collision>& collisions) {
+  py::list out;
+  BOOST_FOREACH(const Collision& c, collisions) {
+    out.append(PyCollision(c));
+  }
+  return out;
+}
+
+class PyCollisionChecker {
+public:
+  py::object AllVsAll() {
+    vector<Collision> collisions;
+    m_cc->AllVsAll(collisions);
+    return toPyList(collisions);
+  }
+  py::object BodyVsAll(py::object py_kb) {
+    KinBodyPtr cpp_kb = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
+        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb.attr("GetEnvironmentId")()));
+    if (!cpp_kb) {
+      throw openrave_exception("body isn't part of environment!");
+    }
+    vector<Collision> collisions;
+    m_cc->BodyVsAll(*cpp_kb, collisions);
+    return toPyList(collisions);
+  }
+  PyCollisionChecker(CollisionCheckerPtr cc) : m_cc(cc) {}
+private:
+  PyCollisionChecker();
+  CollisionCheckerPtr m_cc;
+};
+
+
+PyCollisionChecker PyGetCollisionChecker(py::object py_env) {
+  py::object openravepy = py::import("openravepy");
+  int id = py::extract<int>(openravepy.attr("RaveGetEnvironmentId")(py_env));
+  EnvironmentBasePtr cpp_env = RaveGetEnvironment(id);
+  CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*cpp_env);
+  return PyCollisionChecker(cc);
+}
+
+BOOST_PYTHON_MODULE(ctrajoptpy) {
+
+  py::class_<PyTrajOptProb>("TrajOptProb", py::no_init)
   ;
   py::def("SetInteractive", &SetInteractive);
   py::def("ConstructProblem", &PyConstructProblem);
@@ -90,6 +135,13 @@ BOOST_PYTHON_MODULE(trajoptpy) {
       .def("__str__", &PyTrajOptResult::__str__)
       ;
 
+  py::class_<PyCollisionChecker>("CollisionChecker", py::no_init)
+      .def("AllVsAll", &PyCollisionChecker::AllVsAll)
+      .def("BodyVsAll", &PyCollisionChecker::BodyVsAll)
+      ;
+  py::def("GetCollisionChecker", &PyGetCollisionChecker);
+  py::class_<PyCollision>("Collision", py::no_init)
+     .def("GetDistance", &PyCollision::GetDistance)
+    ;
 
-  ;
 }

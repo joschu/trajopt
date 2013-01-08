@@ -15,7 +15,7 @@ Collision cost and constraint use this class
 */
 struct SingleTimestepCollisionEvaluator {
 public:
-  SingleTimestepCollisionEvaluator(RobotAndDOFPtr rad, const VarVector& vars, const CollisionPairIgnorer* extra_ignores);
+  SingleTimestepCollisionEvaluator(RobotAndDOFPtr rad, const VarVector& vars);
   /**
   @brief linearize all contact distances in terms of robot dofs
   
@@ -39,6 +39,7 @@ public:
   CollisionPairIgnorer m_ignorer;
   typedef std::map<const OR::KinBody::Link*, int> Link2Int;
   Link2Int m_link2ind;
+  vector<OR::KinBody::LinkPtr> m_links;
   Cache<double, vector<Collision>, 3> m_cache;
 
   void GetCollisionsCached(const DblVec& x, vector<Collision>&);

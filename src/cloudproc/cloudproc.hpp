@@ -4,7 +4,6 @@
 #include <string>
 
 using pcl::PointCloud;
-
 template <class PointT>
 typename PointCloud<PointT>::Ptr readPCD(const std::string& pcdfile);
 
