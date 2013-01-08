@@ -1,5 +1,5 @@
 include_directories(${GTEST_INCLUDE_DIRS})
-add_definitions(-DDATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+add_definitions(-DDATA_DIR="${CMAKE_SOURCE_DIR}/data")
 
 set(test_srcs
   unit.cpp
