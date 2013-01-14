@@ -64,6 +64,17 @@ public:
     }
     return out;
   }
+  py::object GetTraj() {
+    py::object numpy = py::import("numpy");
+    TrajArray &traj = m_result->traj;
+    py::object out = numpy.attr("empty")(py::make_tuple(traj.rows(), traj.cols()));
+    for (int i = 0; i < traj.rows(); ++i) {
+      for (int j = 0; j < traj.cols(); ++j) {
+        out[i][j] = traj(i, j);
+      }
+    }
+    return out;
+  }
   py::object __str__() {
     return GetCosts().attr("__str__")() + GetConstraints().attr("__str__")();
   }
@@ -132,6 +143,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
   py::class_<PyTrajOptResult>("TrajOptResult", py::no_init)
       .def("GetCosts", &PyTrajOptResult::GetCosts)
       .def("GetConstraints", &PyTrajOptResult::GetConstraints)
+      .def("GetTraj", &PyTrajOptResult::GetTraj)
       .def("__str__", &PyTrajOptResult::__str__)
       ;
 
