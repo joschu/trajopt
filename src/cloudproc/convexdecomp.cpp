@@ -6,8 +6,10 @@
 #include <queue>
 #include <boost/foreach.hpp>
 #include <pcl/kdtree/kdtree_flann.h>
+#include "sphere_sampling.hpp"
 #include <iostream>
 #include "utils/stl_to_string.hpp"
+#include "convexdecomp.hpp"
 using namespace pcl;
 using namespace Eigen;
 using namespace std;
@@ -36,6 +38,12 @@ vector<int> getNeighbors(const pcl::KdTreeFLANN<PointXYZ>& tree, int i_pt, int k
   FloatVec sqdists(k_neighbs, -666);
   int n_neighbs = tree.nearestKSearch(i_pt, k_neighbs, neighb_inds, sqdists);
   return vector<int>(neighb_inds.begin()+1, neighb_inds.begin() + n_neighbs);
+}
+
+void ConvexDecomp1(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud, float thresh,
+    /*optional outputs: */ std::vector<IntVec>* indices, std::vector< IntVec >* hull_indices) {
+  MatrixXf dirs = getSpherePoints(1);
+  ConvexDecomp(cloud, dirs, thresh, indices, hull_indices);
 }
 
 
@@ -244,7 +252,7 @@ void ConvexDecomp(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud, const E
           }
         }
       }
-      printf("hull size: %i/%i\n", hull_indices->back().size(), pt2dirs.size());
+      DEBUG_PRINT("hull size: %i/%i\n", hull_indices->back().size(), pt2dirs.size());
     }
 
     ++i_label;

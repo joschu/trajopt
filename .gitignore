@@ -24,3 +24,4 @@ tooltip/bin/data
 Testing/
 .svn
 build_html
+bigdata/*.pcd

@@ -13,6 +13,7 @@ using namespace Eigen;
 #include <pcl/segmentation/planar_region.h>
 #include <pcl/segmentation/organized_multi_plane_segmentation.h>
 #include <pcl/segmentation/organized_connected_component_segmentation.h>
+using namespace cloudproc;
 typedef pcl::PointXYZRGBA PointT;
 int main(int argc, char** argv) {
   if (argc != 2) {

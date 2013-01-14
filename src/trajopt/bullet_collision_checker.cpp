@@ -6,6 +6,8 @@
 #include "utils/eigen_conversions.hpp"
 #include <boost/foreach.hpp>
 #include <vector>
+#include <iostream>
+#include <LinearMath/btConvexHull.h>
 using namespace util;
 using namespace std;
 using namespace trajopt;
@@ -107,16 +109,33 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom) {
     btConvexTriangleMeshShape convexTrimesh(&ptrimesh);
     convexTrimesh.setMargin(MARGIN); // margin: hull padding
 
+
     //Create a hull shape to approximate Trimesh
+
+    bool useShapeHull;
+
     btShapeHull shapeHull(&convexTrimesh);
-    shapeHull.buildHull(-666); // note: margin argument not used
+    if (mesh.vertices.size() >= 50) {
+      bool success = shapeHull.buildHull(-666); // note: margin argument not used
+      if (!success) RAVELOG_WARN("shapehull convex hull failed! falling back to original vertices\n");
+      useShapeHull = success;
+    }
+    else {
+      useShapeHull = false;
+    }
 
     btConvexHullShape *convexShape = new btConvexHullShape();
-    for (int i = 0; i < shapeHull.numVertices(); ++i)
-      convexShape->addPoint(shapeHull.getVertexPointer()[i]);
-
     subshape = convexShape;
-    break;
+    if (useShapeHull) {
+      for (int i = 0; i < shapeHull.numVertices(); ++i)
+        convexShape->addPoint(shapeHull.getVertexPointer()[i]);
+      break;
+    }
+    else {
+      for (int i = 0; i < mesh.vertices.size(); ++i)
+        convexShape->addPoint(toBt(mesh.vertices[i]));
+      break;
+    }
   }
   default:
     assert(0 && "unrecognized collision shape type");
@@ -158,13 +177,12 @@ COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link) {
     BOOST_FOREACH(const boost::shared_ptr<OpenRAVE::KinBody::Link::GEOMPROPERTIES>& geom, geometries) {
 
       btCollisionShape* subshape = createShapePrimitive(geom);
-
-      assert(subshape != NULL);
-      cow->manage(subshape);
-      subshape->setMargin(MARGIN);
-      btTransform geomTrans = toBt(geom->GetTransform());
-      compound->addChildShape(geomTrans, subshape);
-
+      if (subshape != NULL) {
+        cow->manage(subshape);
+        subshape->setMargin(MARGIN);
+        btTransform geomTrans = toBt(geom->GetTransform());
+        compound->addChildShape(geomTrans, subshape);
+      }
     }
 
   }
@@ -175,6 +193,8 @@ COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link) {
 }
 
 
+typedef map<btCollisionShape*, HullResult > Shape2Inds;
+Shape2Inds gHullCache;
 
 void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
     OpenRAVE::EnvironmentBase& env, vector<OpenRAVE::GraphHandlePtr>& handles) {
@@ -190,36 +210,41 @@ void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
   case CONVEX_HULL_SHAPE_PROXYTYPE: {
     btConvexHullShape* convex = static_cast<btConvexHullShape*>(shape);
 
-#if 0
-    btConvexPolyhedron* poly = const_cast<btConvexPolyhedron*>(convex->getConvexPolyhedron());
-    vector<btVector3> points;
-    poly->initialize();
-    points.reserve(poly->m_faces.size() * 3);
-    for (int iFace = 0; iFace < poly->m_faces.size(); ++iFace) {
-      btFace& face = poly->m_faces[iFace];
-      for (int iPolygon = 2; iPolygon < face.m_indices.size(); ++iPolygon) {
-        int polyinds[3] = { face.m_indices[iPolygon], face.m_indices[iPolygon
-                                                                     - 1], face.m_indices[0] };
-        points.push_back(tf * poly->m_vertices[polyinds[0]]);
-        points.push_back(tf * poly->m_vertices[polyinds[1]]);
-        points.push_back(tf * poly->m_vertices[polyinds[2]]);
+    Shape2Inds::iterator it = gHullCache.find(convex);
+
+    btAlignedObjectArray<unsigned int> inds;
+    HullResult hr;
+    if ( it != gHullCache.end() )
+      hr = it->second;
+    else {
+
+      HullDesc hd;
+      hd.mFlags = QF_TRIANGLES;
+      hd.mVcount = convex->getNumPoints();
+      hd.mVertices = convex->getPoints();
+      hd.mVertexStride = sizeof(btVector3);
+      HullLibrary hl;
+
+      if (hl.CreateConvexHull(hd, hr) == QE_FAIL) {
+        RAVELOG_ERROR("convex hull computation failed on shape with %i vertices\n", convex->getNumPoints());
+        hr.mNumFaces = 0;
       }
+      else {
+      }
+      gHullCache[convex] = hr;
     }
-    handles.push_back(env.drawtrimesh((float*) points.data(), sizeof(btVector3), NULL,
-        points.size() / 3, OR::RaveVector<float>(0, 1, 0, .25)));
-#endif
-    btShapeHull shapeHull(convex); // I don't think this changes the shape since we used shapeHull to create it
-    shapeHull.buildHull(-666); // note: margin argument not used
-    RAVELOG_INFO("rendering convex shape with %i triangles\n", shapeHull.numTriangles());
-    vector<btVector3> tverts(shapeHull.numVertices());
-    for (int i=0; i < shapeHull.numVertices(); ++i) {
-      tverts[i] = tf*shapeHull.getVertexPointer()[i];
+
+    if (hr.mNumFaces > 0) {
+      vector<btVector3> tverts(hr.mNumOutputVertices);
+      for (int i=0; i < tverts.size(); ++i) tverts[i] = tf * hr.m_OutputVertices[i];
+
+
+      handles.push_back(env.drawtrimesh((float*)&tverts[0], 16,
+          (int*) &hr.m_Indices[0], hr.mNumFaces, OR::RaveVector<float>(1,1,1,.1)));
     }
-    //    for (int i = 0; i < shapeHull.numVertices(); ++i)
-    //      convexShape->addPoint(shapeHull.getVertexPointer()[i]);
-    handles.push_back(env.drawtrimesh((float*) tverts.data(), sizeof(btVector3), (int*)shapeHull.getIndexPointer(),
-        shapeHull.numTriangles(), OR::RaveVector<float>(1,1,1,.1)));
     break;
+
+
   }
 
   default:

@@ -6,6 +6,7 @@
 #include <osgViewer/Viewer>
 #include <osg/Material>
 #include <osg/Point>
+#include <osg/LineWidth>
 #include <osgUtil/SmoothingVisitor>
 #include <cstdio>
 #include <algorithm>
@@ -497,7 +498,7 @@ OpenRAVE::GraphHandlePtr OSGViewer::drawarrow(const RaveVectorf& p1, const RaveV
   return GraphHandlePtr(new OsgGraphHandle(group, m_root.get()));
 }
 
-OpenRAVE::GraphHandlePtr OSGViewer::drawpoints(float* ppoints, int numPoints, int stride, float pointsize, float* colors) {
+OpenRAVE::GraphHandlePtr OSGViewer::plot3(const float* ppoints, int numPoints, int stride, float pointsize, const float* colors, int drawstyle, bool bhasalpha) {
 
   osg::Geometry* geom = new osg::Geometry;
 
@@ -507,7 +508,7 @@ OpenRAVE::GraphHandlePtr OSGViewer::drawpoints(float* ppoints, int numPoints, in
   Vec3Array* osgPts = new Vec3Array;
   osgPts->reserve(numPoints);
   for (int i=0; i < numPoints; ++i) {
-    float* p = ppoints + i*floats_per_pt;
+    const float* p = ppoints + i*floats_per_pt;
     if (isfinite(p[0]))  osgPts->push_back(osg::Vec3(p[0], p[1], p[2]));
   }
   osg::StateSet* ss = geom->getOrCreateStateSet();
@@ -534,11 +535,6 @@ OpenRAVE::GraphHandlePtr OSGViewer::drawpoints(float* ppoints, int numPoints, in
 //    geom->setColorArray(osgCols);
 //    geom->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
 //  }
-
-
-
-
-
 
   Geode* geode = new osg::Geode();
   geode->addDrawable(geom);
@@ -655,4 +651,42 @@ OpenRAVE::GraphHandlePtr OSGViewer::drawtrimesh (const float *ppoints, int strid
   return GraphHandlePtr(new OsgGraphHandle(geode, m_root.get()));
 }
 
+OpenRAVE::GraphHandlePtr  OSGViewer::drawlinelist(const float *ppoints,  int numPoints, int stride, float fwidth, const RaveVectorf &color) {
+
+  osg::Geometry* geom = new osg::Geometry;
+
+  int floats_per_pt = stride / sizeof(float);
+
+  Vec3Array* osgPts = new Vec3Array;
+  osgPts->reserve(numPoints);
+  for (int i=0; i < numPoints; ++i) {
+    const float* p = ppoints + i*floats_per_pt;
+    if (isfinite(p[0]))  osgPts->push_back(osg::Vec3(p[0], p[1], p[2]));
+  }
+  osg::StateSet* ss = geom->getOrCreateStateSet();
+  osg::LineWidth *lw= new osg::LineWidth;
+  lw->setWidth(fwidth);
+  ss->setAttribute(lw);
+
+  ss->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+
+  osg::BlendFunc* blendFunc = new osg::BlendFunc;
+  blendFunc->setFunction(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  ss->setAttributeAndModes(blendFunc);
+  ss->setMode(GL_BLEND, osg::StateAttribute::ON);
+
+  osg::Vec4Array* osgColor = new osg::Vec4Array();
+  osgColor->push_back( osg::Vec4( color[0], color[1], color[2], color[3] ) );
+  geom->setColorArray(osgColor);
+  geom->setColorBinding(osg::Geometry::BIND_OVERALL);
+
+  geom->setVertexArray(osgPts);
+  geom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES,0,osgPts->size()));
+
+
+  Geode* geode = new osg::Geode();
+  geode->addDrawable(geom);
+
+  return GraphHandlePtr(new OsgGraphHandle(geode, m_root.get()));
+}
 

@@ -362,7 +362,7 @@ typedef logging::logger<logging::backend_stdio> stdio_log;
 
 // default compile time threshold is warning
 #ifndef IPI_LOG_THRESH
-#define IPI_LOG_THRESH IPI_LEVEL_DEBUG
+#define IPI_LOG_THRESH IPI_LEVEL_INFO
 #endif
 
 // set the runtime filter level

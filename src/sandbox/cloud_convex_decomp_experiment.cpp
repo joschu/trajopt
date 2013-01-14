@@ -9,6 +9,7 @@
 using namespace pcl;
 using namespace OpenRAVE;
 using namespace std;
+using namespace cloudproc;
 
 #ifdef __CDT_PARSER__
 #define BOOST_FOREACH(...) for(;;)
@@ -85,7 +86,7 @@ int main() {
 
   Eigen::MatrixXf colors(cloud->size(), 4);
   colors.setOnes();
-  handles.push_back(viewer->drawpoints((float*)cloud->points.data(), cloud->size(), 16, 8, colors.data()));
+  handles.push_back(viewer->plot3((float*)cloud->points.data(), cloud->size(), 16, 8, colors.data()));
 
   viewer->Idle();
 

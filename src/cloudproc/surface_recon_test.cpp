@@ -1,7 +1,7 @@
 #include "cloudproc.hpp"
 #include "convexdecomp.hpp"
 using namespace pcl;
-
+using namespace cloudproc;
 
 
 int main (int argc, char** argv)

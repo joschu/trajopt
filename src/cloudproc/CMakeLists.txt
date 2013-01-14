@@ -21,3 +21,5 @@ target_link_libraries(opm_test cloudproc ${PCL_LIBRARIES} utils)
 
 add_executable(test_print test_print.cpp)
 
+boost_python_module(cloudprocpy cloudprocpy.cpp)
+target_link_libraries(cloudprocpy cloudproc ${Boost_SYSTEM_LIBRARY} )
