@@ -230,7 +230,6 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
   int n_steps = bi.n_steps;
 
   prob->m_rad = pci.rad;
-  // todo: support various other dof collections that aren't manipulators
   int n_dof = prob->m_rad->GetDOF();
 
 
@@ -294,6 +293,25 @@ TrajOptProbPtr ConstructProblem(const Json::Value& root, OpenRAVE::EnvironmentBa
   ProblemConstructionInfo pci(env);
   pci.fromJson(root);
   return ConstructProblem(pci);
+}
+
+
+TrajOptProb::TrajOptProb(int n_steps, RobotAndDOFPtr rad) : m_rad(rad) {
+  DblVec lower, upper;
+  m_rad->GetDOFLimits(lower, upper);
+  int n_dof = m_rad->GetDOF();
+  vector<double> vlower, vupper;
+  vector<string> names;
+  for (int i=0; i < n_steps; ++i) {
+    vlower.insert(vlower.end(), lower.data(), lower.data()+lower.size());
+    vupper.insert(vupper.end(), upper.data(), upper.data()+upper.size());
+    for (unsigned j=0; j < n_dof; ++j) {
+      names.push_back( (boost::format("j_%i_%i")%i%j).str() );
+    }
+  }
+  createVariables(names, vlower, vupper);
+  m_traj_vars = VarArray(n_steps, n_dof, getVars().data());
+
 }
 
 

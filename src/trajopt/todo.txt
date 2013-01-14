@@ -1,9 +1,6 @@
-
 Make collision checker able to remove objects
 
 Write function to check trajectory safety
-
-Make an example where you plan the base position
 
 More validation on initialization
 
@@ -20,3 +17,7 @@ bug when using "active" as manip
 occasionally get infeasible relaxed problem. why?
 probably because the initialization is bad. should make the first step
 of the optimization satisfy the linear constraints
+
+openrave initfromtrimesh bug
+
+velocity cost uses timestamps

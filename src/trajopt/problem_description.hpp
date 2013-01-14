@@ -38,6 +38,7 @@ void HandlePlanningRequest(OR::EnvironmentBasePtr env, TrajOptRequest&, TrajOptR
 class TrajOptProb : public OptProb {
 public:
   TrajOptProb();
+  TrajOptProb(int n_steps, RobotAndDOFPtr rad);
   ~TrajOptProb() {}
   VarVector GetVarRow(int i) {
     return m_traj_vars.row(i);
@@ -52,7 +53,6 @@ public:
 
   void SetInitTraj(const TrajArray& x) {m_init_traj = x;}
   TrajArray GetInitTraj() {return m_init_traj;}
-
 
   friend TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo&);
 private:

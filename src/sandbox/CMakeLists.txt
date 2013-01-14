@@ -14,8 +14,7 @@ include_directories(
   ${JSON_INCLUDE_DIRS}
 )
 
-if (NOT APPLE)
 add_executable(cloud_convex_decomp_experiment cloud_convex_decomp_experiment.cpp)
 target_link_libraries(cloud_convex_decomp_experiment trajopt cloudproc osgviewer ${OpenRAVE_LIBRARIES})
-endif()
 
+add_executable(polygon_expt polygon_expt.cpp)

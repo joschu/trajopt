@@ -9,7 +9,7 @@ using namespace Eigen;
 #include <boost/format.hpp>
 #include "sphere_sampling.hpp"
 using namespace util;
-
+using namespace cloudproc;
 
 int main (int argc, char** argv)
 {

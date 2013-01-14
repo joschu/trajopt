@@ -15,14 +15,23 @@
 #include <pcl/point_types.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/features/normal_3d.h>
+#include <pcl/surface/convex_hull.h>
 using namespace std;
 using namespace pcl;
 
 #define FILE_OPEN_ERROR(fname) throw runtime_error( (boost::format("couldn't open %s")%fname).str() )
 
+namespace cloudproc {
+
 template <class CloudT>
 int cloudSize(const CloudT& cloud) {
   return cloud.width * cloud.height;
+}
+
+template <class CloudT>
+void setWidthToSize(const CloudT& cloud) {
+  cloud->width = cloud->points.size();
+  cloud->height = 1;
 }
 
 
@@ -63,6 +72,13 @@ INSTANTIATE_downsampleCloud(PointXYZ)
 INSTANTIATE_downsampleCloud(PointXYZRGB)
 
 //////////////////////////
+
+
+void findConvexHull(PointCloud<pcl::PointXYZ>::Ptr in, PointCloud<pcl::PointXYZ>& out, std::vector<Vertices>& polygons) {
+  pcl::ConvexHull<PointXYZ> chull;
+  chull.setInputCloud (in);
+  chull.reconstruct (out, polygons);
+}
 
 PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::Ptr in) {
   pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointNormal>);
@@ -169,6 +185,17 @@ void saveTrimeshCustomFmt(pcl::PolygonMesh::Ptr mesh, const std::string& fname) 
   }
 }
 
+PointCloud<pcl::PointXYZ>::Ptr boxFilter(PointCloud<pcl::PointXYZ>::Ptr in, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax) {
+  PointCloud<pcl::PointXYZ>::Ptr out(new PointCloud<pcl::PointXYZ>());
+  BOOST_FOREACH(const PointXYZ& pt, in->points) {
+    if (pt.x >= xmin && pt.x <= xmax && pt.y >= ymin && pt.y <= ymax && pt.z >= zmin && pt.z <= zmax) {
+      out->points.push_back(pt);
+    }
+  }
+  setWidthToSize(out);
+  return out;
+}
+
 void saveMesh(pcl::PolygonMesh::Ptr mesh, const std::string& fname, MeshFormat fmt) {
 
 
@@ -185,4 +212,6 @@ void saveMesh(pcl::PolygonMesh::Ptr mesh, const std::string& fname, MeshFormat f
   default:
     throw runtime_error( (boost::format("invalid mesh format %i")%fmt).str() );
   }
+}
+
 }
