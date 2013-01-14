@@ -10,7 +10,7 @@ if ("${GUROBI_HOME}" STREQUAL "")
 else()
         message(STATUS "Gurobi will be enabled")
         include_directories("${GUROBI_HOME}/include")
-        set(GUROBI_LIBRARIES "${GUROBI_HOME}/lib/libgurobi50.so")
+        set(GUROBI_LIBRARIES "${GUROBI_HOME}/lib/libgurobi51.so")
         add_definitions("-DHAVE_GUROBI")
 endif()
 

@@ -18,6 +18,7 @@ PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::Ptr i
 
 pcl::PolygonMesh::Ptr createMesh_gp3(PointCloud<pcl::PointNormal>::Ptr cloud_with_normals);
 pcl::PolygonMesh::Ptr createMesh_ofm(PointCloud<pcl::PointXYZ>::Ptr cloud);
+pcl::PolygonMesh::Ptr createMesh_marchingCubes(PointCloud<pcl::PointXYZ>::Ptr cloud);
 
 
 enum MeshFormat {
