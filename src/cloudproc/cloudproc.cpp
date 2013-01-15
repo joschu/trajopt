@@ -161,6 +161,17 @@ PointCloud<pcl::PointXYZ>::Ptr boxFilter(PointCloud<pcl::PointXYZ>::Ptr in, floa
   return out;
 }
 
+PointCloud<pcl::PointXYZ>::Ptr boxFilterNegative(PointCloud<pcl::PointXYZ>::Ptr in, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax) {
+  PointCloud<pcl::PointXYZ>::Ptr out(new PointCloud<pcl::PointXYZ>());
+  BOOST_FOREACH(const PointXYZ& pt, in->points) {
+    if (!((pt.x >= xmin && pt.x <= xmax && pt.y >= ymin && pt.y <= ymax && pt.z >= zmin && pt.z <= zmax))) {
+      out->points.push_back(pt);
+    }
+  }
+  setWidthToSize(out);
+  return out;
+}
+
 void saveMesh(pcl::PolygonMesh::Ptr mesh, const std::string& fname, MeshFormat fmt) {
 
 

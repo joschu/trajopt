@@ -32,11 +32,12 @@ struct SupInfo {
   float best;
 };
 
-vector<int> getNeighbors(const pcl::KdTreeFLANN<PointXYZ>& tree, int i_pt, int k_neighbs) {
+vector<int> getNeighbors(const pcl::KdTreeFLANN<PointXYZ>& tree, int i_pt, int k_neighbs, float maxdist) {
   k_neighbs += 1;
   IntVec neighb_inds(k_neighbs, -666);
   FloatVec sqdists(k_neighbs, -666);
-  int n_neighbs = tree.nearestKSearch(i_pt, k_neighbs, neighb_inds, sqdists);
+//  int n_neighbs = tree.nearestKSearch(i_pt, k_neighbs, neighb_inds, sqdists);
+  int n_neighbs = tree.radiusSearch(i_pt, maxdist, neighb_inds, sqdists, k_neighbs);
   return vector<int>(neighb_inds.begin()+1, neighb_inds.begin() + n_neighbs);
 }
 
@@ -109,9 +110,7 @@ void ConvexDecomp(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud, const E
     exclude_frontier.insert(i_seed);
     queue<int> frontier;
 
-    IntVec neighb_inds = getNeighbors(*tree, i_seed, k_neighbs);
-    DEBUG_PRINT("neighb inds: %s\n", Str(neighb_inds).c_str());
-    BOOST_FOREACH(const int& i_nb,  getNeighbors(*tree, i_seed, k_neighbs)) {
+    BOOST_FOREACH(const int& i_nb,  getNeighbors(*tree, i_seed, k_neighbs, 2*thresh)) {
       if (pt2label[i_nb]==UNLABELED && exclude_frontier.find(i_nb) == exclude_frontier.end()) {
         DEBUG_PRINT("adding %i to frontier\n", i_nb);
         frontier.push(i_nb);
@@ -222,7 +221,7 @@ void ConvexDecomp(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud, const E
             si.sups.push_back(cursup);
           }
         }
-        BOOST_FOREACH(const int& i_nb,  getNeighbors(*tree, i_cur, k_neighbs)) {
+        BOOST_FOREACH(const int& i_nb,  getNeighbors(*tree, i_cur, k_neighbs, 2*thresh)) {
           if (pt2label[i_nb]==UNLABELED && exclude_frontier.find(i_nb) == exclude_frontier.end()) {
             DEBUG_PRINT("adding %i to frontier\n", i_nb);
             frontier.push(i_nb);

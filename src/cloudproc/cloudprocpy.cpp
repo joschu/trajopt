@@ -61,6 +61,7 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
   py::def("readPCDXYZ", &readPCDXYZ);
   py::def("downsampleCloud", &downsampleCloud);
   py::def("boxFilter", &boxFilter);
+  py::def("boxFilterNegative", &boxFilterNegative);
   py::def("convexDecomp", &PyConvexDecomp);
 
 

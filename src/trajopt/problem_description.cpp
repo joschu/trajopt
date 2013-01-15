@@ -408,7 +408,7 @@ void CollisionCostInfo::hatch(TrajOptProb& prob) {
     prob.addCost(CostPtr(new CollisionCost(dist_pen[i], coeffs[i], prob.GetRAD(), prob.GetVarRow(i))));
   }
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
-  cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end())*2);
+  cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .02);
 }
 CostInfoPtr CollisionCostInfo::create() {
   return CostInfoPtr(new CollisionCostInfo());
