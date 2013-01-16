@@ -21,6 +21,7 @@ PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::Ptr i
 
 pcl::PolygonMesh::Ptr createMesh_gp3(PointCloud<pcl::PointNormal>::Ptr cloud_with_normals);
 pcl::PolygonMesh::Ptr createMesh_ofm(PointCloud<pcl::PointXYZ>::Ptr cloud);
+pcl::PolygonMesh::Ptr createMesh_marchingCubes(PointCloud<pcl::PointXYZ>::Ptr cloud);
 
 PointCloud<pcl::PointXYZ>::Ptr boxFilter(PointCloud<pcl::PointXYZ>::Ptr, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
 PointCloud<pcl::PointXYZ>::Ptr boxFilterNegative(PointCloud<pcl::PointXYZ>::Ptr, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
