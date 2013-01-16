@@ -34,9 +34,9 @@
 #
 #
 
-# if (PYTHON_NUMPY_INCLUDE_DIR)
-#   return()
-# endif()
+if (PYTHON_NUMPY_INCLUDE_DIR)
+  return()
+endif()
 
 set(PYTHON_EXECUTABLE "python")
 if(PYTHON_EXECUTABLE)

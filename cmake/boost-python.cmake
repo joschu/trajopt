@@ -1,6 +1,9 @@
 function(boost_python_module NAME)
   find_package(Boost COMPONENTS python REQUIRED)
   find_package(PythonLibs REQUIRED)
+  find_package(Numpy)
+
+
 
   set(DEP_LIBS
     ${Boost_PYTHON_LIBRARY}

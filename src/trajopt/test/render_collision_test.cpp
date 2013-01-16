@@ -33,12 +33,18 @@ void AdjustTransparency(float da) {
 }
 
 int main() {
-  RaveInitialize(true, OpenRAVE::Level_Debug);
+  RaveInitialize(false, OpenRAVE::Level_Debug);
   env = RaveCreateEnvironment();
   env->StopSimulation();
-  bool success = env->Load("data/pr2test2.env.xml");
-  assert(success);
-
+//  bool success = env->Load("data/pr2test2.env.xml");
+  {
+    bool success = env->Load("/home/joschu/Proj/drc/gfe.xml");
+    assert(success);
+  }
+  {
+    bool success = env->Load("/home/joschu/Proj/trajoptrave/data/test2.env.xml");
+    assert(success);
+  }
   vector<RobotBasePtr> robots;
   env->GetRobots(robots);
   RobotBasePtr robot = robots[0];
