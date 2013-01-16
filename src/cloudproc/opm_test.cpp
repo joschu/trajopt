@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
 
    std::vector<pcl::PlanarRegion<PointT>, Eigen::aligned_allocator<pcl::PlanarRegion<PointT> > > regions; mps.setInputNormals (normal_cloud);
    mps.setInputCloud (cloud);
-   mps.segmentAndRefine (regions);
+   //mps.segmentAndRefine (regions);
 
    visualization::PCLVisualizer  viewer ("3d Viewer");
    viewer.setBackgroundColor (0,0,0);
