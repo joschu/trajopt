@@ -21,3 +21,4 @@ of the optimization satisfy the linear constraints
 openrave initfromtrimesh bug
 
 velocity cost uses timestamps
+velocity cost uses weights

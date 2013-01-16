@@ -15,12 +15,23 @@ namespace py = boost::python;
 namespace {
 bool gInteractive = true;
 
+
+py::list toPyList(const IntVec& x) {
+  py::list out;
+  for (int i=0; i < x.size(); ++i) out.append(x[i]);
+  return out;
+}
+
 }
 
 class PyTrajOptProb {
 public:
   TrajOptProbPtr m_prob;
   PyTrajOptProb(TrajOptProbPtr prob) : m_prob(prob) {}
+  py::list GetDOFIndices() {
+    vector<int> inds = m_prob->GetRAD()->GetJointIndices();
+    return toPyList(inds);
+  }
 };
 
 Json::Value readJsonFile(const std::string& doc) {
@@ -135,6 +146,7 @@ PyCollisionChecker PyGetCollisionChecker(py::object py_env) {
 BOOST_PYTHON_MODULE(ctrajoptpy) {
 
   py::class_<PyTrajOptProb>("TrajOptProb", py::no_init)
+      .def("GetDOFIndices", &PyTrajOptProb::GetDOFIndices)
   ;
   py::def("SetInteractive", &SetInteractive);
   py::def("ConstructProblem", &PyConstructProblem);

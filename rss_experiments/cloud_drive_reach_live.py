@@ -7,8 +7,10 @@ from trajoptpy import convex_soup
 import atexit
 import brett2.ros_utils as ru
 from brett2.PR2 import PR2
+from brett2 import trajectories
 import basic_controls
 import rospy
+
 
 if rospy.get_name() == "/unnamed": rospy.init_node('cloud_drive_reach_live')
 
@@ -52,19 +54,24 @@ def drive_to_reach_request(robot, link_name, xyz_targ, quat_targ):
 
     return request    
 
+
 pr2 = PR2.create()
 env = pr2.env
 robot = pr2.robot
-    
 
-print "waiting for point cloud on /drop/points"
+marker = basic_controls.SixDOFControl( False , [1,0,1], [0,0,0,1])
+raw_input("now choose target pose with interactive markers. press enter when done")
+
+xyz_targ = marker.xyz
+wxyz_targ = np.r_[marker.xyzw[3], marker.xyzw[:3]].tolist()
+
+
+print "waiting for point cloud on /drop/points_self_filtered"
 import sensor_msgs.msg as sm
-pc = rospy.wait_for_message("/drop/points", sm.PointCloud2)
+pc = rospy.wait_for_message("/drop/points_self_filtered", sm.PointCloud2)
 print "ok"
-pc_tf = ru.transformPointCloud2(pc, pr2.tf_listener, "base_footprint", pc.header.frame_id)
-    
-
-xyz, bgr = ru.pc2xyzrgb(pc_tf)
+xyz = ru.pc2xyz(pc)
+xyz = ru.transform_points(xyz, pr2.tf_listener, "base_footprint", pc.header.frame_id)
 xyz = xyz.reshape(-1,3).astype('float32')
 cloud = cloudprocpy.PointCloudXYZ()
 cloud.from2dArray(xyz)
@@ -73,24 +80,25 @@ cloud = cloudprocpy.boxFilter(cloud, -1,5,-3,3,.1,2)
 #(xmin,ymin,zmin) = aabb.pos() - aabb.extents()
 #(xmax,ymax,zmax) = aabb.pos() + aabb.extents()
 #cloud = cloudprocpy.boxFilterNegative(cloud, xmin,xmax,ymin,ymax,zmin,zmax)
-cloud = cloudprocpy.downsampleCloud(cloud, .015)
+#cloud = cloudprocpy.downsampleCloud(cloud, .015)
 convex_soup.create_convex_soup(cloud, env)
 
 
 
 
-marker = basic_controls.SixDOFControl( False , [1,0,1], [0,0,0,1])
-raw_input("now choose target pose with interactive markers. press enter when done")
-
-xyz = marker.xyz
-wxyz = np.r_[marker.xyzw[3], marker.xyzw[:3]].tolist()
-
 
 ##################
 
-request = drive_to_reach_request(robot, "r_gripper_tool_frame", xyz, wxyz)
+request = drive_to_reach_request(robot, "r_gripper_tool_frame", xyz_targ, wxyz_targ)
 s = json.dumps(request)
 print "REQUEST:",s
 trajoptpy.SetInteractive(True);
 prob = trajoptpy.ConstructProblem(s, env)
 result = trajoptpy.OptimizeProblem(prob)
+
+from jds_utils.yes_or_no import yes_or_no
+yn = yes_or_no("execute traj?")
+if yn:
+    traj = result.GetTraj()
+    inds = prob.GetDOFIndices()
+    trajectories.follow_rave_trajectory(pr2, traj, inds, use_base=True)

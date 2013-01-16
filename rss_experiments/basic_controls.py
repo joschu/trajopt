@@ -118,9 +118,9 @@ def makeBox( msg ):
     marker = Marker()
 
     marker.type = Marker.CUBE
-    marker.scale.x = msg.scale * 0.45
-    marker.scale.y = msg.scale * 0.45
-    marker.scale.z = msg.scale * 0.45
+    marker.scale.x = msg.scale * 0.1
+    marker.scale.y = msg.scale * 0.1
+    marker.scale.z = msg.scale * 0.1
     marker.color.r = 0.5
     marker.color.g = 0.5
     marker.color.b = 0.5
@@ -157,7 +157,7 @@ class SixDOFControl(MarkerControl):
         int_marker.header.frame_id = "/base_link"
         int_marker.pose.position = gm.Point(*xyz_init)
         int_marker.pose.orientation = gm.Quaternion(*xyzw_init)
-        int_marker.scale = 1
+        int_marker.scale = .1
     
         int_marker.name = "simple_6dof"
         int_marker.description = "Simple 6-DOF Control"
@@ -251,7 +251,7 @@ def makeRandomDofMarker():
     int_marker.header.frame_id = "/base_link"
     int_marker.pose.position.y = -3.0 * marker_pos
     marker_pos += 1
-    int_marker.scale = 1
+    int_marker.scale = .1
 
     int_marker.name = "6dof_random_axes"
     int_marker.description = "6-DOF\n(Arbitrary Axes)"
@@ -278,7 +278,7 @@ def makeViewFacingMarker():
     int_marker.header.frame_id = "/base_link"
     int_marker.pose.position.y = -3.0 * marker_pos
     marker_pos += 1
-    int_marker.scale = 1
+    int_marker.scale = .1
 
     int_marker.name = "view_facing"
     int_marker.description = "View Facing 6-DOF"
@@ -310,7 +310,7 @@ def makeQuadrocopterMarker():
     int_marker.header.frame_id = "/base_link"
     int_marker.pose.position.y = -3.0 * marker_pos
     marker_pos += 1
-    int_marker.scale = 1
+    int_marker.scale = .1
 
     int_marker.name = "quadrocopter"
     int_marker.description = "Quadrocopter"
@@ -335,7 +335,7 @@ def makeChessPieceMarker():
     int_marker.header.frame_id = "/base_link"
     int_marker.pose.position.y = -3.0 * marker_pos
     marker_pos += 1
-    int_marker.scale = 1
+    int_marker.scale = .1
 
     int_marker.name = "chess_piece"
     int_marker.description = "Chess Piece\n(2D Move + Alignment)"
@@ -365,7 +365,7 @@ def makePanTiltMarker():
     int_marker.header.frame_id = "/base_link"
     int_marker.pose.position.y = -3.0 * marker_pos
     marker_pos += 1
-    int_marker.scale = 1
+    int_marker.scale = .1
 
     int_marker.name = "pan_tilt"
     int_marker.description = "Pan / Tilt"
@@ -398,7 +398,7 @@ def makeMenuMarker():
     int_marker.header.frame_id = "/base_link"
     int_marker.pose.position.y = -3.0 * marker_pos
     marker_pos += 1
-    int_marker.scale = 1
+    int_marker.scale = .1
 
     int_marker.name = "context_menu"
     int_marker.description = "Context Menu\n(Right Click)"
@@ -425,7 +425,7 @@ def makeMovingMarker():
     int_marker.header.frame_id = "/moving_frame"
     int_marker.pose.position.y = -3.0 * marker_pos
     marker_pos += 1
-    int_marker.scale = 1
+    int_marker.scale = .1
 
     int_marker.name = "moving"
     int_marker.description = "Marker Attached to a\nMoving Frame"
