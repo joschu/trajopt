@@ -188,6 +188,27 @@ void OptProb::addLinearConstr(const AffExpr& expr, ConstraintType type) {
   else model_->addIneqCnt(expr, "");
 }
 
+vector<double> OptProb::getCentralFeasiblePoint(const vector<double>& x) {
+  assert(x.size() == lower_bounds_.size());
+  DblVec center(x.size());
+  for (int i=0; i < x.size(); ++i) center[i] = (lower_bounds_[i] + upper_bounds_[i])/2;
+  return getClosestFeasiblePoint(center);
+}
+vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
+  assert(vars_.size() == x.size());
+  QuadExpr obj;
+  for (int i=0; i < x.size(); ++i) {
+    exprInc(obj, exprSquare(exprSub(AffExpr(vars_[i]),x[i])));
+  }
+  for (int i=0; i < x.size(); ++i) {
+    model_->setVarBounds(vars_[i], fmax(x[i], lower_bounds_[i]),
+                                  fmin(x[i], upper_bounds_[i]));    
+  }  
+  model_->setObjective(obj);
+  model_->optimize();
+  return model_->getVarValues(vars_);
+}
+
 
 
 }

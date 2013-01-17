@@ -61,6 +61,7 @@ public:
 
   virtual void update() = 0; // call after adding/deleting stuff
   virtual void setVarBounds(const Var& var, double lower, double upper)=0;
+  virtual void setVarBounds(const VarVector& vars, const vector<double>& lower, const vector<double>& upper);
   virtual double getVarValue(const Var& var) const=0;
   virtual vector<double> getVarValues(const VarVector& vars) const;
   virtual CvxOptStatus optimize()=0;

@@ -182,6 +182,8 @@ OptStatus BasicTrustRegionSQP::optimize() {
   vector<string> cnt_names = getCntNames(constraints);
 
   DblVec& x_ = results_.x; // just so I don't have to rewrite code
+  x_ = prob_->getClosestFeasiblePoint(x_);
+  
   assert(x_.size() == prob_->getVars().size());
   assert(prob_->getCosts().size() > 0 || constraints.size() > 0);
 

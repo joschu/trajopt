@@ -60,6 +60,9 @@ vector<double> Model::getVarValues(const VarVector& vars) const {
   return out;
 }
 
+void Model::setVarBounds(const VarVector& vars, const vector<double>& lower, const vector<double>& upper) {
+  for (int i=0; i < vars.size(); ++i) setVarBounds(vars[i], lower[i], upper[i]);
+}
 
 
 

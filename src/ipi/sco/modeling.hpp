@@ -149,6 +149,8 @@ public:
   void addEqConstr(ConstraintPtr);
   void addIneqConstr(ConstraintPtr);
   virtual ~OptProb() {}
+  vector<double> getCentralFeasiblePoint(const vector<double>& x);
+  vector<double> getClosestFeasiblePoint(const vector<double>& x);
 
   vector<ConstraintPtr> getConstraints() const;
   vector<CostPtr>& getCosts() {return costs_;}
