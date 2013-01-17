@@ -54,7 +54,7 @@ PointCloud<pcl::PointXYZ>::Ptr readPCDXYZ(const std::string& pcdfile) {
 ///////////////////////////
 
 #define INSTANTIATE_downsampleCloud(PointT)     \
-PointCloud<PointT>::Ptr downsampleCloud(PointCloud<PointT>::Ptr in, float vsize) {\
+PointCloud<PointT>::Ptr downsampleCloud(PointCloud<PointT>::ConstPtr in, float vsize) {\
   PointCloud<PointT>::Ptr out (new PointCloud<PointT>);    \
   pcl::VoxelGrid< PointT > sor;                 \
   sor.setInputCloud (in);\
@@ -69,13 +69,13 @@ INSTANTIATE_downsampleCloud(PointXYZRGB)
 //////////////////////////
 
 
-void findConvexHull(PointCloud<pcl::PointXYZ>::Ptr in, PointCloud<pcl::PointXYZ>& out, std::vector<Vertices>& polygons) {
+void findConvexHull(PointCloud<pcl::PointXYZ>::ConstPtr in, PointCloud<pcl::PointXYZ>& out, std::vector<Vertices>& polygons) {
   pcl::ConvexHull<PointXYZ> chull;
   chull.setInputCloud (in);
   chull.reconstruct (out, polygons);
 }
 
-PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::Ptr in) {
+PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::ConstPtr in) {
   pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointNormal>);
 
   pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
@@ -94,7 +94,7 @@ PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::Ptr i
 
 
 
-pcl::PolygonMesh::Ptr createMesh_gp3(PointCloud<pcl::PointNormal>::Ptr cloud_with_normals) {
+pcl::PolygonMesh::Ptr createMesh_gp3(PointCloud<pcl::PointNormal>::ConstPtr cloud_with_normals) {
   pcl::search::KdTree<pcl::PointNormal>::Ptr tree2(
       new pcl::search::KdTree<pcl::PointNormal>);
   tree2->setInputCloud(cloud_with_normals);
@@ -121,7 +121,7 @@ pcl::PolygonMesh::Ptr createMesh_gp3(PointCloud<pcl::PointNormal>::Ptr cloud_wit
 }
 
 
-pcl::PolygonMesh::Ptr createMesh_ofm(PointCloud<pcl::PointXYZ>::Ptr cloud) {
+pcl::PolygonMesh::Ptr createMesh_ofm(PointCloud<pcl::PointXYZ>::ConstPtr cloud) {
   pcl::OrganizedFastMesh<pcl::PointXYZ> ofm;
   ofm.setInputCloud(cloud);
   ofm.setTrianglePixelSize (3);
@@ -134,7 +134,7 @@ pcl::PolygonMesh::Ptr createMesh_ofm(PointCloud<pcl::PointXYZ>::Ptr cloud) {
 }
 
 
-void saveTrimeshCustomFmt(pcl::PolygonMesh::Ptr mesh, const std::string& fname) {
+void saveTrimeshCustomFmt(pcl::PolygonMesh::ConstPtr mesh, const std::string& fname) {
   ofstream o(fname.c_str());
   if (o.bad()) FILE_OPEN_ERROR(fname);
   PointCloud<PointXYZ>::Ptr cloud(new PointCloud<PointXYZ>());
@@ -150,7 +150,18 @@ void saveTrimeshCustomFmt(pcl::PolygonMesh::Ptr mesh, const std::string& fname) 
   }
 }
 
-PointCloud<pcl::PointXYZ>::Ptr boxFilter(PointCloud<pcl::PointXYZ>::Ptr in, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax) {
+PointCloud<pcl::PointXYZ>::Ptr toXYZ(PointCloud<pcl::PointNormal>::ConstPtr in) {
+  PointCloud<pcl::PointXYZ>::Ptr out(new PointCloud<PointXYZ>());
+  out->reserve(in->size());
+  out->width = in->width;
+  out->height = in->height;
+  BOOST_FOREACH(const PointNormal& pt, in->points) {
+    out->points.push_back(PointXYZ(pt.x, pt.y, pt.z));
+  }
+  return out;
+}
+
+PointCloud<pcl::PointXYZ>::Ptr boxFilter(PointCloud<pcl::PointXYZ>::ConstPtr in, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax) {
   PointCloud<pcl::PointXYZ>::Ptr out(new PointCloud<pcl::PointXYZ>());
   BOOST_FOREACH(const PointXYZ& pt, in->points) {
     if (pt.x >= xmin && pt.x <= xmax && pt.y >= ymin && pt.y <= ymax && pt.z >= zmin && pt.z <= zmax) {
@@ -161,7 +172,7 @@ PointCloud<pcl::PointXYZ>::Ptr boxFilter(PointCloud<pcl::PointXYZ>::Ptr in, floa
   return out;
 }
 
-PointCloud<pcl::PointXYZ>::Ptr boxFilterNegative(PointCloud<pcl::PointXYZ>::Ptr in, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax) {
+PointCloud<pcl::PointXYZ>::Ptr boxFilterNegative(PointCloud<pcl::PointXYZ>::ConstPtr in, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax) {
   PointCloud<pcl::PointXYZ>::Ptr out(new PointCloud<pcl::PointXYZ>());
   BOOST_FOREACH(const PointXYZ& pt, in->points) {
     if (!((pt.x >= xmin && pt.x <= xmax && pt.y >= ymin && pt.y <= ymax && pt.z >= zmin && pt.z <= zmax))) {
@@ -172,7 +183,7 @@ PointCloud<pcl::PointXYZ>::Ptr boxFilterNegative(PointCloud<pcl::PointXYZ>::Ptr 
   return out;
 }
 
-void saveMesh(pcl::PolygonMesh::Ptr mesh, const std::string& fname, MeshFormat fmt) {
+void saveMesh(pcl::PolygonMesh::ConstPtr mesh, const std::string& fname, MeshFormat fmt) {
 
 
   switch (fmt) {

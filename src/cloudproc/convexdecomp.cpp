@@ -26,6 +26,8 @@ typedef map<int, IntSet> Int2IntSet;
 //#define DEBUG_PRINT(...) printf(__VA_ARGS__)
 #define DEBUG_PRINT(...)
 
+namespace {
+
 struct SupInfo {
   IntVec inds;
   FloatVec sups;
@@ -40,6 +42,12 @@ vector<int> getNeighbors(const pcl::KdTreeFLANN<PointXYZ>& tree, int i_pt, int k
   int n_neighbs = tree.radiusSearch(i_pt, maxdist, neighb_inds, sqdists, k_neighbs);
   return vector<int>(neighb_inds.begin()+1, neighb_inds.begin() + n_neighbs);
 }
+
+
+}
+
+
+namespace cloudproc {
 
 void ConvexDecomp1(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud, float thresh,
     /*optional outputs: */ std::vector<IntVec>* indices, std::vector< IntVec >* hull_indices) {
@@ -257,5 +265,7 @@ void ConvexDecomp(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cloud, const E
     ++i_label;
   }
 
+
+}
 
 }

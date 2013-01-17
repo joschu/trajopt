@@ -8,6 +8,7 @@ add_definitions(${PCL_DEFINITIONS})
 
 add_library(cloudproc cloudproc.cpp  convexdecomp.cpp sphere_sampling.cpp
 # cloudgrabber.cpp
+convexdecomp2.cpp
 )
 target_link_libraries (cloudproc ${PCL_LIBRARIES})
 
