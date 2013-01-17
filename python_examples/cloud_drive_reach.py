@@ -3,7 +3,7 @@ import trajoptpy
 import openravepy as rave
 import numpy as np
 import json
-from point_clouds import convex_soup
+from trajoptpy import convex_soup
 import atexit
 
 def drive_to_reach_request(robot, link_name, xyz_targ, quat_targ):

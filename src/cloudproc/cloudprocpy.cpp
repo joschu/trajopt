@@ -32,7 +32,7 @@ py::object toInt32_1d(const int* data, size_t sz) {
   return out;
 }
 
-py::object PointCloudXYZ_to2dArray(PointCloudXYZ* cloud) {
+py::object PointCloudXYZ_to2dArray(const PointCloudXYZ* cloud) {
   py::object np_mod = py::import("numpy");
   py::object out = np_mod.attr("empty")(py::make_tuple(cloud->size(), 3), "float32");
   float* p = getPointer<float>(out);
@@ -87,6 +87,9 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
   py::def("boxFilter", &boxFilter);
   py::def("boxFilterNegative", &boxFilterNegative);
   py::def("convexDecomp", &PyConvexDecomp);
+
+
+  py::implicitly_convertible< boost::shared_ptr<PointCloudXYZ>, boost::shared_ptr<PointCloudXYZ const> >();
 
 #if 0
   py::class_<CloudGrabber, boost::shared_ptr<CloudGrabber> >("CloudGrabber")
