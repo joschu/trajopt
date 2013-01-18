@@ -5,7 +5,8 @@
 #include <cstdio>
 #include "expr_ops.hpp"
 #include "sco_common.hpp"
-
+#include "utils/stl_to_string.hpp"
+using namespace util;
 using namespace std;
 
 namespace ipi {
@@ -201,11 +202,14 @@ vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
     exprInc(obj, exprSquare(exprSub(AffExpr(vars_[i]),x[i])));
   }
   for (int i=0; i < x.size(); ++i) {
-    model_->setVarBounds(vars_[i], fmax(x[i], lower_bounds_[i]),
-                                  fmin(x[i], upper_bounds_[i]));    
+    model_->setVarBounds(vars_[i], lower_bounds_[i], upper_bounds_[i]);
   }  
   model_->setObjective(obj);
-  model_->optimize();
+  CvxOptStatus status = model_->optimize();
+  cout << Str(lower_bounds_) << endl;
+  cout << Str(upper_bounds_) << endl;
+  model_->writeToFile("/tmp/fail.lp");
+  assert(status == CVX_SOLVED);
   return model_->getVarValues(vars_);
 }
 
