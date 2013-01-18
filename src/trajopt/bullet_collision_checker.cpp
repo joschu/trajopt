@@ -101,10 +101,10 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom) {
     assert(mesh.indices.size() >= 3);
     btTriangleMesh ptrimesh;
 
-    for (size_t i = 0; i < mesh.indices.size(); i += 3)
-      ptrimesh.addTriangle(toBt(mesh.vertices[i]), toBt(mesh.vertices[i + 1]),
-          toBt(mesh.vertices[i + 2]));
-    // store the trimesh somewhere so it doesn't get deallocated by the smart pointer
+    for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+      ptrimesh.addTriangle(toBt(mesh.vertices[mesh.indices[i]]), toBt(mesh.vertices[mesh.indices[i + 1]]),
+              toBt(mesh.vertices[mesh.indices[i + 2]]));
+    }
 
     btConvexTriangleMeshShape convexTrimesh(&ptrimesh);
     convexTrimesh.setMargin(MARGIN); // margin: hull padding
