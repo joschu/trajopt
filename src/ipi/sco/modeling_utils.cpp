@@ -35,7 +35,6 @@ double CostFromNumDiff::value(const vector<double>& xin) {
 }
 
 ConvexObjectivePtr CostFromNumDiff::convex(const vector<double>& xin, Model* model) {
-  assert (xin.size() == vars_.size());
   VectorXd x = getVec(xin, vars_);
 
   ConvexObjectivePtr out(new ConvexObjective(model));
