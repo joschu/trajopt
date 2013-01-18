@@ -1,6 +1,7 @@
 #include <boost/python.hpp>
 #include "trajopt/collision_checker.hpp"
 #include "trajopt/problem_description.hpp"
+#include "osgviewer/osgviewer.hpp"
 #include <stdexcept>
 #include <boost/python/exception_translator.hpp>
 #include <boost/foreach.hpp>
@@ -111,6 +112,12 @@ py::list toPyList(const vector<Collision>& collisions) {
   return out;
 }
 
+class PyGraphHandle {
+  vector<GraphHandlePtr> m_handles;
+public:
+  PyGraphHandle(const vector<GraphHandlePtr>& handles) : m_handles(handles) {}
+};
+
 class PyCollisionChecker {
 public:
   py::object AllVsAll() {
@@ -128,6 +135,11 @@ public:
     m_cc->BodyVsAll(*cpp_kb, collisions);
     return toPyList(collisions);
   }
+  PyGraphHandle PlotCollisionGeometry() {
+    vector<GraphHandlePtr> handles;
+    m_cc->PlotCollisionGeometry(handles);
+    return PyGraphHandle(handles);
+  }
   PyCollisionChecker(CollisionCheckerPtr cc) : m_cc(cc) {}
 private:
   PyCollisionChecker();
@@ -135,12 +147,32 @@ private:
 };
 
 
-PyCollisionChecker PyGetCollisionChecker(py::object py_env) {
+EnvironmentBasePtr GetCppEnv(py::object py_env) {
   py::object openravepy = py::import("openravepy");
   int id = py::extract<int>(openravepy.attr("RaveGetEnvironmentId")(py_env));
   EnvironmentBasePtr cpp_env = RaveGetEnvironment(id);
-  CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*cpp_env);
+  return cpp_env;
+}
+
+PyCollisionChecker PyGetCollisionChecker(py::object py_env) {
+  CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*GetCppEnv(py_env));
   return PyCollisionChecker(cc);
+}
+
+class PyOSGViewer {
+  OSGViewerPtr m_viewer;
+public:
+    PyOSGViewer(OSGViewerPtr viewer) : m_viewer(viewer) {}
+  int Step() {
+    m_viewer->UpdateSceneData();
+    m_viewer->Draw();
+    return 0;
+  }
+};
+PyOSGViewer PyGetViewer(py::object py_env) {
+  EnvironmentBasePtr env = GetCppEnv(py_env);
+  ViewerBasePtr viewer = OSGViewer::GetOrCreate(env);
+  return PyOSGViewer(boost::dynamic_pointer_cast<OSGViewer>(viewer));
 }
 
 BOOST_PYTHON_MODULE(ctrajoptpy) {
@@ -162,10 +194,16 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
   py::class_<PyCollisionChecker>("CollisionChecker", py::no_init)
       .def("AllVsAll", &PyCollisionChecker::AllVsAll)
       .def("BodyVsAll", &PyCollisionChecker::BodyVsAll)
+      .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
       ;
   py::def("GetCollisionChecker", &PyGetCollisionChecker);
   py::class_<PyCollision>("Collision", py::no_init)
      .def("GetDistance", &PyCollision::GetDistance)
     ;
+  py::class_< PyGraphHandle >("GraphHandle", py::no_init);
 
+  py::class_< PyOSGViewer >("OSGViewer", py::no_init)
+     .def("Step", &PyOSGViewer::Step)
+    ;
+  py::def("GetViewer", &PyGetViewer);
 }

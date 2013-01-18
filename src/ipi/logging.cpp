@@ -71,7 +71,7 @@ void log_break(){
 level_t getenv_filter()
 {
   static const std::string lvl = getenv("IPI_LOG_THRESH")
-    ? getenv("IPI_LOG_THRESH") : "WARNING";
+    ? getenv("IPI_LOG_THRESH") : "INFO";
 
   if (lvl == "EMERG")    return EMERG;
   if (lvl == "ALERT")    return ALERT;

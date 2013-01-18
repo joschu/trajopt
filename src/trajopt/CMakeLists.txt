@@ -26,9 +26,10 @@ target_link_libraries(trajopt ${BULLET_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${B
 #set_target_properties(trajoptplugin PROPERTIES COMPILE_FLAGS "${OpenRAVE_CXX_FLAGS}" LINK_FLAGS "${OpenRAVE_LINK_FLAGS}")
 #target_link_libraries(trajoptplugin ${OpenRAVE_LIBRARIES} trajopt)
 
+add_subdirectory(test)
+
 include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
 boost_python_module(ctrajoptpy trajoptpy.cpp)
 target_link_libraries(ctrajoptpy trajopt ${Boost_SYSTEM_LIBRARY} )
 
-add_subdirectory(test)
 

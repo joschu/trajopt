@@ -22,3 +22,6 @@ openrave initfromtrimesh bug
 
 velocity cost uses timestamps
 velocity cost uses weights
+
+cloud_drive_reach.py--error
+can't start at non-origin position? (cloud drive reach)

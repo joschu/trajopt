@@ -37,8 +37,9 @@ void PlotCosts(OSGViewer& viewer, vector<CostPtr>& costs, vector<ConstraintPtr>&
 
 
 Optimizer::Callback PlotCallback(TrajOptProb& prob) {
-  OSGViewerPtr viewer = boost::dynamic_pointer_cast<OSGViewer>(prob.GetEnv()->GetViewer("osg"));
+  OSGViewerPtr viewer = OSGViewer::GetOrCreate(prob.GetEnv());
   if (!viewer) {
+    printf("creating a new viewer\n");
     viewer.reset(new OSGViewer(prob.GetEnv()));
     prob.GetEnv()->AddViewer(viewer);
   }

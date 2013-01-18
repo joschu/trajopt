@@ -9,32 +9,37 @@ def calc_hull(points):
     elif len(points) == 3: return points, np.array([[0,1,2]], dtype=int)
     elif len(points) == 4: return points, np.array(list(itertools.combinations(range(4),3)), dtype=int)
     else:
-        pertpts = points
         while True:
+            pertpts = points + np.random.randn(*points.shape)*.001
             try:
-                delaunay = scipy.spatial.Delaunay(points)
+                delaunay = scipy.spatial.Delaunay(pertpts)
                 return delaunay.points, delaunay.convex_hull
             except Exception:
+                return None,None
                 print "qhull error, adding noise"
-                pertpts = points + np.random.randn(*origpts.shape)*.001
 
 def create_convex_soup(cloud, env, name = "convexsoup"):
     xyz = cloud.to2dArray()
-    indss = cloudprocpy.convexDecomp(cloud, .02)
+    indss = cloudprocpy.convexDecomp(cloud, .03)
     geom_infos = []
     for (i,inds) in enumerate(indss):
-        if len(inds) < 10: continue # openrave is slow with a lot of geometries
+        if len(inds) < 100: continue # openrave is slow with a lot of geometries
 
         origpts = xyz[inds]
         hullpoints, hullinds = calc_hull(origpts)
+        if hullpoints is None: 
+            print "failed to get convex hull!"
+            continue
+            
             
         gi = rave.KinBody.GeometryInfo()
         gi._meshcollision = rave.TriMesh(hullpoints, hullinds)
         gi._type = rave.GeometryType.Trimesh
         gi._vAmbientColor = np.random.rand(3)/2
+        
         geom_infos.append(gi)
 
-        body = rave.RaveCreateKinBody(env,'')
-        body.SetName(name)
-        body.InitFromGeometries(geom_infos)
+    body = rave.RaveCreateKinBody(env,'')
+    body.SetName(name)
+    body.InitFromGeometries(geom_infos)
     env.Add(body)
