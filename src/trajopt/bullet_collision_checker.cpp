@@ -495,10 +495,21 @@ void BulletCollisionChecker::PlotCollisionGeometry(vector<OpenRAVE::GraphHandleP
   }
 }
 
+
+
+
+
+////////// Continuous collisions ////////////////////////
+
+namespace {
+
 vector<btTransform> rightMultiplyAll(const vector<btTransform>& xs, const btTransform& y) {
   vector<btTransform> out(xs.size());
   for (int i=0; i < xs.size(); ++i) out[i] = xs[i]*y;
   return out;
+}
+
+
 }
 
 void ContinuousCheckShape(btCollisionShape* shape, const vector<btTransform>& transforms,

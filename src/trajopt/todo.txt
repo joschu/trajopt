@@ -25,3 +25,9 @@ velocity cost uses weights
 
 cloud_drive_reach.py--error
 can't start at non-origin position? (cloud drive reach)
+
+two things don't work about drc example:
+1. go thru obstacle
+2. sometimes don't satisfy pose constraint
+
+ENABLED DOESNT WORK

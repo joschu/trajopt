@@ -116,6 +116,12 @@ class PyGraphHandle {
   vector<GraphHandlePtr> m_handles;
 public:
   PyGraphHandle(const vector<GraphHandlePtr>& handles) : m_handles(handles) {}
+  PyGraphHandle(GraphHandlePtr handle) : m_handles(1, handle) {}
+  void SetTransparency1(float alpha) {
+    BOOST_FOREACH(GraphHandlePtr& handle, m_handles) {
+      SetTransparency(handle, alpha);
+    }
+  }
 };
 
 class PyCollisionChecker {
@@ -153,6 +159,14 @@ EnvironmentBasePtr GetCppEnv(py::object py_env) {
   EnvironmentBasePtr cpp_env = RaveGetEnvironment(id);
   return cpp_env;
 }
+KinBodyPtr GetCppKinBody(py::object py_kb, EnvironmentBasePtr env) {
+  py::object openravepy = py::import("openravepy");
+  int id = py::extract<int>(py_kb.attr("GetEnvironmentId")());
+  return env->GetBodyFromEnvironmentId(id);
+}
+
+
+
 
 PyCollisionChecker PyGetCollisionChecker(py::object py_env) {
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*GetCppEnv(py_env));
@@ -167,6 +181,9 @@ public:
     m_viewer->UpdateSceneData();
     m_viewer->Draw();
     return 0;
+  }
+  PyGraphHandle PlotKinBody(py::object py_kb) {
+    return PyGraphHandle(m_viewer->PlotKinBody(GetCppKinBody(py_kb, m_viewer->GetEnv())));
   }
 };
 PyOSGViewer PyGetViewer(py::object py_env) {
@@ -200,10 +217,13 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
   py::class_<PyCollision>("Collision", py::no_init)
      .def("GetDistance", &PyCollision::GetDistance)
     ;
-  py::class_< PyGraphHandle >("GraphHandle", py::no_init);
+  py::class_< PyGraphHandle >("GraphHandle", py::no_init)
+     .def("SetTransparency", &PyGraphHandle::SetTransparency1)
+     ;
 
   py::class_< PyOSGViewer >("OSGViewer", py::no_init)
      .def("Step", &PyOSGViewer::Step)
+     .def("PlotKinBody", &PyOSGViewer::PlotKinBody)
     ;
   py::def("GetViewer", &PyGetViewer);
 }
