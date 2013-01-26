@@ -2,6 +2,7 @@
 #include <openrave-core.h>
 #include "trajopt/collision_checker.hpp"
 #include "utils/stl_to_string.hpp"
+#include "utils/eigen_conversions.hpp"
 using namespace OpenRAVE;
 using namespace std;
 using namespace trajopt;
@@ -71,7 +72,7 @@ TEST(collision_checker, box_distance) {
   }
 
   {
-    checker->SetContactDistance(.05);
+    checker->SetContactDistance(.1);
     box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
     box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
     vector<Collision> collisions;
@@ -91,6 +92,47 @@ TEST(collision_checker, box_distance) {
     EXPECT_EQ(collisions.size(), 1);
   }
 
+
+
+}
+
+TEST(continuous_collisions, boxes) {
+  RaveInitialize(false);
+  RaveSetDebugLevel(Level_Debug);
+  EnvironmentBasePtr env = RaveCreateEnvironment();
+  ASSERT_TRUE(env->Load(data_dir() + "/box.xml"));
+  ASSERT_TRUE(env->Load(data_dir() + "/boxbot.xml"));
+  KinBodyPtr box = env->GetKinBody("box");
+  RobotBasePtr boxbot = env->GetRobot("boxbot");
+
+  CollisionCheckerPtr checker = CreateCollisionChecker(env);
+  {
+    RobotAndDOFPtr rad(new RobotAndDOF(boxbot, IntVec(), DOF_X | DOF_Y, Vector()));
+    TrajArray traj(2,2);
+    traj << -1.9,0,  0,1.9;
+    vector<Collision> collisions;
+    checker->ContinuousCheckTrajectory(traj, *rad, collisions);
+    ASSERT_EQ(collisions.size(), 1);
+    Collision col = collisions[0];
+    EXPECT_NEAR(col.normalB2A.x, -1, 1e-4);
+    EXPECT_NEAR(col.normalB2A.y, 0, 1e-4);
+    EXPECT_NEAR(col.normalB2A.z, 0, 1e-4);
+  }
+  {
+    vector<Collision> tmpcoll;
+    checker->AllVsAll(tmpcoll);
+    RobotAndDOFPtr rad(new RobotAndDOF(boxbot, IntVec(), DOF_X | DOF_Y, Vector()));
+    TrajArray traj(2,2);
+    traj << -1.9,0,  0,1.9;
+    vector<Collision> collisions;
+    checker->CastVsAll(*rad, toDblVec(traj.row(0)), toDblVec(traj.row(1)), collisions);
+    ASSERT_EQ(collisions.size(), 1);
+    Collision col = collisions[0];
+    cout << col << endl;
+//    EXPECT_NEAR(col.normalB2A.x, , 1e-4);
+//    EXPECT_NEAR(col.normalB2A.y, 0, 1e-4);
+//    EXPECT_NEAR(col.normalB2A.z, 0, 1e-4);
+  }
 
 
 }

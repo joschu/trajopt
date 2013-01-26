@@ -31,3 +31,12 @@ two things don't work about drc example:
 2. sometimes don't satisfy pose constraint
 
 ENABLED DOESNT WORK
+
+problem in convexdecomp: we don't check to see if new point is ok in some direction
+
+Issue: now the collision checker will fail to find grazing self-collisions, since right now the continuous check
+doesn't look at robot-robot collisions.
+
+modifying bttransformaabb is a bad hack
+
+unittest for removal
