@@ -56,6 +56,7 @@ public:
 
 
   osg::ref_ptr<EventHandler> m_handler;
+  int m_plotDecimation;
   private:
 
   osg::ref_ptr<osg::Group> m_root;
