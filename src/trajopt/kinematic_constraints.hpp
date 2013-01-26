@@ -38,6 +38,11 @@ class CartPositionConstraint : public ConstraintFromNumDiffErr, public Plottable
 #endif
 
 
+class CartVelConstraint : public ConstraintFromNumDiff {
+public:
+  CartVelConstraint(const VarVector& step0vars, const VarVector& step1vars, RobotAndDOFPtr manip, KinBody::LinkPtr link, double distlimit);
+};
+
 
 class JointVelCost : public Cost {
 public:

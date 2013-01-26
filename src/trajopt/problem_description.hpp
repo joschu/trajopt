@@ -165,6 +165,14 @@ struct PoseCntInfo : public CntInfo {
   void hatch(TrajOptProb& prob);
   static CntInfoPtr create();
 };
+struct CartVelCntInfo : public CntInfo {
+  int first_step, last_step;
+  KinBody::LinkPtr link;
+  double distance_limit;
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
+  static CntInfoPtr create();
+};
 
 struct JointVelCostInfo : public CostInfo {
   /** cost = coeff * v^2

@@ -33,6 +33,8 @@ void RegisterMakers() {
 
   CntInfo::RegisterMaker("joint", &JointConstraintInfo::create);
   CntInfo::RegisterMaker("pose", &PoseCntInfo::create);
+  CntInfo::RegisterMaker("cart_vel", &CartVelCntInfo::create);
+
 
   gRegisteredMakers = true;
 }
@@ -366,7 +368,28 @@ void PoseCntInfo::hatch(TrajOptProb& prob) {
   prob.addConstr(ConstraintPtr(new CartPoseConstraint(prob.GetVarRow(timestep), toRaveTransform(wxyz, xyz), prob.GetRAD(), link, toMask(coeffs))));
 }
 
+void CartVelCntInfo::fromJson(const Value& v) {
+  FAIL_IF_FALSE(v.isMember("params"));
+  const Value& params = v["params"];
+  childFromJson(params, first_step, "first_step");
+  childFromJson(params, last_step, "last_step");
+  childFromJson(params, distance_limit,"distance_limit");
 
+  string linkstr;
+  childFromJson(params, linkstr, "link");
+  link = gPCI->rad->GetRobot()->GetLink(linkstr);
+  if (!link) {
+    throw MY_EXCEPTION( (boost::format("invalid link name: %s")%linkstr).str());
+  }
+}
+CntInfoPtr CartVelCntInfo::create() {
+  return CntInfoPtr(new CartVelCntInfo());
+}
+void CartVelCntInfo::hatch(TrajOptProb& prob) {
+  for (int iStep = first_step; iStep < last_step; ++iStep) {
+    prob.addConstr(ConstraintPtr(new CartVelConstraint(prob.GetVarRow(iStep), prob.GetVarRow(iStep+1), prob.GetRAD(), link, distance_limit)));
+  }
+}
 
 void JointVelCostInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));
