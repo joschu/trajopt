@@ -4,6 +4,7 @@ import numpy as np
 import json
 import trajoptpy.math_utils as mu
 import trajoptpy.kin_utils as ku
+import trajoptpy.make_kinbodies as mk
 
 def move_arm_to_grasp(xyz_targ, quat_targ, link_name, manip_name):
     
@@ -67,31 +68,6 @@ def move_arm_to_grasp(xyz_targ, quat_targ, link_name, manip_name):
     
     return request
 
-def create_cylinder(env, center, radius, height, name = "cylinder"):
-  xcenter, ycenter, zcenter = center
-  xml_str = """
-<Environment>
-  <KinBody name="%s">
-    <Body type="static">
-      <Geom type="cylinder">
-	<Translation> %f %f %f </Translation>
-        <RotationAxis>1 0 0 90</RotationAxis>
-	<radius> %f </radius>
-        <height> %f </height>
-      </Geom>
-    </Body>
-  </KinBody>
-
-</Environment>
-"""%( name,
-      xcenter, ycenter, zcenter,
-      radius, height )
-  
-  fname = "/tmp/%s.xml"%name
-  with open(fname,"w") as fh:
-    fh.write(xml_str)
-      
-  return env.Load(fname)
 
 
 if __name__ == "__main__":
@@ -118,7 +94,7 @@ if __name__ == "__main__":
     T_grasp = T_gripper.copy()
     T_grasp[:3,3]  += np.array([0,0.1,0])
     xyz_targ = T_grasp[:3,3]
-    success = create_cylinder(env, xyz_targ-np.array([.03,0,0]), .02, .5)
+    success = mk.create_cylinder(env, xyz_targ-np.array([.03,0,0]), .02, .5)
     quat_targ = rave.quatFromRotationMatrix(T_grasp[:3,:3])
 
     request = move_arm_to_grasp(xyz_targ, quat_targ, LINK_NAME, MANIP_NAME)

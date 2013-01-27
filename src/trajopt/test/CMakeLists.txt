@@ -12,3 +12,6 @@ add_test(planning-unit ${CMAKE_BINARY_DIR}/bin/planning-unit)
 
 add_executable(render-collision-test render_collision_test.cpp)
 target_link_libraries(render-collision-test trajopt ${Boost_SYSTEM_LIBRARY} osgviewer)
+
+add_executable(cast-cost-unit cast-cost-unit.cpp)
+target_link_libraries(cast-cost-unit trajopt gtest gtest_main ${Boost_SYSTEM_LIBRARY} ${Boost_PROGRAM_OPTIONS_LIBRARY} osgviewer)

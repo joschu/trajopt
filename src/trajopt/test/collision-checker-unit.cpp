@@ -27,8 +27,6 @@ void PrintCollisions(const vector<Collision>& collisions) {
 
 
 TEST(collision_checker, box_distance) {
-  RaveInitialize(false);
-  RaveSetDebugLevel(Level_Debug);
   EnvironmentBasePtr env = RaveCreateEnvironment();
   ASSERT_TRUE(env->Load(data_dir() + "/box.xml"));
   KinBodyPtr box0 = env->GetKinBody("box");
@@ -97,8 +95,6 @@ TEST(collision_checker, box_distance) {
 }
 
 TEST(continuous_collisions, boxes) {
-  RaveInitialize(false);
-  RaveSetDebugLevel(Level_Debug);
   EnvironmentBasePtr env = RaveCreateEnvironment();
   ASSERT_TRUE(env->Load(data_dir() + "/box.xml"));
   ASSERT_TRUE(env->Load(data_dir() + "/boxbot.xml"));
@@ -119,13 +115,11 @@ TEST(continuous_collisions, boxes) {
     EXPECT_NEAR(col.normalB2A.z, 0, 1e-4);
   }
   {
-    vector<Collision> tmpcoll;
-    checker->AllVsAll(tmpcoll);
     RobotAndDOFPtr rad(new RobotAndDOF(boxbot, IntVec(), DOF_X | DOF_Y, Vector()));
     TrajArray traj(2,2);
     traj << -1.9,0,  0,1.9;
     vector<Collision> collisions;
-    checker->CastVsAll(*rad, toDblVec(traj.row(0)), toDblVec(traj.row(1)), collisions);
+    checker->CastVsAll(*rad, rad->GetRobot()->GetLinks(), toDblVec(traj.row(0)), toDblVec(traj.row(1)), collisions);
     ASSERT_EQ(collisions.size(), 1);
     Collision col = collisions[0];
     cout << col << endl;
@@ -140,5 +134,8 @@ TEST(continuous_collisions, boxes) {
 int main(int argc, char** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
+  RaveInitialize(false);
+  RaveSetDebugLevel(Level_Debug);
+
   return RUN_ALL_TESTS();
 }

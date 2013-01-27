@@ -189,6 +189,13 @@ struct CollisionCostInfo : public CostInfo {
   void hatch(TrajOptProb& prob);
   static CostInfoPtr create();
 };
+struct ContinuousCollisionCostInfo : public CostInfo {
+  int first_step, last_step;
+  DblVec coeffs, dist_pen;
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
+  static CostInfoPtr create();
+};
 
 
 struct JointConstraintInfo : public CntInfo {

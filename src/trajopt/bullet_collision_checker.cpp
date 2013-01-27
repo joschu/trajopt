@@ -8,6 +8,7 @@
 #include <vector>
 #include <iostream>
 #include <LinearMath/btConvexHull.h>
+#include <utils/stl_to_string.hpp>
 using namespace util;
 using namespace std;
 using namespace trajopt;
@@ -269,17 +270,19 @@ struct CollisionCollector : public btCollisionWorld::ContactResultCallback {
       const btCollisionObjectWrapper* colObj1Wrap,int partId1,int index1) {
     const KinBody::Link* linkA = getLink(colObj0Wrap->getCollisionObject());
     const KinBody::Link* linkB = getLink(colObj1Wrap->getCollisionObject());
-//    if ( m_ignorer.CanCollide(*linkA, *linkB)) {
+//    if ( m_ignorer.CanCollide(*linkA, *linkB)) { we're checking in needscollision
     if (true) {
       m_collisions.push_back(Collision(linkA, linkB, toOR(cp.m_positionWorldOnA), toOR(cp.m_positionWorldOnB),
           toOR(cp.m_normalWorldOnB), cp.m_distance1));
       RAVELOG_DEBUG("collide %s-%s\n", linkA->GetName().c_str(), linkB->GetName().c_str());
     }
+
     return 0;
   }
   bool needsCollision(btBroadphaseProxy* proxy0) const {
     bool maskcollides = (proxy0->m_collisionFilterGroup & m_collisionFilterMask) != 0;
     maskcollides = maskcollides && (m_collisionFilterGroup & proxy0->m_collisionFilterMask);
+    KinBody::Link* otherlink = static_cast<CollisionObjectWrapper*>(proxy0->m_clientObject)->m_link;
     if (maskcollides) {
       KinBody::Link* otherlink = static_cast<CollisionObjectWrapper*>(proxy0->m_clientObject)->m_link;
       bool out = m_ignorer.CanCollide(m_link, *otherlink);
@@ -302,13 +305,14 @@ public:
   BulletCollisionChecker(OR::EnvironmentBaseConstPtr env);
   ~BulletCollisionChecker();
   void SetContactDistance(float distance);
+  double GetContactDistance() {return m_contactDistance;}
   void AllVsAll(vector<Collision>& collisions);
   virtual void LinksVsAll(const vector<KinBody::LinkPtr>& links, vector<Collision>& collisions);
   virtual void LinkVsAll(const KinBody::Link& link, vector<Collision>& collisions);
   virtual void UpdateBulletFromRave();
   virtual void PlotCollisionGeometry(vector<OpenRAVE::GraphHandlePtr>& handles);
   virtual void ContinuousCheckTrajectory(const TrajArray& traj, RobotAndDOF& rad, vector<Collision>&);
-  virtual void CastVsAll(RobotAndDOF& rad, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions);
+  virtual void CastVsAll(RobotAndDOF& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions);
 
   CollisionObjectWrapper* GetCow(const KinBody::Link* link) {
     Link2Cow::iterator it = m_link2cow.find(link);
@@ -413,20 +417,19 @@ void BulletCollisionChecker::LinkVsAll(const KinBody::Link& link, vector<Collisi
   m_world->contactTest(cow, cc);
 }
 
-
+class KinBodyCollisionData;
+typedef boost::shared_ptr<KinBodyCollisionData> CDPtr;
 struct KinBodyCollisionData : public OpenRAVE::UserData {
   OpenRAVE::KinBodyWeakPtr body;
   std::vector<KinBody::Link*> links;
   std::vector<COWPtr> cows;
   KinBodyCollisionData(OR::KinBodyPtr _body) : body(_body) {}
 };
-typedef boost::shared_ptr<KinBodyCollisionData> CDPtr;
 
 void BulletCollisionChecker::AddKinBody(const OR::KinBodyPtr& body) {
   CDPtr cd(new KinBodyCollisionData(body));
 
   int filterGroup = body->IsRobot() ? RobotFilter : KinBodyFilter;
-
   const vector<OR::KinBody::LinkPtr> links = body->GetLinks();
 
   body->SetUserData("bt", cd);
@@ -446,7 +449,6 @@ void BulletCollisionChecker::AddKinBody(const OR::KinBodyPtr& body) {
       }
     }
   }
-  body->SetUserData("bt", cd);
 
 //  const std::set<int>& pairhashes = body->GetAdjacentLinks();
 //  BOOST_FOREACH(const int& p, pairhashes) {
@@ -558,6 +560,8 @@ void ContinuousCheckShape(btCollisionShape* shape, const vector<btTransform>& tr
 
 void BulletCollisionChecker::ContinuousCheckTrajectory(const TrajArray& traj, RobotAndDOF& rad, vector<Collision>& collisions) {
   UpdateBulletFromRave();
+  m_world->updateAabbs();
+
   // first calculate transforms of all the relevant links at each step
   vector<KinBody::LinkPtr> links;
   vector<int> link_inds;
@@ -708,7 +712,10 @@ public:
   }
 
   virtual void    setLocalScaling(const btVector3& scaling) {}
-  virtual const btVector3& getLocalScaling() const {return btVector3(1,1,1);}
+  virtual const btVector3& getLocalScaling() const {
+    static btVector3 out(1,1,1);
+    return out;
+  }
 
   virtual void    setMargin(btScalar margin) {}
   virtual btScalar    getMargin() const {return 0;}
@@ -735,6 +742,7 @@ void CheckShapeCast(btCollisionShape* shape, const btTransform& tf0, const btTra
     obj->setWorldTransform(tf0);
     CollisionCollector cc(collisions, *ignorer, *link);
     cc.m_collisionFilterMask = KinBodyFilter;
+    cc.m_collisionFilterGroup = RobotFilter;
     world->contactTest(obj, cc);
     delete obj;
     delete shape;
@@ -750,28 +758,28 @@ void CheckShapeCast(btCollisionShape* shape, const btTransform& tf0, const btTra
 
 }
 
-
-
-void BulletCollisionChecker::CastVsAll(RobotAndDOF& rad, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions) {
-  {
-    OR::RobotBase::RobotStateSaver saver = rad.Save();
-    rad.SetDOFValues(startjoints);
-    boost::shared_ptr<KinBodyCollisionData> d = boost::dynamic_pointer_cast<KinBodyCollisionData>(rad.GetRobot()->GetUserData("bt"));
-    if (!d) throw runtime_error("robot hasn't been added to bullet world yet");
-    int nlinks = d->links.size();
-    vector<btTransform> tbefore(nlinks), tafter(nlinks);
-    for (int i=0; i < nlinks; ++i) {
-      tbefore[i] = toBt(d->links[i]->GetTransform());
-    }
-    rad.SetDOFValues(endjoints);
-    for (int i=0; i < nlinks; ++i) {
-      tafter[i] = toBt(d->links[i]->GetTransform());
-    }
-    rad.SetDOFValues(startjoints);
-    for (int i=0; i < nlinks; ++i) {
-      CheckShapeCast(d->cows[i]->getCollisionShape(), tbefore[i], tafter[i], d->links[i], m_world, &m_ignorer, collisions);
-    }
+void BulletCollisionChecker::CastVsAll(RobotAndDOF& rad, const vector<KinBody::LinkPtr>& links,
+    const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions) {
+  OR::RobotBase::RobotStateSaver saver = rad.Save();
+  rad.SetDOFValues(startjoints);
+  int nlinks = links.size();
+  vector<btTransform> tbefore(nlinks), tafter(nlinks);
+  for (int i=0; i < nlinks; ++i) {
+    tbefore[i] = toBt(links[i]->GetTransform());
   }
+  rad.SetDOFValues(endjoints);
+  for (int i=0; i < nlinks; ++i) {
+    tafter[i] = toBt(links[i]->GetTransform());
+  }
+  rad.SetDOFValues(startjoints);
+  UpdateBulletFromRave();
+  m_world->updateAabbs();
+
+  for (int i=0; i < nlinks; ++i) {
+    assert(m_link2cow[links[i].get()] != NULL);
+    CheckShapeCast(m_link2cow[links[i].get()]->getCollisionShape(), tbefore[i], tafter[i], links[i].get(), m_world, &m_ignorer, collisions);
+  }
+  RAVELOG_DEBUG("CastVsAll checked %i links and found %i collisions\n", links.size(), collisions.size());
 }
 
 }
