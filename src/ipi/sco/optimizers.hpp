@@ -71,7 +71,7 @@ protected:
 
 class BasicTrustRegionSQP : public Optimizer {
   /*
-   * Iterates between convexifying objectives and constraints and then solving convex subproblem
+   * Alternates between convexifying objectives and constraints and then solving convex subproblem
    * Uses a merit function to decide whether or not to accept the step
    * merit function = objective + merit_err_coeff * | constraint_error |
    * Note: sometimes the convexified objectives and constraints lead to an infeasible subproblem
@@ -79,15 +79,21 @@ class BasicTrustRegionSQP : public Optimizer {
    * (todo: implement penalty-based sqp that gracefully handles infeasible constraints)
    */
 public:
-  double merit_error_coeff_,
-         improve_ratio_threshold_, // minimum ratio true_improve/approx_improve to accept step
+  double improve_ratio_threshold_, // minimum ratio true_improve/approx_improve to accept step
          min_trust_box_size_, // if trust region gets any smaller, exit and report convergence
          min_approx_improve_, // if model improves less than this, exit and report convergence
-         min_approx_improve_frac_,
+         min_approx_improve_frac_, // if model improves less than this, exit and report convergence
          max_iter_,
-         trust_shrink_ratio_,
-         trust_expand_ratio_;
-  double trust_box_size_; // current size of trust region (component-wise)
+         trust_shrink_ratio_, // if improvement is less than improve_ratio_threshold, shrink trust region by this ratio
+         trust_expand_ratio_, // see above
+         cnt_tolerance_, // after convergence of penalty subproblem, if constraint violation is less than this, we're done
+         max_merit_coeff_increases_, // number of times that we jack up penalty coefficient
+         merit_coeff_increase_ratio_, // ratio that we increate coeff each time
+         max_time_ // not yet implemented
+         ;
+  double merit_error_coeff_, // initial penalty coefficient
+         trust_box_size_ // current size of trust region (component-wise)
+         ;
 
   BasicTrustRegionSQP();
   BasicTrustRegionSQP(OptProbPtr prob);

@@ -25,8 +25,8 @@ void ConvexObjective::addHinge(const AffExpr& affexpr, double coeff) {
   exprInc(quad_, hinge_cost);
 }
 void ConvexObjective::addAbs(const AffExpr& affexpr, double coeff) {
-  Var neg = model_->addVar("abs", 0, INFINITY);
-  Var pos = model_->addVar("abs", 0, INFINITY);
+  Var neg = model_->addVar("neg", 0, INFINITY);
+  Var pos = model_->addVar("pos", 0, INFINITY);
   vars_.push_back(neg);
   vars_.push_back(pos);
   AffExpr neg_plus_pos;
@@ -194,6 +194,7 @@ vector<double> OptProb::getCentralFeasiblePoint(const vector<double>& x) {
   return getClosestFeasiblePoint(center);
 }
 vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
+  IPI_LOG_DEBUG("getClosestFeasiblePoint");
   assert(vars_.size() == x.size());
   QuadExpr obj;
   for (int i=0; i < x.size(); ++i) {

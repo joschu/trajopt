@@ -178,7 +178,7 @@ CvxOptStatus GurobiModel::optimize(){
   GRBgetintattr(model, GRB_INT_ATTR_STATUS, &status);
   if (status == GRB_OPTIMAL) {
     double objval; GRBgetdblattr(model, GRB_DBL_ATTR_OBJVAL, &objval);
-    IPI_LOG_INFO("solver objective value: %.3e", objval);
+    IPI_LOG_DEBUG("solver objective value: %.3e", objval);
     return CVX_SOLVED;
   }
   else if (status == GRB_INFEASIBLE) return CVX_INFEASIBLE;

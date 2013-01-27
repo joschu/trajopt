@@ -121,7 +121,7 @@ vector<ConvexObjectivePtr> cntsToCosts(const vector<ConvexConstraintsPtr>& cnts,
       obj->addAbs(aff, err_coeff);
     }
     BOOST_FOREACH(const AffExpr& aff, cnt->ineqs_) {
-      obj->addAbs(aff, err_coeff);
+      obj->addHinge(aff, err_coeff);
     }
     out.push_back(obj);
   }
@@ -146,7 +146,7 @@ BasicTrustRegionSQP::BasicTrustRegionSQP(OptProbPtr prob) {
 }
 
 void BasicTrustRegionSQP::initParameters() {
-  merit_error_coeff_ = 100;
+
   improve_ratio_threshold_ = .25;
   min_trust_box_size_ = 1e-4;
   min_approx_improve_= 1e-4;
@@ -154,7 +154,15 @@ void BasicTrustRegionSQP::initParameters() {
   max_iter_ = 50;
   trust_shrink_ratio_=.1;
   trust_expand_ratio_ = 1.5;
+  cnt_tolerance_ = 1e-4;
+  max_merit_coeff_increases_ = 5;
+  merit_coeff_increase_ratio_ = 3;
+  max_time_ = INFINITY;
+
+  merit_error_coeff_ = 10;
   trust_box_size_ = 1e-1;
+
+
 }
 
 void BasicTrustRegionSQP::setProblem(OptProbPtr prob) {
@@ -175,6 +183,26 @@ void BasicTrustRegionSQP::setTrustBoxConstraints(const DblVec& x) {
   }
 }
 
+struct MultiCritFilter {
+  /**
+   * Checks if you're making an improvement on a multidimensional objective
+   * Given a set of past error vectors, the improvement is defined as
+   * min_{olderrvec in past_err_vecs} | olderrvec - errvec |^+
+   */
+  vector<DblVec> errvecs;
+  double improvement(const DblVec& errvec) {
+    double leastImprovement=INFINITY;
+    BOOST_FOREACH(const DblVec& olderrvec, errvecs) {
+      double improvement=0;
+      for (int i=0; i < errvec.size(); ++i) improvement += pospart(olderrvec[i] - errvec[i]);
+      leastImprovement = fmin(leastImprovement, improvement);
+    }
+    return leastImprovement;
+  }
+  void insert(const DblVec& x) {errvecs.push_back(x);}
+  bool empty() {return errvecs.size() > 0;}
+};
+
 OptStatus BasicTrustRegionSQP::optimize() {
 
   vector<string> cost_names = getCostNames(prob_->getCosts());
@@ -183,170 +211,156 @@ OptStatus BasicTrustRegionSQP::optimize() {
 
   DblVec& x_ = results_.x; // just so I don't have to rewrite code
   x_ = prob_->getClosestFeasiblePoint(x_);
-  
+
   assert(x_.size() == prob_->getVars().size());
   assert(prob_->getCosts().size() > 0 || constraints.size() > 0);
 
   OptStatus retval = INVALID;
 
+  for (int merit_increases=0; merit_increases < max_merit_coeff_increases_; ++merit_increases) { /* merit adjustment loop */
+    for (int iter=1; ; ++iter) { /* sqp loop */
+      ++iter;
+      callCallbacks(x_);
 
-  for (size_t iter = 1; ; ++iter) {
-    callCallbacks(x_);
+      IPI_LOG_INFO("current iterate: %s", Str(x_));
+      IPI_LOG_INFO("iteration %i", iter);
 
+      // speed optimization: if you just evaluated the cost when doing the line search, use that
+      if (results_.cost_vals.empty()) { //only happens on the first iteration
+        results_.cnt_viols = evaluateConstraintViols(constraints, x_);
+        results_.cost_vals = evaluateCosts(prob_->getCosts(), x_);
+        assert(results_.n_func_evals == 0);
+        ++results_.n_func_evals;
+      }
 
-    IPI_LOG_DEBUG("current iterate: %s", Str(x_));
-    IPI_LOG_INFO("iteration %i", iter);
-
-    // speed optimization: if you just evaluated the cost when doing the line search, use that
-    if (results_.cost_vals.empty()) { //only happens on the first iteration
-      results_.cnt_viols = evaluateConstraintViols(constraints,  x_);
-      results_.cost_vals = evaluateCosts(prob_->getCosts(), x_);
-      assert(results_.n_func_evals == 0);
-      ++results_.n_func_evals;
+      vector<ConvexObjectivePtr> cost_models = convexifyCosts(prob_->getCosts(),x_, model_.get());
+      vector<ConvexConstraintsPtr> cnt_models = convexifyConstraints(constraints, x_, model_.get());
+      vector<ConvexObjectivePtr> cnt_cost_models = cntsToCosts(cnt_models, merit_error_coeff_, model_.get());
+      model_->update();
+      BOOST_FOREACH(ConvexObjectivePtr& cost, cost_models)cost->addConstraintsToModel();
+      BOOST_FOREACH(ConvexObjectivePtr& cost, cnt_cost_models)cost->addConstraintsToModel();
+      model_->update();
+      QuadExpr objective;
+      BOOST_FOREACH(ConvexObjectivePtr& co, cost_models)exprInc(objective, co->quad_);
+      BOOST_FOREACH(ConvexObjectivePtr& co, cnt_cost_models){
+      exprInc(objective, co->quad_);
     }
-
-
-    vector<ConvexObjectivePtr> cost_models = convexifyCosts(prob_->getCosts(), x_, model_.get());
-    vector<ConvexConstraintsPtr> cnt_models = convexifyConstraints(constraints, x_, model_.get());
-    model_->update();
-    BOOST_FOREACH(ConvexObjectivePtr& cost, cost_models) cost->addConstraintsToModel();
-    BOOST_FOREACH(ConvexConstraintsPtr& cnt, cnt_models) cnt->addConstraintsToModel();
-    model_->update();
-    QuadExpr objective;
-    BOOST_FOREACH(ConvexObjectivePtr& co, cost_models) exprInc(objective, co->quad_);
 //    objective = cleanupExpr(objective);
-    model_->setObjective(objective);
+      model_->setObjective(objective);
 
-    if (logging::filter() >= IPI_LEVEL_DEBUG) {
+//    if (logging::filter() >= IPI_LEVEL_DEBUG) {
 //      DblVec model_cost_vals;
 //      BOOST_FOREACH(ConvexObjectivePtr& cost, cost_models) {
 //        model_cost_vals.push_back(cost->value(x));
 //      }
 //      IPI_LOG_DEBUG("model costs %s should equalcosts  %s", printer(model_cost_vals), printer(cost_vals));
-    }
+//    }
 
-    bool solving_slack_problem = false;
-    vector<ConvexObjectivePtr> cnt_cost_models;
-    while (trust_box_size_ >= min_trust_box_size_) {
+      while (trust_box_size_ >= min_trust_box_size_) {
 
-      setTrustBoxConstraints(x_);
-
-      CvxOptStatus status = model_->optimize();
-      ++results_.n_qp_solves;
-
-      if (status != CVX_SOLVED) {
-        if (solving_slack_problem) {
+        setTrustBoxConstraints(x_);
+        CvxOptStatus status = model_->optimize();
+        ++results_.n_qp_solves;
+        if (status != CVX_SOLVED) {
+          IPI_LOG_ERR("convex solver failed! set IPI_LOG_LEVEL=DEBUG to see solver output. saving model to /tmp/fail.lp");
           model_->writeToFile("/tmp/fail.lp");
-          IPI_ABORT("inequalities turned into penalties but problem is still infeasible. written to /tmp/fail.lp");
+          retval = OPT_FAILED;
+          goto cleanup;
         }
-        IPI_LOG_WARNING("problem was infeasible. optimizing relaxed problem");
-//        model_->writeToFile("/tmp/infeas.lp");
-//        IPI_LOG_WARNING("infeasible model written to /tmp/infeas.lp");
+        DblVec model_var_vals = model_->getVarValues(model_->getVars());
 
-        BOOST_FOREACH(ConvexConstraintsPtr& cnt, cnt_models) cnt->removeFromModel();
-        cnt_cost_models = cntsToCosts(cnt_models, merit_error_coeff_, model_.get());
-        model_->update();
-        BOOST_FOREACH(ConvexObjectivePtr& cost, cnt_cost_models) cost->addConstraintsToModel();
-        model_->update();
-        QuadExpr cnt_objective = objective; // cnt_objective = orig objective + constraint penalties
-        BOOST_FOREACH(ConvexObjectivePtr& co, cnt_cost_models) exprInc(cnt_objective, co->quad_);
-        model_->setObjective(cnt_objective);
-        model_->update();
-//        IPI_LOG_INFO("relaxed model written to /tmp/relaxed.lp");
-//        model_->writeToFile("/tmp/relaxed.lp");
-        solving_slack_problem = true;
-        continue;
+        DblVec model_cost_vals = evaluateModelCosts(cost_models, model_var_vals);
+        DblVec model_cnt_viols = evaluateModelCntViols(cnt_models, model_var_vals);
+
+        // the n variables of the OptProb happen to be the first n variables in the Model
+        DblVec new_x(model_var_vals.begin(), model_var_vals.begin() + x_.size());
+
+        if (logging::filter() >= IPI_LEVEL_DEBUG) {
+          DblVec model_cnt_viols2 = evaluateModelCosts(cnt_cost_models, model_var_vals);
+          IPI_LOG_DEBUG("SHOULD BE THE SAME: %.2f*%s ?= %s", merit_error_coeff_, Str(model_cnt_viols), Str(model_cnt_viols2));
+        }
+
+        DblVec new_cost_vals = evaluateCosts(prob_->getCosts(), new_x);
+        DblVec new_cnt_viols = evaluateConstraintViols(constraints, new_x);
+        ++results_.n_func_evals;
+
+        double old_merit = vecSum(results_.cost_vals) + merit_error_coeff_ * vecSum(results_.cnt_viols);
+        double model_merit = vecSum(model_cost_vals) + merit_error_coeff_ * vecSum(model_cnt_viols);
+        double new_merit = vecSum(new_cost_vals) + merit_error_coeff_ * vecSum(new_cnt_viols);
+        double approx_merit_improve = old_merit - model_merit;
+        double exact_merit_improve = old_merit - new_merit;
+        double merit_improve_ratio = exact_merit_improve / approx_merit_improve;
+
+        if (logging::filter() >= IPI_LEVEL_INFO) {
+          IPI_LOG_INFO("");
+          printCostInfo(results_.cost_vals, model_cost_vals, new_cost_vals,
+                        results_.cnt_viols, model_cnt_viols, new_cnt_viols, cost_names,
+                        cnt_names, merit_error_coeff_);
+          printf("%15s | %10.3e | %10.3e | %10.3e | %10.3e\n", "TOTAL", old_merit, approx_merit_improve, exact_merit_improve, merit_improve_ratio);
+        }
+
+        if (approx_merit_improve < -1e-4) {
+          IPI_LOG_ERR("approximate merit function got worse (%.3e). (convexification is probably wrong to zeroth order)", approx_merit_improve);
+        }
+        if (approx_merit_improve < min_approx_improve_) {
+          IPI_LOG_INFO("converged because improvement was small (%.3e < %.3e)", approx_merit_improve, min_approx_improve_);
+          retval = OPT_CONVERGED;
+          goto penaltyadjustment;
+        }
+        if (approx_merit_improve / old_merit < min_approx_improve_frac_) {
+          IPI_LOG_INFO(
+              "converged because improvement ratio was small (%.3e < %.3e)",
+              approx_merit_improve/old_merit, min_approx_improve_frac_);
+          retval = OPT_CONVERGED;
+          goto penaltyadjustment;
+        } 
+        else if (exact_merit_improve < 0 || merit_improve_ratio < improve_ratio_threshold_) {
+          adjustTrustRegion(trust_shrink_ratio_);
+          IPI_LOG_INFO("shrunk trust region. new box size: %.4f",
+              trust_box_size_);
+        } else {
+          x_ = new_x;
+          results_.cost_vals = new_cost_vals;
+          results_.cnt_viols = new_cnt_viols;
+          adjustTrustRegion(trust_expand_ratio_);
+          IPI_LOG_INFO("expanded trust region. new box size: %.4f",trust_box_size_);
+          break;
+        }
       }
 
-      else if (status == CVX_FAILED) {
-        IPI_LOG_ERR("convex solver failed! aborting. saving model to /tmp/fail.lp");
-        model_->writeToFile("/tmp/fail.lp");
-        retval = OPT_FAILED;
-        goto cleanup;
-      }
-      DblVec model_var_vals = model_->getVarValues(model_->getVars());
-
-      DblVec model_cost_vals = evaluateModelCosts(cost_models, model_var_vals);
-      DblVec model_cnt_viols = evaluateModelCntViols(cnt_models, model_var_vals);
-
-      // the n variables of the OptProb happen to be the first n variables in the Model
-      DblVec new_x(model_var_vals.begin(), model_var_vals.begin() + x_.size());
-
-      if (solving_slack_problem && logging::filter() >= IPI_LEVEL_DEBUG) {
-        DblVec model_cnt_viols2 = evaluateModelCosts(cnt_cost_models, model_var_vals);
-        IPI_LOG_DEBUG("SHOULD BE THE SAME: %.2f*%s ?= %s", merit_error_coeff_, Str(model_cnt_viols), Str(model_cnt_viols2));
-      }
-
-      DblVec new_cost_vals = evaluateCosts(prob_->getCosts(), new_x);
-      DblVec new_cnt_viols = evaluateConstraintViols(constraints, new_x);
-      ++results_.n_func_evals;
-
-      double old_merit = vecSum(results_.cost_vals) + merit_error_coeff_ * vecSum(results_.cnt_viols);
-      double model_merit = vecSum(model_cost_vals) + merit_error_coeff_ * vecSum(model_cnt_viols);
-      double new_merit = vecSum(new_cost_vals) + merit_error_coeff_ * vecSum(new_cnt_viols);
-      double approx_merit_improve = old_merit - model_merit;
-      double exact_merit_improve = old_merit - new_merit;
-      double merit_improve_ratio = exact_merit_improve / approx_merit_improve;
-
-      if (logging::filter() >= IPI_LEVEL_INFO) {
-        IPI_LOG_INFO("");
-        printCostInfo(results_.cost_vals, model_cost_vals, new_cost_vals, results_.cnt_viols, model_cnt_viols, new_cnt_viols, cost_names, cnt_names, merit_error_coeff_);
-        printf("%15s | %10.3e | %10.3e | %10.3e | %10.3e\n", "TOTAL", old_merit, approx_merit_improve, exact_merit_improve, merit_improve_ratio);
-      }
-
-
-      if (approx_merit_improve < -1e-6) {
-        IPI_LOG_ERR("approximate merit function got worse. (convexification is probably wrong to zeroth order)");
-      }
-      if (approx_merit_improve < min_approx_improve_) {
-        IPI_LOG_INFO("converged because improvement was small (%.3e < %.3e)", approx_merit_improve, min_approx_improve_);
+      if (trust_box_size_ < min_trust_box_size_) {
+        IPI_LOG_INFO("converged because trust region is tiny");
         retval = OPT_CONVERGED;
+        goto penaltyadjustment;
+      } else if (iter >= max_iter_) {
+        IPI_LOG_INFO("iteration limit");
+        retval = OPT_ITERATION_LIMIT;
         goto cleanup;
-      }
-      if (approx_merit_improve/old_merit < min_approx_improve_frac_) {
-        IPI_LOG_INFO("converged because improvement ratio was small (%.3e < %.3e)", approx_merit_improve/old_merit, min_approx_improve_frac_);
-        retval = OPT_CONVERGED;
-        goto cleanup;
-      }
-      else if (exact_merit_improve < 0 || merit_improve_ratio < improve_ratio_threshold_) {
-        adjustTrustRegion(trust_shrink_ratio_);
-        IPI_LOG_INFO("shrunk trust region. new box size: %.4f", trust_box_size_);
-      }
-      else {
-        x_ = new_x;
-        results_.cost_vals = new_cost_vals;
-        results_.cnt_viols = new_cnt_viols;
-        adjustTrustRegion(trust_expand_ratio_);
-        IPI_LOG_INFO("expanded trust region. new box size: %.4f", trust_box_size_);
-        break;
       }
     }
 
-    if (trust_box_size_ < min_trust_box_size_) {
-      IPI_LOG_INFO("converged because trust region is tiny");
-      retval = OPT_CONVERGED;
+    penaltyadjustment:
+    if (results_.cnt_viols.empty() || vecMax(results_.cnt_viols) < cnt_tolerance_) {
+      IPI_LOG_INFO("woo-hoo! constraints are satisfied (to tolerance %.2e)", cnt_tolerance_);
       goto cleanup;
     }
-    else if (iter >= max_iter_) {
-      IPI_LOG_INFO("iteration limit");
-      retval = OPT_ITERATION_LIMIT;
-      goto cleanup;
+    else {
+      IPI_LOG_INFO("not all constraints are satisfied. increasing penalties");
+      merit_error_coeff_ *= merit_coeff_increase_ratio_;
+      trust_box_size_ = fmax(trust_box_size_, min_trust_box_size_ * 5);
     }
+
+
+
   }
+  retval = OPT_ITERATION_LIMIT;
+  IPI_LOG_INFO("optimization couldn't satisfy all constraints");
 
-
-  assert(0 && "unreachable");
 
   cleanup:
   assert(retval != INVALID && "should never happen");
   results_.status = retval;
   IPI_LOG_INFO("\n==================\n%s==================", Str(results_));
-
-  /**
-   * We don't need cleanup because the ConvexObjective / ConvexConstraint objects
-   * get removed when they go out of scope. So we don't really need a goto here
-   */
-
 
   return retval;
 

@@ -115,7 +115,7 @@ TEST_F(PlanningTest, arm_around_table) {
 
   vector<Collision> collisions;
   CollisionChecker::GetOrCreate(*env)->ContinuousCheckTrajectory(getTraj(opt.x(), prob->GetVars()), *pci.rad, collisions);
-  RAVELOG_INFO("number of continuous collisions: %i", collisions.size());
+  RAVELOG_INFO("number of continuous collisions: %i\n", collisions.size());
 
   if (plotting) PlotCallback(*prob)(opt.x());
 
