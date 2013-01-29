@@ -30,9 +30,12 @@ void RegisterMakers() {
   CostInfo::RegisterMaker("pose", &PoseCostInfo::create);
   CostInfo::RegisterMaker("joint_vel", &JointVelCostInfo::create);
   CostInfo::RegisterMaker("collision", &CollisionCostInfo::create);
+  CostInfo::RegisterMaker("continuous_collision", &ContinuousCollisionCostInfo::create);
 
   CntInfo::RegisterMaker("joint", &JointConstraintInfo::create);
   CntInfo::RegisterMaker("pose", &PoseCntInfo::create);
+  CntInfo::RegisterMaker("cart_vel", &CartVelCntInfo::create);
+
 
   gRegisteredMakers = true;
 }
@@ -67,6 +70,10 @@ BoolVec toMask(const VectorXd& x) {
   BoolVec out(x.size());
   for (int i=0; i < x.size(); ++i) out[i] = (x[i] > 0);
   return out;
+}
+
+bool allClose(const VectorXd& a, const VectorXd& b) {
+  return (a-b).array().abs().maxCoeff() < 1e-4;
 }
 
 }
@@ -250,6 +257,9 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
   DblVec cur_dofvals = prob->m_rad->GetDOFValues();
 
   if (bi.start_fixed) {
+    if (pci.init_info.data.rows() > 0 && !allClose(toVectorXd(cur_dofvals), pci.init_info.data.row(0))) {
+      throw MY_EXCEPTION( "robot dof values don't match initialization. I don't know what you want me to use for the dof values");
+    }
     for (int j=0; j < n_dof; ++j) {
       prob->addLinearConstr(exprSub(AffExpr(prob->m_traj_vars(0,j)), cur_dofvals[j]), EQ);
     }
@@ -366,7 +376,28 @@ void PoseCntInfo::hatch(TrajOptProb& prob) {
   prob.addConstr(ConstraintPtr(new CartPoseConstraint(prob.GetVarRow(timestep), toRaveTransform(wxyz, xyz), prob.GetRAD(), link, toMask(coeffs))));
 }
 
+void CartVelCntInfo::fromJson(const Value& v) {
+  FAIL_IF_FALSE(v.isMember("params"));
+  const Value& params = v["params"];
+  childFromJson(params, first_step, "first_step");
+  childFromJson(params, last_step, "last_step");
+  childFromJson(params, distance_limit,"distance_limit");
 
+  string linkstr;
+  childFromJson(params, linkstr, "link");
+  link = gPCI->rad->GetRobot()->GetLink(linkstr);
+  if (!link) {
+    throw MY_EXCEPTION( (boost::format("invalid link name: %s")%linkstr).str());
+  }
+}
+CntInfoPtr CartVelCntInfo::create() {
+  return CntInfoPtr(new CartVelCntInfo());
+}
+void CartVelCntInfo::hatch(TrajOptProb& prob) {
+  for (int iStep = first_step; iStep < last_step; ++iStep) {
+    prob.addConstr(ConstraintPtr(new CartVelConstraint(prob.GetVarRow(iStep), prob.GetVarRow(iStep+1), prob.GetRAD(), link, distance_limit)));
+  }
+}
 
 void JointVelCostInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));
@@ -413,6 +444,40 @@ void CollisionCostInfo::hatch(TrajOptProb& prob) {
 CostInfoPtr CollisionCostInfo::create() {
   return CostInfoPtr(new CollisionCostInfo());
 }
+
+
+void ContinuousCollisionCostInfo::fromJson(const Value& v) {
+  FAIL_IF_FALSE(v.isMember("params"));
+  const Value& params = v["params"];
+
+  int n_steps = gPCI->basic_info.n_steps;
+  childFromJson(params, first_step, "first_step", 0);
+  childFromJson(params, last_step, "last_step", n_steps-1);
+  childFromJson(params, coeffs, "coeffs");
+  int n_terms = last_step - first_step;
+  cout << "n terms: " << n_terms << endl;
+  if (coeffs.size() == 1) coeffs = DblVec(n_terms, coeffs[0]);
+  else if (coeffs.size() != n_terms) {
+    throw MY_EXCEPTION( (boost::format("wrong size: coeffs. expected %i got %i")%n_terms%coeffs.size()).str() );
+  }
+  childFromJson(params, dist_pen,"dist_pen");
+  if (dist_pen.size() == 1) dist_pen = DblVec(n_terms, dist_pen[0]);
+  else if (dist_pen.size() != n_terms) {
+    throw MY_EXCEPTION( (boost::format("wrong size: dist_pen. expected %i got %i")%n_terms%dist_pen.size()).str() );
+  }
+}
+void ContinuousCollisionCostInfo::hatch(TrajOptProb& prob) {
+  for (int i=first_step; i < last_step; ++i) {
+    prob.addCost(CostPtr(new CollisionCost(dist_pen[i], coeffs[i], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
+  }
+  CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
+  cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .02);
+}
+CostInfoPtr ContinuousCollisionCostInfo::create() {
+  return CostInfoPtr(new ContinuousCollisionCostInfo());
+}
+
+
 
 void JointConstraintInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));

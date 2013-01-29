@@ -38,6 +38,14 @@ VectorXd concat(const VectorXd& a, const VectorXd& b) {
   return out;
 }
 
+template <typename T>
+vector<T> concat(const vector<T>& a, const vector<T>& b) {
+  vector<T> out;
+  vector<int> x;
+  out.insert(out.end(), a.begin(), a.end());
+  out.insert(out.end(), b.begin(), b.end());
+  return out;
+}
 
 
 }
@@ -198,6 +206,33 @@ class CartPositionConstraint : public CostFromNumDiffErr, public Plottable {
     CostFromNumDiffErr(CartPositionErrCalculator(pt, manip, link), vars, EQ, "CartPosition") {}
 };
 #endif
+
+
+struct CartVelCalculator : VectorOfVector {
+  RobotAndDOFPtr manip_;
+  KinBody::LinkPtr link_;
+  double limit_;
+  CartVelCalculator(RobotAndDOFPtr manip, KinBody::LinkPtr link, double limit) :
+    manip_(manip), link_(link), limit_(limit) {}
+
+  VectorXd operator()(const VectorXd& dof_vals) const {
+    int n_dof = manip_->GetDOF();
+    manip_->SetDOFValues(toDblVec(dof_vals.topRows(n_dof)));
+    OR::Transform pose0 = link_->GetTransform();
+    manip_->SetDOFValues(toDblVec(dof_vals.bottomRows(n_dof)));
+    OR::Transform pose1 = link_->GetTransform();
+    VectorXd out(6);
+    out.topRows(3) = toVector3d(pose1.trans - pose0.trans - OR::Vector(limit_,limit_,limit_));
+    out.bottomRows(3) = toVector3d(OR::Vector(limit_,limit_,limit_) - pose1.trans + pose0.trans);
+    return out;
+  }
+};
+
+CartVelConstraint::CartVelConstraint(const VarVector& step0vars, const VarVector& step1vars, RobotAndDOFPtr manip, KinBody::LinkPtr link, double distlimit) :
+        ConstraintFromNumDiff(VectorOfVectorPtr(new CartVelCalculator(manip, link, distlimit)),
+            concat(step0vars, step1vars), INEQ, "CartVel")
+{}
+
 
 
 struct UpErrorCalculator {

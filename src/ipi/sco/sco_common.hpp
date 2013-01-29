@@ -1,6 +1,7 @@
 #pragma once
-  #include <vector>
+#include <vector>
 #include <cmath>
+#include <algorithm>
 
 namespace ipi {
 namespace sco {
@@ -28,6 +29,15 @@ inline double sq(double x) {
 inline double vecHingeSum(const DblVec& v) {
   double out = 0;
   for (int i=0; i < v.size(); ++i) out += pospart(v[i]);
+  return out;
+}
+inline double vecMax(const DblVec& v) {
+  return *std::max_element(v.begin(), v.end());
+}
+inline double vecDot(const DblVec& a, const DblVec& b) {
+  assert(a.size() == b.size());
+  double out=0;
+  for (int i=0; i < a.size(); ++i) out += a[i]*b[i];
   return out;
 }
 

@@ -5,8 +5,6 @@
 #include <cstdio>
 #include "expr_ops.hpp"
 #include "sco_common.hpp"
-#include "utils/stl_to_string.hpp"
-using namespace util;
 using namespace std;
 
 namespace ipi {
@@ -27,8 +25,8 @@ void ConvexObjective::addHinge(const AffExpr& affexpr, double coeff) {
   exprInc(quad_, hinge_cost);
 }
 void ConvexObjective::addAbs(const AffExpr& affexpr, double coeff) {
-  Var neg = model_->addVar("abs", 0, INFINITY);
-  Var pos = model_->addVar("abs", 0, INFINITY);
+  Var neg = model_->addVar("neg", 0, INFINITY);
+  Var pos = model_->addVar("pos", 0, INFINITY);
   vars_.push_back(neg);
   vars_.push_back(pos);
   AffExpr neg_plus_pos;
@@ -196,6 +194,7 @@ vector<double> OptProb::getCentralFeasiblePoint(const vector<double>& x) {
   return getClosestFeasiblePoint(center);
 }
 vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
+  IPI_LOG_DEBUG("getClosestFeasiblePoint");
   assert(vars_.size() == x.size());
   QuadExpr obj;
   for (int i=0; i < x.size(); ++i) {
@@ -206,9 +205,6 @@ vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
   }  
   model_->setObjective(obj);
   CvxOptStatus status = model_->optimize();
-  cout << Str(lower_bounds_) << endl;
-  cout << Str(upper_bounds_) << endl;
-  model_->writeToFile("/tmp/fail.lp");
   assert(status == CVX_SOLVED);
   return model_->getVarValues(vars_);
 }

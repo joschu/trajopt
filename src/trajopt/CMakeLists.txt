@@ -7,6 +7,7 @@ include_directories(
 )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 add_library(trajopt SHARED 
+	collision_avoidance.cpp
 	json_marshal.cpp
 	problem_description.cpp
 	bullet_collision_checker.cpp 
@@ -14,7 +15,6 @@ add_library(trajopt SHARED
 	robot_and_dof.cpp 
 	utils.cpp
 	rave_utils.cpp
-	collision_avoidance.cpp
 	collision_checker.cpp
 	plot_callback.cpp
 )

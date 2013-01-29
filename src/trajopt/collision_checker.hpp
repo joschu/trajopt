@@ -2,6 +2,7 @@
 #include "typedefs.hpp"
 #include <set>
 #include <utility>
+#include <iostream>
 #include <openrave/openrave.h>
 #include "robot_and_dof.hpp"
 
@@ -28,6 +29,8 @@ struct Collision {
   Collision(const KinBody::Link* linkA, const KinBody::Link* linkB, const OR::Vector& ptA, const OR::Vector& ptB, const OR::Vector& normalB2A, double distance, float weight=1, float time=0) :
     linkA(linkA), linkB(linkB), ptA(ptA), ptB(ptB), normalB2A(normalB2A), distance(distance), weight(weight), time(0) {}
 };
+std::ostream& operator<<(std::ostream&, const Collision&);
+
 
 class CollisionChecker : public OR::UserData {
 public:
@@ -49,10 +52,12 @@ public:
   }
   /** contacts of distance < (arg) will be returned */
   virtual void SetContactDistance(float distance)  = 0;
+  virtual double GetContactDistance() = 0;
   
   virtual void PlotCollisionGeometry(vector<OpenRAVE::GraphHandlePtr>&) {throw std::runtime_error("not implemented");}
 
-  void ContinuousCheckTrajectory(const TrajArray& traj, RobotAndDOF& rad) {throw std::runtime_error("not implemented");}
+  virtual void ContinuousCheckTrajectory(const TrajArray& traj, RobotAndDOF& rad, vector<Collision>& collisions) {throw std::runtime_error("not implemented");}
+  virtual void CastVsAll(RobotAndDOF& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions) {throw std::runtime_error("not implemented");}
 
   void IgnoreZeroStateSelfCollisions();
   void IgnoreZeroStateSelfCollisions(OpenRAVE::KinBodyPtr body);

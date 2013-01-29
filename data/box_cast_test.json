@@ -1,0 +1,37 @@
+{
+  "basic_info" : {
+    "n_steps" : 3,
+    "manip" : "active",
+    "start_fixed" : true
+  },
+  "costs" : [
+  {
+    "type" : "joint_vel",
+    "name" : "jvel0",
+    "params": {
+      "coeffs" : [1]
+    }
+  },
+  {
+    "type" : "continuous_collision",
+    "name" : "cc",
+    "params" : {
+      "coeffs" : [1],
+      "dist_pen" : [0.01]
+    }
+  }
+  ],
+  "constraints" : [
+  {
+    "type" : "joint",
+    "name" : "joint",
+    "params" : {
+       "vals" : [1.9, 3.8] 
+    }
+  }
+  ],
+  "init_info" : {
+    "type" : "given_traj",
+    "data" : [[-1.9, 0], [0,1.9], [1.9,3.8]   ] 
+  }
+}

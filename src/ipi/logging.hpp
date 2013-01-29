@@ -32,6 +32,7 @@
 #include <boost/format.hpp>
 #include <boost/format/exceptions.hpp>
 #include <boost/noncopyable.hpp>
+#define LOGGING_SHORT_FILENAMES
 namespace ipi
 {
 /**

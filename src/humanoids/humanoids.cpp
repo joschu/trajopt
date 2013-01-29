@@ -100,7 +100,7 @@ void ZMP::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphH
     xyz(2*i+1,0) = m_pts((i+1)%npts,0);
     xyz(2*i+1,1) = m_pts((i+1)%npts,1);
   }
-  handles.push_back(env.drawlinelist(xyz.data(), xyz.rows(), sizeof(float)*3, .1, OR::RaveVector<float>(1,0,0,1)));
+  handles.push_back(env.drawlinelist(xyz.data(), xyz.rows(), sizeof(float)*3, 4, OR::RaveVector<float>(1,0,0,1)));
 
   m_rad->SetDOFValues(getDblVec(x,m_vars));
   OR::Vector moment(0,0,0);
@@ -113,7 +113,51 @@ void ZMP::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphH
   }
   moment /= totalmass;
   OR::Vector moment_ground = moment; moment_ground.z = 0;
-  handles.push_back(env.drawarrow(moment, moment_ground, .01, OR::RaveVector<float>(1,0,0,1)));
+  handles.push_back(env.drawarrow(moment, moment_ground, .005, OR::RaveVector<float>(1,0,0,1)));
 }
+
+struct StaticTorqueCalc : public VectorOfVector {
+  RobotAndDOFPtr m_rad;
+  StaticTorqueCalc(const RobotAndDOFPtr rad) : m_rad(rad) {}
+  VectorXd operator()(const VectorXd& x) const {
+    m_rad->SetDOFValues(toDblVec(x));
+    VectorXd out = VectorXd::Zero(m_rad->GetDOF());
+    BOOST_FOREACH(const KinBody::LinkPtr& link, m_rad->GetRobot()->GetLinks()) {
+      if (!link->GetGeometries().empty()) {
+        OR::Vector cm = link->GetGlobalMassFrame().trans;
+        DblMatrix jac = m_rad->PositionJacobian(link->GetIndex(), cm) * link->GetMass();
+        out += jac.row(2).transpose();
+      }
+    }
+    return out;
+  }
+};
+
+StaticTorque::StaticTorque(RobotAndDOFPtr rad, const VarVector& vars, double coeff) :
+  CostFromNumDiffErr(VectorOfVectorPtr(new StaticTorqueCalc(rad)), vars, VectorXd::Ones(vars.size())*coeff,
+    SQUARED,  "static_torque") {
+}
+
+struct PECalc : public VectorOfVector {
+  RobotAndDOFPtr m_rad;
+  PECalc(const RobotAndDOFPtr rad) : m_rad(rad) {}
+  VectorXd operator()(const VectorXd& x) const {
+    m_rad->SetDOFValues(toDblVec(x));
+    VectorXd out = VectorXd::Zero(1);
+    BOOST_FOREACH(const KinBody::LinkPtr& link, m_rad->GetRobot()->GetLinks()) {
+      if (!link->GetGeometries().empty()) {
+        OR::Vector cm = link->GetGlobalMassFrame().trans;
+        out(0) += cm.z;
+      }
+    }
+    return out;
+  }
+};
+
+PECost::PECost(RobotAndDOFPtr rad, const VarVector& vars, double coeff) :
+  CostFromNumDiffErr(VectorOfVectorPtr(new PECalc(rad)), vars, VectorXd::Ones(1)*coeff,
+    SQUARED,  "PE") {
+}
+
 
 }

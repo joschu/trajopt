@@ -40,7 +40,7 @@ void expectAllNear(const DblVec& x, const DblVec& y, double abstol) {
 double f_QuadraticSeparable(const VectorXd& x) {
   return x(0)*x(0) + sq(x(1) - 1) + sq(x(2)-2);
 }
-TEST(BasicTrustRegionSQP, QuadraticSeparable)  {
+TEST(SQP, QuadraticSeparable)  {
   // if the problem is exactly a QP, it should be solved in one iteration
   OptProbPtr prob;
   setupProblem(prob, 3);
@@ -57,7 +57,7 @@ TEST(BasicTrustRegionSQP, QuadraticSeparable)  {
 double f_QuadraticNonseparable(const VectorXd& x) {
   return sq(x(0) - x(1) + 3*x(2)) + sq(x(0)-1) + sq(x(2) - 2);
 }
-TEST(BasicTrustRegionSQP, QuadraticNonseparable)  {
+TEST(SQP, QuadraticNonseparable)  {
   OptProbPtr prob;
   setupProblem(prob, 3);
   prob->addCost(CostPtr(new CostFromNumDiff(ScalarOfVector::construct(&f_QuadraticNonseparable), prob->getVars(), true)));
@@ -85,7 +85,7 @@ void testProblem(ScalarOfVectorPtr f, VectorOfVectorPtr g, ConstraintType cnt_ty
     BasicTrustRegionSQP solver(prob);
     solver.max_iter_ = 1000;
     solver.min_trust_box_size_ = 1e-5;
-    solver.min_approx_improve_ = 1e-6;
+    solver.min_approx_improve_ = 1e-10;
     solver.merit_error_coeff_ = 1;
     
     solver.initialize(init);
@@ -96,7 +96,7 @@ void testProblem(ScalarOfVectorPtr f, VectorOfVectorPtr g, ConstraintType cnt_ty
 // http://www.ai7.uni-bayreuth.de/test_problem_coll.pdf
 
 double f_TP1(const VectorXd& x) {
-  return 100*sq(x(1)-sq(x(0))) + sq(1-x(0));
+  return 1*sq(x(1)-sq(x(0))) + sq(1-x(0));
 }
 VectorXd g_TP1(const VectorXd& x) {
   VectorXd out(1);
@@ -112,7 +112,7 @@ VectorXd g_TP2(const VectorXd& x) {
   return out;
 }
 double f_TP3(const VectorXd& x) {
-  return x(1) + 1e-5 * sq(x(1)-x(0));
+  return (x(1) + 1e-5 * sq(x(1)-x(0)));
 }
 VectorXd g_TP3(const VectorXd& x) {
   VectorXd out(1);
@@ -136,15 +136,15 @@ VectorXd g_TP7(const VectorXd& x) {
   return out;
 }
 
-TEST(BasicTrustRegionSQP, TP1) {
+TEST(SQP, TP1) {
   testProblem(ScalarOfVector::construct(&f_TP1), VectorOfVector::construct(&g_TP1), INEQ, list_of(-2)(1), list_of(1)(1));
 }
-TEST(BasicTrustRegionSQP, TP3) {
+TEST(SQP, TP3) {
   testProblem(ScalarOfVector::construct(&f_TP3), VectorOfVector::construct(&g_TP3), INEQ, list_of(10)(1), list_of(0)(0));
 }
-TEST(BasicTrustRegionSQP, TP6) {
+TEST(SQP, TP6) {
   testProblem(ScalarOfVector::construct(&f_TP6), VectorOfVector::construct(&g_TP6), EQ, list_of(10)(1), list_of(1)(1));
 }
-TEST(BasicTrustRegionSQP, TP7) {
+TEST(SQP, TP7) {
   testProblem(ScalarOfVector::construct(&f_TP7), VectorOfVector::construct(&g_TP7), EQ, list_of(2)(2), list_of(0.)(sqrtf(3.)));
 }
