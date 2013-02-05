@@ -222,7 +222,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
       ++iter;
       callCallbacks(x_);
 
-      IPI_LOG_INFO("current iterate: %s", Str(x_));
+      IPI_LOG_DEBUG("current iterate: %s", Str(x_));
       IPI_LOG_INFO("iteration %i", iter);
 
       // speed optimization: if you just evaluated the cost when doing the line search, use that

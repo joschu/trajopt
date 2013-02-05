@@ -8,15 +8,9 @@ Don't allow non-robot kinbodies to collide
 
 Partition links into groups and do broadphase filtering
 
-use userdata in collision checker
-
 make optimization parameters settable
 
 bug when using "active" as manip
-
-occasionally get infeasible relaxed problem. why?
-probably because the initialization is bad. should make the first step
-of the optimization satisfy the linear constraints
 
 openrave initfromtrimesh bug
 
@@ -45,4 +39,4 @@ make it easier to print stuff out for debuggin
 
 setcontactdistance screws you up if you have multiple collision cost groups
 
-to debug continuous collision stuff, make a mesh box.
+optimization changes state

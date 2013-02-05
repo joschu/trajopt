@@ -362,8 +362,12 @@ bool OSGViewer::EventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GU
 boost::shared_ptr<OSGViewer> OSGViewer::GetOrCreate(OpenRAVE::EnvironmentBasePtr env) {
   ViewerBasePtr viewer = env->GetViewer("osg");
   if (!viewer) {
+    RAVELOG_INFO("creating viewer\n");
     viewer = ViewerBasePtr(new OSGViewer(env));
     env->AddViewer(viewer);
+  }
+  else {
+    RAVELOG_INFO("already have a viewer for this environment\n");
   }
   return boost::dynamic_pointer_cast<OSGViewer>(viewer);
 }

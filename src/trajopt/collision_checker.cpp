@@ -19,7 +19,7 @@ boost::shared_ptr<CollisionChecker> CollisionChecker::GetOrCreate(OR::Environmen
     SetUserData(env, "trajopt_cc", ud);
   }
   else {
-    RAVELOG_INFO("already have a collision checker for this environment\n");
+    RAVELOG_DEBUG("already have a collision checker for this environment\n");
   }
   return boost::dynamic_pointer_cast<CollisionChecker>(ud);
 }

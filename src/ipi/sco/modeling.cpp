@@ -205,7 +205,10 @@ vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
   }  
   model_->setObjective(obj);
   CvxOptStatus status = model_->optimize();
-  assert(status == CVX_SOLVED);
+  if(status != CVX_SOLVED) {
+    model_->writeToFile("/tmp/fail.lp");
+    throw std::runtime_error("couldn't find a feasible point. wrote to /tmp/fail.lp");
+  }
   return model_->getVarValues(vars_);
 }
 

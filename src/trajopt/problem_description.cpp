@@ -7,6 +7,7 @@
 #include "trajopt/collision_avoidance.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/plot_callback.hpp"
+#include "trajopt/rave_utils.hpp"
 #include "utils/eigen_conversions.hpp"
 #include "utils/eigen_slicing.hpp"
 #include <boost/algorithm/string.hpp>
@@ -439,7 +440,7 @@ void CollisionCostInfo::hatch(TrajOptProb& prob) {
     prob.addCost(CostPtr(new CollisionCost(dist_pen[i], coeffs[i], prob.GetRAD(), prob.GetVarRow(i))));
   }
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
-  cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .02);
+  cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .04);
 }
 CostInfoPtr CollisionCostInfo::create() {
   return CostInfoPtr(new CollisionCostInfo());
@@ -471,7 +472,7 @@ void ContinuousCollisionCostInfo::hatch(TrajOptProb& prob) {
     prob.addCost(CostPtr(new CollisionCost(dist_pen[i], coeffs[i], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
   }
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
-  cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .02);
+  cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .04);
 }
 CostInfoPtr ContinuousCollisionCostInfo::create() {
   return CostInfoPtr(new ContinuousCollisionCostInfo());
