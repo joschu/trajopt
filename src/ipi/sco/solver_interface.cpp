@@ -94,18 +94,8 @@ ostream& operator<<(ostream& o, const QuadExpr& e) {
 
 
 ModelPtr createModel(CvxSolverID solver) {
-  if (solver == SOLVER_GUROBI) {
-#ifdef HAVE_GUROBI
-    extern ModelPtr createGurobiModel();
-    return createGurobiModel();
-#else
-    IPI_ABORT("DON'T HAVE GUROBI INTERFACE");
-#endif
-  }
-  else {
-    IPI_ABORT("DON'T HAVE GUROBI INTERFACE");
-  }
-  return ModelPtr();
+  extern ModelPtr createGurobiModel();
+  return createGurobiModel();
 }
 
 

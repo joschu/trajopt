@@ -10,6 +10,11 @@
 #include <pcl/surface/marching_cubes_rbf.h>
 #include <pcl/surface/marching_cubes.h>
 #include <pcl/surface/marching_cubes_hoppe.h>
+
+#include "pcl/io/vtk_lib_io.h"
+#include <pcl/point_types.h>
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/features/normal_3d.h>
 #include <pcl/surface/convex_hull.h>
 using namespace std;
 using namespace pcl;
@@ -93,6 +98,36 @@ PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::Const
 
 
 
+pcl::PolygonMesh::Ptr createMesh_marchingCubes(PointCloud<pcl::PointXYZ>::ConstPtr cloud) {
+    pcl::PolygonMesh::Ptr triangles(new pcl::PolygonMesh);
+
+    pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> n;
+    pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal>);
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+    tree->setInputCloud (cloud);
+    n.setInputCloud (cloud);
+    n.setSearchMethod (tree);
+    n.setKSearch (20);
+    n.compute (*normals);
+    //* normals should not contain the point normals + surface curvatures
+
+    // Concatenate the XYZ and normal fields*
+    pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointNormal>);
+    pcl::concatenateFields (*cloud, *normals, *cloud_with_normals);
+
+    // Create search tree*
+    pcl::search::KdTree<pcl::PointNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointNormal>);
+    tree2->setInputCloud (cloud_with_normals);
+
+    pcl::MarchingCubesHoppe<pcl::PointNormal> mcg;    
+    mcg.setInputCloud(cloud_with_normals); 
+    mcg.setSearchMethod(tree2); 
+    //mcg.setLeafSize(.1); 
+    mcg.setIsoLevel(.9);           
+    mcg.reconstruct (*triangles);
+
+    return triangles;
+}
 
 pcl::PolygonMesh::Ptr createMesh_gp3(PointCloud<pcl::PointNormal>::ConstPtr cloud_with_normals) {
   pcl::search::KdTree<pcl::PointNormal>::Ptr tree2(
