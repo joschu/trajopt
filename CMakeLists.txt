@@ -5,7 +5,7 @@ include(cmake/main.cmake)
 
 find_package(Eigen REQUIRED)
 find_package(Boost COMPONENTS system python thread program_options REQUIRED)
-find_package(OpenRAVE REQUIRED)
+find_package(OpenRAVE 0.9 REQUIRED)
 
 if (NOT CMAKE_BUILD_TYPE) 
 	set(CMAKE_BUILD_TYPE Release)
