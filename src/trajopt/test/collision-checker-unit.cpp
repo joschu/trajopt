@@ -38,45 +38,40 @@ TEST(collision_checker, box_distance) {
   RAVELOG_DEBUG("%i kinbodies in rave env\n", bodies.size());
   CollisionCheckerPtr checker = CreateCollisionChecker(env);
 
+#define EXPECT_NUM_COLLISIONS(n)\
+  vector<Collision> collisions;\
+  checker->AllVsAll(collisions);\
+  EXPECT_EQ(collisions.size(), n);\
+  collisions.clear();\
+  checker->BodyVsAll(*box0, collisions);\
+  EXPECT_EQ(collisions.size(), n);
 
   {
     checker->SetContactDistance(0);
     box1->SetTransform(Transform(Vector(1,0,0,0), Vector(.9,0,0)));
     box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
-    vector<Collision> collisions;
-    checker->AllVsAll(collisions);
-    PrintCollisions(collisions);
-    EXPECT_EQ(collisions.size(), 1);
+    EXPECT_NUM_COLLISIONS(1);
   }
 
   {
     checker->SetContactDistance(0);
     box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
     box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
-    vector<Collision> collisions;
-    checker->AllVsAll(collisions);
-    PrintCollisions(collisions);
-    EXPECT_EQ(collisions.size(), 0);
+    EXPECT_NUM_COLLISIONS(0);
   }
 
   {
     checker->SetContactDistance(.04);
     box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
     box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
-    vector<Collision> collisions;
-    checker->AllVsAll(collisions);
-    PrintCollisions(collisions);
-    EXPECT_EQ(collisions.size(), 0);
+    EXPECT_NUM_COLLISIONS(0);
   }
 
   {
     checker->SetContactDistance(.1);
     box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
     box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
-    vector<Collision> collisions;
-    checker->AllVsAll(collisions);
-    PrintCollisions(collisions);
-    EXPECT_EQ(collisions.size(), 1);
+    EXPECT_NUM_COLLISIONS(1);
   }
 
 
@@ -84,12 +79,13 @@ TEST(collision_checker, box_distance) {
     checker->SetContactDistance(.2);
     box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
     box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
-    vector<Collision> collisions;
-    checker->AllVsAll(collisions);
-    PrintCollisions(collisions);
-    EXPECT_EQ(collisions.size(), 1);
+    EXPECT_NUM_COLLISIONS(1);
   }
 
+  {
+    env->Remove(box1);
+    EXPECT_NUM_COLLISIONS(0);
+  }
 
 
 }
