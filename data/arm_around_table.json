@@ -7,14 +7,12 @@
   "costs" : [
   {
     "type" : "joint_vel",
-    "name" : "jvel0",
     "params": {
       "coeffs" : [1]
     }
     },
   {
     "type" : "collision",
-    "name" : "collision",
     "params" : {
       "coeffs" : [20],
       "dist_pen" : [0.025]

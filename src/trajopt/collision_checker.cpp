@@ -6,10 +6,11 @@ using namespace OpenRAVE;
 
 namespace trajopt {
 
-
+#if 0
 void CollisionPairIgnorer::AddExcludes(const CollisionPairIgnorer& other) {
   m_pairs.insert(other.m_pairs.begin(), other.m_pairs.end());
 }
+#endif
 
 boost::shared_ptr<CollisionChecker> CollisionChecker::GetOrCreate(OR::EnvironmentBase& env) {
   UserDataPtr ud = GetUserData(env, "trajopt_cc");
@@ -25,7 +26,7 @@ boost::shared_ptr<CollisionChecker> CollisionChecker::GetOrCreate(OR::Environmen
 }
 
 
-
+#if 0
 void CollisionPairIgnorer::ExcludePair(const KinBody::Link& link1, const KinBody::Link& link2) {
 
   m_pairs.insert(LinkPair(&link1, &link2));
@@ -34,6 +35,7 @@ void CollisionPairIgnorer::ExcludePair(const KinBody::Link& link1, const KinBody
 bool CollisionPairIgnorer::CanCollide(const KinBody::Link& link1, const KinBody::Link& link2) const {
   return m_pairs.find(LinkPair(&link1, &link2)) == m_pairs.end();
 }
+#endif
 
 void CollisionChecker::IgnoreZeroStateSelfCollisions(OpenRAVE::KinBodyPtr body) {
   RAVELOG_DEBUG("IgnoreZeroStateSelfCollisions for %s\n", body->GetName().c_str());
@@ -47,7 +49,7 @@ void CollisionChecker::IgnoreZeroStateSelfCollisions(OpenRAVE::KinBodyPtr body) 
   RAVELOG_DEBUG("%i extra self collisions in zero state\n", collisions.size());
   for(int i=0; i < collisions.size(); ++i) {
     RAVELOG_DEBUG("ignoring self-collision: %s %s\n", collisions[i].linkA->GetName().c_str(), collisions[i].linkB->GetName().c_str());
-    m_ignorer.ExcludePair(*collisions[i].linkA, *collisions[i].linkB);
+    ExcludeCollisionPair(*collisions[i].linkA, *collisions[i].linkB);
   }
   RAVELOG_DEBUG("------\n");
 }

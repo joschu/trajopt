@@ -8,18 +8,6 @@
 
 namespace trajopt {
 
-class CollisionPairIgnorer {
-public:
-  void ExcludePair(const KinBody::Link& link1,
-                   const KinBody::Link& link2);
-  void AddExcludes(const CollisionPairIgnorer& other);
-  bool CanCollide(const KinBody::Link& link1,
-                   const KinBody::Link& link2) const;
-private:
-  typedef std::pair<const KinBody::Link*, const KinBody::Link*> LinkPair;
-  std::set<LinkPair> m_pairs;
-};
-
 struct Collision {
   const OR::KinBody::Link* linkA;
   const OR::KinBody::Link* linkB;
@@ -37,9 +25,7 @@ public:
   /** 
   Each CollisionChecker object has a copy of the world, so for performance, don't make too many copies  
   */ 
-  
-  /** CollisionPairIgnorer argument is optional in the following methods */
-  
+
   /** check everything vs everything else */
   virtual void AllVsAll(vector<Collision>& collisions)=0;
   /** check link vs everything else */
@@ -62,15 +48,16 @@ public:
   void IgnoreZeroStateSelfCollisions();
   void IgnoreZeroStateSelfCollisions(OpenRAVE::KinBodyPtr body);
 
+  virtual void ExcludeCollisionPair(const KinBody::Link& link0, const KinBody::Link& link1) = 0;
+
+
   OpenRAVE::EnvironmentBaseConstPtr GetEnv() {return m_env;}
-  CollisionPairIgnorer& GetIgnorer() {return m_ignorer;}
 
   virtual ~CollisionChecker() {}
   static boost::shared_ptr<CollisionChecker> GetOrCreate(OR::EnvironmentBase& env);
 protected:
   CollisionChecker(OpenRAVE::EnvironmentBaseConstPtr env) : m_env(env) {}
   OpenRAVE::EnvironmentBaseConstPtr m_env;
-  CollisionPairIgnorer m_ignorer;
 };
 typedef boost::shared_ptr<CollisionChecker> CollisionCheckerPtr;
 
