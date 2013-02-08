@@ -1,42 +1,46 @@
-Make collision checker able to remove objects
 
-Write function to check trajectory safety
 
-More validation on initialization
+Critical
+=========
 
-Don't allow non-robot kinbodies to collide
-
-Partition links into groups and do broadphase filtering
-
-make optimization parameters settable
-
-bug when using "active" as manip
-
-openrave initfromtrimesh bug
-
-velocity cost uses timestamps
-velocity cost uses weights
+ENABLED DOESNT WORK
+problem in convexdecomp: we don't check to see if new point is ok in some direction
+bug when using "active" as manip (?)
 
 cloud_drive_reach.py--error
 can't start at non-origin position? (cloud drive reach)
+
+setcontactdistance screws you up if you have multiple collision cost groups
+
+optimization changes state
+
+
+
+
+Eventually
+===========
+
+velocity cost uses timestamps
+make optimization parameters settable
 
 two things don't work about drc example:
 1. go thru obstacle
 2. sometimes don't satisfy pose constraint
 
-ENABLED DOESNT WORK
-
-problem in convexdecomp: we don't check to see if new point is ok in some direction
-
 Issue: now the collision checker will fail to find grazing self-collisions, since right now the continuous check
 doesn't look at robot-robot collisions.
 
-modifying bttransformaabb is a bad hack
+make a function specifically for self-collision testing
 
-unittest for removal
+error message for unrecognized arguments
 
-make it easier to print stuff out for debuggin
+Maybe
+=======
 
-setcontactdistance screws you up if you have multiple collision cost groups
+Partition links into groups and do broadphase filtering (?)
+Modifying bttransformaabb is a bad hack. figure out a better way.
+make it easier to print stuff out for debugging optimization
 
-optimization changes state
+
+
+

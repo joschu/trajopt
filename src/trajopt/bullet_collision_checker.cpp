@@ -150,14 +150,8 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom) {
 COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link) {
   RAVELOG_DEBUG("creating bt collision object from from %s\n",link->GetName().c_str());
 
-  //#if OPENRAVE_VERSION_MINOR>6
   const std::vector<boost::shared_ptr<OpenRAVE::KinBody::Link::GEOMPROPERTIES> > & geometries=link->GetGeometries();
-  //#else
-  //  const std::list<KinBody::Link::GEOMPROPERTIES> &geometries =link->GetGeometries();
-  //#endif
-  // sometimes the OpenRAVE link might not even have any geometry data associated with it
-  // (this is the case with the PR2 model). therefore just add an empty BulletObject
-  // pointer so we know to skip it in the future
+
   if (geometries.empty()) return COWPtr();
 
   //	bool useCompound = geometries.size() > 1;

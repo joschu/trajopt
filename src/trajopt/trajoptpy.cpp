@@ -2,8 +2,6 @@
 #include "trajopt/collision_checker.hpp"
 #include "trajopt/problem_description.hpp"
 #include "osgviewer/osgviewer.hpp"
-#include <stdexcept>
-#include <boost/python/exception_translator.hpp>
 #include <boost/foreach.hpp>
 
 using namespace trajopt;

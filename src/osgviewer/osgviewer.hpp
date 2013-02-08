@@ -18,7 +18,7 @@ public:
   virtual void quitmainloop() {}
   void RemoveKinBody(OpenRAVE::KinBodyPtr pbody);
   void Draw();
-  void Idle();
+  void Idle(); // should be called ToggleIdle
   void UpdateSceneData();
   const std::string& GetName() const {return m_name;}
 
@@ -62,7 +62,7 @@ public:
 //  osg::ref_ptr<osgViewer::Viewer> m_viewer;
   osg::ref_ptr<osg::Camera> m_cam;
   osgViewer::Viewer m_viewer;
-  bool m_idling;
+  bool m_idling, m_request_stop_idling;
   std::string m_name;
 
 

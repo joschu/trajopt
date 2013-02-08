@@ -2,16 +2,20 @@
 #include <json/json.h>
 #include <vector>
 #include <boost/format.hpp>
+#include <string>
+#include <sstream>
 
-class runtime_error_print : public std::runtime_error {
-public:
-  runtime_error_print(const std::string& s) :
-    std::runtime_error(s) {
-    std::cerr << "\033[1;31mERROR " << s << "\033[0m\n";
+#define PRINT_AND_THROW(s) do {\
+  std::cerr << "\033[1;31mERROR " << s << "\033[0m\n";\
+  std::cerr << "at " << __FILE__ << ":" << __LINE__ << std::endl;\
+  std::stringstream ss;\
+  ss << s;\
+  throw std::runtime_error(ss.str());\
+} while (0)
+#define FAIL_IF_FALSE(expr) if (!expr) {\
+    PRINT_AND_THROW( "expected true: " #expr);\
   }
-};
 
-#define MY_EXCEPTION runtime_error_print
 
 namespace json_marshal {
 
@@ -36,8 +40,7 @@ void fromJsonArray(const Json::Value& parent, std::vector<T>& ref) {
 template <class T>
 void fromJsonArray(const Json::Value& parent, std::vector<T>& ref, int size) {
   if (parent.size() != size) {
-    std::cerr << "expected size: " << size << " got: " << parent << std::endl;
-    throw MY_EXCEPTION("wrong");
+    PRINT_AND_THROW(boost::format("expected list of size size %i. got: %s\n")%size%parent);
   }
   else {
     fromJsonArray(parent, ref);
@@ -65,7 +68,7 @@ void childFromJson(const Json::Value& parent, T& ref, const char* name) {
     fromJson(v, ref);
   }
   else {
-    throw MY_EXCEPTION((boost::format("missing field: %s")%name).str());
+    PRINT_AND_THROW(boost::format("missing field: %s")%name);
   }
 }
 

@@ -5,9 +5,12 @@
 #include "ipi/sco/expr_op_overloads.hpp"
 #include <boost/foreach.hpp>
 #include "utils/eigen_conversions.hpp"
+#include "trajopt/problem_description.hpp"
+#include "humanoids/hull2d.hpp"
 using namespace util;
 using namespace Eigen;
 using namespace std;
+using namespace Json;
 namespace trajopt {
 
 void PolygonToEquations(const MatrixX2d& pts, MatrixX2d& ab, VectorXd& c) {
@@ -157,6 +160,122 @@ struct PECalc : public VectorOfVector {
 PECost::PECost(RobotAndDOFPtr rad, const VarVector& vars, double coeff) :
   CostFromNumDiffErr(VectorOfVectorPtr(new PECalc(rad)), vars, VectorXd::Ones(1)*coeff,
     SQUARED,  "PE") {
+}
+
+extern ProblemConstructionInfo* gPCI;
+
+
+struct PECostInfo : public CostInfo {
+  double coeff;
+  int timestep;
+  void fromJson(const Value& v) {
+    FAIL_IF_FALSE(v.isMember("params"));
+    const Value& params = v["params"];
+    childFromJson(params, timestep, "timestep");
+    childFromJson(params, coeff, "coeff");
+    int n_steps = gPCI->basic_info.n_steps;
+    FAIL_IF_FALSE((timestep >= 0) && (timestep < n_steps));
+  }
+  void hatch(TrajOptProb& prob) {
+    prob.addCost(CostPtr(new PECost(prob.GetRAD(), prob.GetVarRow(timestep), coeff)));
+  }
+  static CostInfoPtr create() {
+    return CostInfoPtr(new PECostInfo());
+  }
+};
+struct StaticTorqueCostInfo : public CostInfo {
+  double coeff;
+  int timestep;
+  void fromJson(const Value& v) {
+    FAIL_IF_FALSE(v.isMember("params"));
+    const Value& params = v["params"];
+    childFromJson(params, timestep, "timestep");
+    childFromJson(params, coeff, "coeff");
+    int n_steps = gPCI->basic_info.n_steps;
+    FAIL_IF_FALSE((timestep >= 0) && (timestep < n_steps));
+  }
+  void hatch(TrajOptProb& prob) {
+    prob.addCost(CostPtr(new StaticTorque(prob.GetRAD(), prob.GetVarRow(timestep), coeff)));
+  }
+  static CostInfoPtr create() {
+    return CostInfoPtr(new StaticTorqueCostInfo());
+  }
+};
+
+template <typename MatrixT>
+MatrixT concat0(const MatrixT& x, const MatrixT& y) {
+  MatrixT out(x.rows() + y.rows(), x.cols());
+  out.topRows(x.rows()) = x;
+  out.bottomRows(y.rows()) = y;
+  return out;
+}
+
+/**
+import openravepy
+env = openravepy.Environment()
+env.Load("gfe.xml")
+robot = env.GetRobots()[0]
+rfoot = robot.GetLink("r_foot")
+aabb = rfoot.ComputeLocalAABB(rfoot)
+aabb.pos()+aabb.extents()
+aabb.pos()-aabb.extents()
+ */
+MatrixX2d GetLocalAabbPoly() {
+  MatrixX2d out(4,2);
+  out << 0.17939, 0.062707,
+      0.17939, -0.061646,
+      -0.08246, -0.061646,
+      -0.08246, 0.061646;
+  return out;
+}
+MatrixX2d local_aabb_poly = GetLocalAabbPoly();
+MatrixX2d GetFootPoly(const KinBody::Link& link) {
+  OpenRAVE::Vector v = link.GetTransform().trans;
+  v.z = 0;
+  return local_aabb_poly.rowwise() + Vector2d(v.x, v.y).transpose();
+}
+MatrixX2d GetFeetPoly(const vector<KinBody::LinkPtr>& links) {
+  FAIL_IF_FALSE(links.size() > 0);
+  MatrixX2d allpoly = GetFootPoly(*links[0]);
+  for (int i=1; i < links.size(); ++i) {
+    allpoly = concat0(allpoly, GetFootPoly(*links[i]));
+  }
+  return hull2d(allpoly);
+}
+
+
+struct ZMPCntInfo : public CntInfo {
+  int timestep;
+  vector<string> planted_link_names;
+  void fromJson(const Value& v) {
+    FAIL_IF_FALSE(v.isMember("params"));
+    const Value& params = v["params"];
+    childFromJson(params, timestep, "timestep");
+    int n_steps = gPCI->basic_info.n_steps;
+    FAIL_IF_FALSE((timestep >= 0) && (timestep < n_steps));
+    childFromJson(params, planted_link_names, "planted_links");
+  }
+  void hatch(TrajOptProb& prob) {
+    vector<KinBody::LinkPtr> planted_links;
+    BOOST_FOREACH(const string& linkname, planted_link_names) {
+      KinBody::LinkPtr link = prob.GetRAD()->GetRobot()->GetLink(linkname);
+      if (!link) {
+        PRINT_AND_THROW(boost::format("invalid link name: %s")%linkname);
+      }
+      planted_links.push_back(link);
+    }
+    prob.addConstr(ConstraintPtr(new ZMP(prob.GetRAD(), GetFeetPoly(planted_links), prob.GetVarRow(timestep))));
+  }
+  static CntInfoPtr create() {
+    return CntInfoPtr(new ZMPCntInfo());
+  }
+};
+
+
+void RegisterHumanoidCostsAndCnts() {
+  CostInfo::RegisterMaker("potential_energy", &PECostInfo::create);
+  CostInfo::RegisterMaker("static_torque", &StaticTorqueCostInfo::create);
+  CntInfo::RegisterMaker("zmp", &ZMPCntInfo::create);
 }
 
 

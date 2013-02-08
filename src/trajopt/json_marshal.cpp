@@ -11,8 +11,8 @@ namespace json_marshal {
   try {\
     ref = v.cvtFunc();\
   }\
-  catch (MY_EXCEPTION&) {\
-    throw MY_EXCEPTION( (boost::format("expected: %s, got %s")%(#T)%(v)).str() );\
+  catch (const std::runtime_error&) {\
+    PRINT_AND_THROW( boost::format("expected: %s, got %s")%(#T)%(v) );\
   }}
 
 

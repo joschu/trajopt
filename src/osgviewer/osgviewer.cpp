@@ -400,15 +400,18 @@ int OSGViewer::main(bool bShow) {
 void OSGViewer::Idle() {
   UpdateSceneData();
   if (m_idling) { // stop idling
-    m_idling = false;
+    m_request_stop_idling=true;
     return;
   }
   else { // start idling
     m_idling = true;
+    m_request_stop_idling=false;
     RAVELOG_INFO("press p to stop idling\n");
-    while (!m_viewer.done() && m_idling) {
+    while (!m_viewer.done() && !m_request_stop_idling) {
       m_viewer.frame();
+      sleep(.025);
     }
+    m_idling=false;
   }
 }
 
