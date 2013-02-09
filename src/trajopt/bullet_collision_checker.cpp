@@ -352,6 +352,7 @@ BulletCollisionChecker::BulletCollisionChecker(OR::EnvironmentBaseConstPtr env) 
   m_dispatcher->setNearCallback(&nearCallback);
   m_dispatcher->m_userData = this;
   SetContactDistance(.05);
+  UpdateBulletFromRave();
 }
 
 BulletCollisionChecker::~BulletCollisionChecker() {

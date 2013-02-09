@@ -93,8 +93,9 @@ CostFromNumDiffErr::CostFromNumDiffErr(VectorOfVectorPtr f, const VarVector& var
     Cost(name), f_(f), vars_(vars), coeffs_(coeffs), pen_type_(pen_type), epsilon_(DEFAULT_EPSILON) {}
 double CostFromNumDiffErr::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
-  VectorXd scaled_err = f_->call(x).cwiseProduct(coeffs_);
-  return (pen_type_ == SQUARED) ? scaled_err.squaredNorm() : scaled_err.lpNorm<1>();
+  VectorXd err = f_->call(x);
+  VectorXd positive_err = (pen_type_ == SQUARED) ? (VectorXd)err.cwiseProduct(err) : (VectorXd)err.cwiseAbs();
+  return positive_err.dot(coeffs_);
 }
 ConvexObjectivePtr CostFromNumDiffErr::convex(const vector<double>& xin, Model* model) {
   VectorXd x = getVec(xin, vars_);

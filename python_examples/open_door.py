@@ -1,4 +1,3 @@
-import cloudprocpy
 import trajoptpy
 import openravepy as rave
 import numpy as np

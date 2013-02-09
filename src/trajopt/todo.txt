@@ -20,6 +20,10 @@ optimization changes state
 Eventually
 ===========
 
+Figure out some consistent scheme for specifiying timestep of costs.
+
+Run automated tests with python examples
+
 velocity cost uses timestamps
 make optimization parameters settable
 
@@ -40,6 +44,8 @@ Maybe
 Partition links into groups and do broadphase filtering (?)
 Modifying bttransformaabb is a bad hack. figure out a better way.
 make it easier to print stuff out for debugging optimization
+
+collisionchecker segfaults if bullet world isn't updated
 
 
 

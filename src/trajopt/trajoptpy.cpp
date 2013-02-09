@@ -13,13 +13,30 @@ namespace py = boost::python;
 
 namespace {
 bool gInteractive = true;
-
+py::object openravepy;
 
 py::list toPyList(const IntVec& x) {
   py::list out;
   for (int i=0; i < x.size(); ++i) out.append(x[i]);
   return out;
 }
+
+
+EnvironmentBasePtr GetCppEnv(py::object py_env) {
+  int id = py::extract<int>(openravepy.attr("RaveGetEnvironmentId")(py_env));
+  EnvironmentBasePtr cpp_env = RaveGetEnvironment(id);
+  return cpp_env;
+}
+KinBodyPtr GetCppKinBody(py::object py_kb, EnvironmentBasePtr env) {
+  int id = py::extract<int>(py_kb.attr("GetEnvironmentId")());
+  return env->GetBodyFromEnvironmentId(id);
+}
+KinBody::LinkPtr GetCppLink(py::object py_link, EnvironmentBasePtr env) {
+  KinBodyPtr parent = GetCppKinBody(py_link.attr("GetParent")(), env);
+  int idx = py::extract<int>(py_link.attr("GetIndex")());
+  return parent->GetLinks()[idx];
+}
+
 
 }
 
@@ -42,9 +59,7 @@ Json::Value readJsonFile(const std::string& doc) {
 }
 
 PyTrajOptProb PyConstructProblem(const std::string& json_string, py::object py_env) {
-  py::object openravepy = py::import("openravepy");
-  int id = py::extract<int>(openravepy.attr("RaveGetEnvironmentId")(py_env));
-  EnvironmentBasePtr cpp_env = RaveGetEnvironment(id);
+  EnvironmentBasePtr cpp_env = GetCppEnv(py_env);
   Json::Value json_root = readJsonFile(json_string);
   TrajOptProbPtr cpp_prob = ConstructProblem(json_root, cpp_env);
   return PyTrajOptProb(cpp_prob);
@@ -144,25 +159,15 @@ public:
     m_cc->PlotCollisionGeometry(handles);
     return PyGraphHandle(handles);
   }
+  void ExcludeCollisionPair(py::object link0, py::object link1) {
+    EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
+    m_cc->ExcludeCollisionPair(*GetCppLink(link0, env), *GetCppLink(link1, env));
+  }
   PyCollisionChecker(CollisionCheckerPtr cc) : m_cc(cc) {}
 private:
   PyCollisionChecker();
   CollisionCheckerPtr m_cc;
 };
-
-
-EnvironmentBasePtr GetCppEnv(py::object py_env) {
-  py::object openravepy = py::import("openravepy");
-  int id = py::extract<int>(openravepy.attr("RaveGetEnvironmentId")(py_env));
-  EnvironmentBasePtr cpp_env = RaveGetEnvironment(id);
-  return cpp_env;
-}
-KinBodyPtr GetCppKinBody(py::object py_kb, EnvironmentBasePtr env) {
-  py::object openravepy = py::import("openravepy");
-  int id = py::extract<int>(py_kb.attr("GetEnvironmentId")());
-  return env->GetBodyFromEnvironmentId(id);
-}
-
 
 
 
@@ -195,6 +200,8 @@ PyOSGViewer PyGetViewer(py::object py_env) {
 
 BOOST_PYTHON_MODULE(ctrajoptpy) {
 
+  openravepy = py::import("openravepy");
+
   py::class_<PyTrajOptProb>("TrajOptProb", py::no_init)
       .def("GetDOFIndices", &PyTrajOptProb::GetDOFIndices)
   ;
@@ -213,6 +220,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("AllVsAll", &PyCollisionChecker::AllVsAll)
       .def("BodyVsAll", &PyCollisionChecker::BodyVsAll)
       .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
+      .def("ExcludeCollisionPair", &PyCollisionChecker::ExcludeCollisionPair)
       ;
   py::def("GetCollisionChecker", &PyGetCollisionChecker);
   py::class_<PyCollision>("Collision", py::no_init)

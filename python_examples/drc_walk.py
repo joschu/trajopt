@@ -19,6 +19,10 @@ def request_skeleton(n_steps):
         {
             "type" : "joint_vel",            
             "params": {"coeffs":[1]}
+        },
+        {
+            "type":"collision",
+            "params":{"coeffs":[1], "dist_pen":[.01]}
         }
         ],
         "constraints" : [
@@ -29,10 +33,10 @@ def request_skeleton(n_steps):
     }
     for i in xrange(1,n_steps):
         request["costs"].extend([
-        {
-            "type":"potential_energy",
-            "params":{"coeff" : .01,"timestep":i}
-        },
+        # {
+        #     "type":"potential_energy",
+        #     "params":{"coeff" : .01,"timestep":i}
+        # },
         {
             "type":"static_torque",
             "params":{"coeff" : .1,"timestep":i}
@@ -147,7 +151,7 @@ def shift_weight_request(robot, n_steps, to_foot):
             request["constraints"].append(
                 {
                     "type":"zmp",
-                    "params":{"planted_links":[from_foot],"timestep":i}
+                    "params":{"planted_links":[from_foot, to_foot],"timestep":i}
                 })
         else:
             request["constraints"].append(
@@ -190,30 +194,38 @@ if __name__ == "__main__":
     ##################
     trajoptpy.SetInteractive(True)
     
+    cc = trajoptpy.GetCollisionChecker(env)
+    cc.ExcludeCollisionPair(robot.GetLink("l_foot"), env.GetKinBody("ProjectRoom").GetLink("Floor"))
+    cc.ExcludeCollisionPair(robot.GetLink("r_foot"), env.GetKinBody("ProjectRoom").GetLink("Floor"))
+    
     n_steps = 6
     
-    for i in xrange(5):
-        request = step_forward_request(robot, n_steps, "r_foot",.1, 0)
-        s = json.dumps(request)
-        prob = trajoptpy.ConstructProblem(s, env)
-        result = trajoptpy.OptimizeProblem(prob)
-        print result
+    request = step_forward_request(robot, n_steps, "r_foot",.1, 0)
+    s = json.dumps(request)
+    prob = trajoptpy.ConstructProblem(s, env)
+    result = trajoptpy.OptimizeProblem(prob)
+    
+    
+    for i in xrange(8):
     
         request = shift_weight_request(robot, n_steps, "r_foot")
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
-        print result
     
         request = step_forward_request(robot, n_steps, "l_foot",.2, 0)
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
-        print result
     
         request = shift_weight_request(robot, n_steps, "l_foot")
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
-        print result
+
+        request = step_forward_request(robot, n_steps, "r_foot",.2, 0)
+        s = json.dumps(request)
+        prob = trajoptpy.ConstructProblem(s, env)
+        result = trajoptpy.OptimizeProblem(prob)
+        
         

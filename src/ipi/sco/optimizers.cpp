@@ -219,7 +219,6 @@ OptStatus BasicTrustRegionSQP::optimize() {
 
   for (int merit_increases=0; merit_increases < max_merit_coeff_increases_; ++merit_increases) { /* merit adjustment loop */
     for (int iter=1; ; ++iter) { /* sqp loop */
-      ++iter;
       callCallbacks(x_);
 
       IPI_LOG_DEBUG("current iterate: %s", Str(x_));
