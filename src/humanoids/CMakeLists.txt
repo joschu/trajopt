@@ -15,9 +15,6 @@ target_link_libraries(humanoids sco trajopt ${OpenRAVE_BOTH_LIBRARIES})
 
 add_definitions(-DDATA_DIR="${CMAKE_SOURCE_DIR}/data")
 
-add_executable(zmp_test zmp_test.cpp)
-target_link_libraries(zmp_test  sco trajopt humanoids ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${OpenRAVE_BOTH_LIBRARIES})
-
 include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
 boost_python_module(humanoidspy humanoidspy.cpp)
 target_link_libraries(humanoidspy trajopt humanoids ${Boost_SYSTEM_LIBRARY} )

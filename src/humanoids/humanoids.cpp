@@ -41,14 +41,14 @@ void PolygonToEquations(const MatrixX2d& pts, MatrixX2d& ab, VectorXd& c) {
 }
 
 
-ZMP::ZMP(RobotAndDOFPtr rad, const MatrixX2d& hullpts, const VarVector& vars) :
+ZMPConstraint::ZMPConstraint(RobotAndDOFPtr rad, const MatrixX2d& hullpts, const VarVector& vars) :
           m_rad(rad), m_vars(vars), m_pts(hullpts) {
 
   // find the equations representing the polygon
   PolygonToEquations(m_pts, m_ab, m_c);
 }
 
-DblVec ZMP::value(const DblVec& x) {
+DblVec ZMPConstraint::value(const DblVec& x) {
   m_rad->SetDOFValues(getDblVec(x,m_vars));
   OR::Vector moment(0,0,0);
   // calculate center of mass
@@ -66,7 +66,7 @@ DblVec ZMP::value(const DblVec& x) {
   return toDblVec(m_ab * xy + m_c);
 }
 
-ConvexConstraintsPtr ZMP::convex(const DblVec& x, Model* model) {
+ConvexConstraintsPtr ZMPConstraint::convex(const DblVec& x, Model* model) {
   DblVec curvals = getDblVec(x, m_vars);
   m_rad->SetDOFValues(curvals);
   DblMatrix jacmoment = DblMatrix::Zero(3, curvals.size());
@@ -93,7 +93,7 @@ ConvexConstraintsPtr ZMP::convex(const DblVec& x, Model* model) {
   return out;
 }
 
-void ZMP::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles) {
+void ZMPConstraint::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles) {
   Matrix<float, Dynamic, 3, RowMajor> xyz(m_ab.rows()*2, 3);
   xyz.col(2).setZero();
   int npts = m_pts.rows();
@@ -119,9 +119,9 @@ void ZMP::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphH
   handles.push_back(env.drawarrow(moment, moment_ground, .005, OR::RaveVector<float>(1,0,0,1)));
 }
 
-struct StaticTorqueCalc : public VectorOfVector {
+struct StaticTorqueCostCalc : public VectorOfVector {
   RobotAndDOFPtr m_rad;
-  StaticTorqueCalc(const RobotAndDOFPtr rad) : m_rad(rad) {}
+  StaticTorqueCostCalc(const RobotAndDOFPtr rad) : m_rad(rad) {}
   VectorXd operator()(const VectorXd& x) const {
     m_rad->SetDOFValues(toDblVec(x));
     VectorXd out = VectorXd::Zero(m_rad->GetDOF());
@@ -136,8 +136,8 @@ struct StaticTorqueCalc : public VectorOfVector {
   }
 };
 
-StaticTorque::StaticTorque(RobotAndDOFPtr rad, const VarVector& vars, double coeff) :
-  CostFromNumDiffErr(VectorOfVectorPtr(new StaticTorqueCalc(rad)), vars, VectorXd::Ones(vars.size())*coeff,
+StaticTorqueCost::StaticTorqueCost(RobotAndDOFPtr rad, const VarVector& vars, double coeff) :
+  CostFromNumDiffErr(VectorOfVectorPtr(new StaticTorqueCostCalc(rad)), vars, VectorXd::Ones(vars.size())*coeff,
     SQUARED,  "static_torque") {
 }
 
@@ -183,7 +183,7 @@ struct PECostInfo : public CostInfo {
     return CostInfoPtr(new PECostInfo());
   }
 };
-struct StaticTorqueCostInfo : public CostInfo {
+struct StaticTorqueCostCostInfo : public CostInfo {
   double coeff;
   int timestep;
   void fromJson(const Value& v) {
@@ -195,10 +195,10 @@ struct StaticTorqueCostInfo : public CostInfo {
     FAIL_IF_FALSE((timestep >= 0) && (timestep < n_steps));
   }
   void hatch(TrajOptProb& prob) {
-    prob.addCost(CostPtr(new StaticTorque(prob.GetRAD(), prob.GetVarRow(timestep), coeff)));
+    prob.addCost(CostPtr(new StaticTorqueCost(prob.GetRAD(), prob.GetVarRow(timestep), coeff)));
   }
   static CostInfoPtr create() {
-    return CostInfoPtr(new StaticTorqueCostInfo());
+    return CostInfoPtr(new StaticTorqueCostCostInfo());
   }
 };
 
@@ -244,7 +244,7 @@ MatrixX2d GetFeetPoly(const vector<KinBody::LinkPtr>& links) {
 }
 
 
-struct ZMPCntInfo : public CntInfo {
+struct ZMPConstraintCntInfo : public CntInfo {
   int timestep;
   vector<string> planted_link_names;
   void fromJson(const Value& v) {
@@ -264,18 +264,18 @@ struct ZMPCntInfo : public CntInfo {
       }
       planted_links.push_back(link);
     }
-    prob.addConstr(ConstraintPtr(new ZMP(prob.GetRAD(), GetFeetPoly(planted_links), prob.GetVarRow(timestep))));
+    prob.addConstr(ConstraintPtr(new ZMPConstraint(prob.GetRAD(), GetFeetPoly(planted_links), prob.GetVarRow(timestep))));
   }
   static CntInfoPtr create() {
-    return CntInfoPtr(new ZMPCntInfo());
+    return CntInfoPtr(new ZMPConstraintCntInfo());
   }
 };
 
 
 void RegisterHumanoidCostsAndCnts() {
   CostInfo::RegisterMaker("potential_energy", &PECostInfo::create);
-  CostInfo::RegisterMaker("static_torque", &StaticTorqueCostInfo::create);
-  CntInfo::RegisterMaker("zmp", &ZMPCntInfo::create);
+  CostInfo::RegisterMaker("static_torque", &StaticTorqueCostCostInfo::create);
+  CntInfo::RegisterMaker("zmp", &ZMPConstraintCntInfo::create);
 }
 
 

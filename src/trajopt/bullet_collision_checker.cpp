@@ -315,6 +315,7 @@ struct CollisionCollector : public btCollisionWorld::ContactResultCallback {
   virtual btScalar addSingleResult(btManifoldPoint& cp,
       const btCollisionObjectWrapper* colObj0Wrap,int partId0,int index0,
       const btCollisionObjectWrapper* colObj1Wrap,int partId1,int index1) {
+    if (cp.m_distance1 > m_cc->GetContactDistance()) return 0;
     const KinBody::Link* linkA = getLink(colObj0Wrap->getCollisionObject());
     const KinBody::Link* linkB = getLink(colObj1Wrap->getCollisionObject());
     m_collisions.push_back(Collision(linkA, linkB, toOR(cp.m_positionWorldOnA), toOR(cp.m_positionWorldOnB),
@@ -503,7 +504,7 @@ void BulletCollisionChecker::AddAndRemoveBodies(const vector<KinBodyPtr>& curVec
   vector<KinBodyPtr> toRemove;
   SetDifferences(curVec, prevVec, toAdd, toRemove);
   BOOST_FOREACH(const KinBodyPtr& body, toAdd) {
-    assert(!bodies[i]->GetUserData("bt"));
+    assert(!body->GetUserData("bt"));
     AddKinBody(body);
   }
   BOOST_FOREACH(const KinBodyPtr& body, toRemove) {

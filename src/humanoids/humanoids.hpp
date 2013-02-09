@@ -6,12 +6,12 @@
 namespace trajopt {
 using Eigen::MatrixX2d;
 
-struct ZMP: public Constraint, public Plotter {
+struct ZMPConstraint : public Constraint, public Plotter {
   RobotAndDOFPtr m_rad;
   VarVector m_vars;
   MatrixX2d m_ab, m_pts;
   VectorXd m_c;
-  ZMP(RobotAndDOFPtr rad, const MatrixX2d& hullpts, const VarVector& vars);
+  ZMPConstraint(RobotAndDOFPtr rad, const MatrixX2d& hullpts, const VarVector& vars);
   DblVec value(const DblVec&);
   ConvexConstraintsPtr convex(const DblVec&, Model* model);
   void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
@@ -20,10 +20,10 @@ struct ZMP: public Constraint, public Plotter {
 };
 
 
-struct StaticTorque : public CostFromNumDiffErr {
+struct StaticTorqueCost : public CostFromNumDiffErr {
   RobotAndDOFPtr m_rad;
   VarVector m_vars;
-  StaticTorque(RobotAndDOFPtr rad, const VarVector& vars, double coeff);
+  StaticTorqueCost(RobotAndDOFPtr rad, const VarVector& vars, double coeff);
 };
 
 struct PECost : public CostFromNumDiffErr {

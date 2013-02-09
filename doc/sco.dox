@@ -1,10 +1,10 @@
 /**
 
-\mainpage Sequential Convex Optimization (SCO)
+\page sco Sequential Convex Optimization
 
 \section overview Motivation
 
-This is a software package for solving non-convex optimization problems.
+This is a library for solving non-convex optimization problems.
 The methods implemented here solve the original non-convex problem by repeatedly making convex approximations to the cost and constraint functions and solving the resulting convex problems.
 
 Our motivations for creating this software rather than using an existing non-convex optimization program are as follows:
@@ -36,9 +36,7 @@ The most naive algorithm would repeatedly replace \f$f, g_i, h_i\f$ by convex/af
 - the approximations are only valid locally around the current iterate \f$x\f$, so the solution to the convex problem might not improve the cost and constraint violation of the original non-convex problem.
 - the convex subproblem might be infeasible, i.e., there is no point that satisfies all of the constraints.
 
-Todo: description of trust-region SQP methods that use L1 penalties
-
-@section api API overview
+\section api API overview
 
 To set up your optimization problem, you will likely need to interact with the following classes
 - \ref ipi::sco::Model: serves as the interface to a convex optimization program; each Model object stores a convex optimization problems with a set of variables and constraints.
@@ -47,29 +45,7 @@ To set up your optimization problem, you will likely need to interact with the f
 
 While the solver uses Cost and Constraint objects, which enable a user-defined problem convexification, it's usually most convenient to write functions (instead of classes). The file \ref modeling_utils.hpp contains some tools for constructing Cost and Constraint objects based on user-defined functions (and, optionally, gradients and hessians.)
 
-\section Installation
-
-This code has been tested on Linux and OSX. 
-
-Dependencies:
-- CMake
-- boost
-- Eigen
-- Gurobi (though in the future we plan to support other solvers and provide a custom solver)
-
-Instructions
-- install CMake, boost, Eigen, e.g. using apt-get (Debian/Ubuntu) or homebrew (Mac).
-- download and install Gurobi from <a href="http://www.gurobi.com">www.gurobi.com</a>. You'll need to make an account and obtain a license.
-- set the environment variable \c GUROBI_HOME to point to the folder of your Gurobi directory that contains \c include, \c lib, etc. One my development machines, these are \c /Library/gurobi501/mac64 or \c /home/username/Src/gurobi502/linux64. 
-- Follow the usual CMake procedure:
-  - mkdir build_dir
-  - cd build_dir
-  - cmake /path/to/source_root
-  - make -j
-  - wait and pray
-  - <b>DON'T</b> make install
-   
-
 \section References
+
 
 */

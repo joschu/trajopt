@@ -667,7 +667,7 @@ OpenRAVE::GraphHandlePtr OSGViewer::drawtrimesh (const float *ppoints, int strid
   return GraphHandlePtr(new OsgGraphHandle(geode, m_root.get()));
 }
 
-OpenRAVE::GraphHandlePtr  OSGViewer::drawlinelist(const float *ppoints,  int numPoints, int stride, float fwidth, const RaveVectorf &color) {
+OpenRAVE::GraphHandlePtr  OSGViewer::_drawlines(osg::PrimitiveSet::Mode mode, const float *ppoints,  int numPoints, int stride, float fwidth, const RaveVectorf &color) {
 
   osg::Geometry* geom = new osg::Geometry;
 
@@ -697,7 +697,7 @@ OpenRAVE::GraphHandlePtr  OSGViewer::drawlinelist(const float *ppoints,  int num
   geom->setColorBinding(osg::Geometry::BIND_OVERALL);
 
   geom->setVertexArray(osgPts);
-  geom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINES,0,osgPts->size()));
+  geom->addPrimitiveSet(new osg::DrawArrays(mode,0,osgPts->size()));
 
 
   Geode* geode = new osg::Geode();
@@ -706,3 +706,9 @@ OpenRAVE::GraphHandlePtr  OSGViewer::drawlinelist(const float *ppoints,  int num
   return GraphHandlePtr(new OsgGraphHandle(geode, m_root.get()));
 }
 
+OpenRAVE::GraphHandlePtr  OSGViewer::drawlinestrip(const float *ppoints,  int numPoints, int stride, float fwidth, const RaveVectorf &color) {
+  return _drawlines(osg::PrimitiveSet::LINE_STRIP, ppoints, numPoints, stride, fwidth, color);
+}
+OpenRAVE::GraphHandlePtr  OSGViewer::drawlinelist(const float *ppoints,  int numPoints, int stride, float fwidth, const RaveVectorf &color) {
+  return _drawlines(osg::PrimitiveSet::LINES, ppoints, numPoints, stride, fwidth, color);
+}

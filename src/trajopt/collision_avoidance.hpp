@@ -3,7 +3,7 @@
 #include "trajopt/collision_checker.hpp"
 #include "ipi/sco/modeling.hpp"
 #include "ipi/sco/sco_fwd.hpp"
-#include "cache.hpp"
+#include "cache.hxx"
 
 
 namespace trajopt {

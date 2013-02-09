@@ -183,6 +183,9 @@ public:
   PyGraphHandle PlotKinBody(py::object py_kb) {
     return PyGraphHandle(m_viewer->PlotKinBody(GetCppKinBody(py_kb, m_viewer->GetEnv())));
   }
+  void SetAllTransparency(float a) {
+    m_viewer->SetAllTransparency(a);
+  }
 };
 PyOSGViewer PyGetViewer(py::object py_env) {
   EnvironmentBasePtr env = GetCppEnv(py_env);
@@ -222,6 +225,8 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
   py::class_< PyOSGViewer >("OSGViewer", py::no_init)
      .def("Step", &PyOSGViewer::Step)
      .def("PlotKinBody", &PyOSGViewer::PlotKinBody)
+     .def("SetAllTransparency", &PyOSGViewer::SetAllTransparency)
     ;
   py::def("GetViewer", &PyGetViewer);
+
 }

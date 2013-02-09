@@ -6,7 +6,7 @@
 #include <openrave/openrave.h>
 
 #include "ipi/sco/modeling.hpp"
-#include "trajopt/basic_array.hpp"
+#include "utils/basic_array.hpp"
 
 namespace trajopt {
 
@@ -16,8 +16,9 @@ using OR::KinBody;
 using OR::RobotBase;
 using std::vector;
 using std::map;
-
 using namespace ipi::sco;
+using namespace util;
+
 typedef BasicArray<Var> VarArray;
 
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> DblMatrix;

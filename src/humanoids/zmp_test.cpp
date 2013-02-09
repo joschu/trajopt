@@ -160,7 +160,7 @@ void LeftRightStep(RobotBasePtr gfe, TrajArray& out) {
 
 
     for (int i=1; i < n_steps; ++i) {
-      prob->addCost(CostPtr(new StaticTorque(rad, prob->GetVarRow(i), 1)));
+      prob->addCost(CostPtr(new StaticTorqueCost(rad, prob->GetVarRow(i), 1)));
       prob->addCost(CostPtr(new PECost(rad, prob->GetVarRow(i), .01)));
       prob->addCost(CostPtr(new CollisionCost(DIST_PEN, COLL_COEFF, rad, prob->GetVarRow(i))));
 //      prob->addConstr(ConstraintPtr(new CartPoseConstraint(prob->GetVarRow(i), Tfoottarg, rad, rfoot, xonly)));
@@ -185,7 +185,7 @@ void LeftRightStep(RobotBasePtr gfe, TrajArray& out) {
     SetStartFixed(*prob);
     prob->addCost(CostPtr(new JointVelCost(prob->GetVars(), VEL_COEFF*VectorXd::Ones(rad->GetDOF()))));
     for (int i=1; i < n_steps; ++i) {
-      prob->addCost(CostPtr(new StaticTorque(rad, prob->GetVarRow(i), 1)));
+      prob->addCost(CostPtr(new StaticTorqueCost(rad, prob->GetVarRow(i), 1)));
       prob->addCost(CostPtr(new PECost(rad, prob->GetVarRow(i), .01)));
       prob->addCost(CostPtr(new CollisionCost(DIST_PEN, COLL_COEFF, rad, prob->GetVarRow(i))));
       SetLinkFixed(*prob, lfoot, i);
@@ -205,7 +205,7 @@ void LeftRightStep(RobotBasePtr gfe, TrajArray& out) {
     SetStartFixed(*prob);
     prob->addCost(CostPtr(new JointVelCost(prob->GetVars(), VEL_COEFF*VectorXd::Ones(rad->GetDOF()))));
     for (int i=1; i < n_steps; ++i) {
-      prob->addCost(CostPtr(new StaticTorque(rad, prob->GetVarRow(i), 1)));
+      prob->addCost(CostPtr(new StaticTorqueCost(rad, prob->GetVarRow(i), 1)));
       prob->addCost(CostPtr(new PECost(rad, prob->GetVarRow(i), .01)));
       prob->addCost(CostPtr(new CollisionCost(DIST_PEN, COLL_COEFF, rad, prob->GetVarRow(i))));
       SetLinkFixed(*prob, rfoot, i);
@@ -228,7 +228,7 @@ void LeftRightStep(RobotBasePtr gfe, TrajArray& out) {
     SetStartFixed(*prob);
     prob->addCost(CostPtr(new JointVelCost(prob->GetVars(), VEL_COEFF*VectorXd::Ones(rad->GetDOF()))));
     for (int i=1; i < n_steps; ++i) {
-      prob->addCost(CostPtr(new StaticTorque(rad, prob->GetVarRow(i), 1)));
+      prob->addCost(CostPtr(new StaticTorqueCost(rad, prob->GetVarRow(i), 1)));
       prob->addCost(CostPtr(new PECost(rad, prob->GetVarRow(i), .01)));
       prob->addCost(CostPtr(new CollisionCost(DIST_PEN, COLL_COEFF, rad, prob->GetVarRow(i))));
       SetLinkFixed(*prob, lfoot, i);
@@ -305,7 +305,7 @@ int main(int argc, char* argv[]) {
       SetLeftZMP(*prob, i);
       SetRightZMP(*prob, i);
 
-//      prob->addCost(CostPtr(new StaticTorque(rad, prob->GetVarRow(i), 1)));
+//      prob->addCost(CostPtr(new StaticTorqueCost(rad, prob->GetVarRow(i), 1)));
 //      prob->addCost(CostPtr(new PECost(rad, prob->GetVarRow(i), .01)));
 //      prob->addCost(CostPtr(new CollisionCost(DIST_PEN, COLL_COEFF, rad, prob->GetVarRow(i))));
     }

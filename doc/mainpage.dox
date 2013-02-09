@@ -1,0 +1,12 @@
+/**
+
+\mainpage Trajectory Optimization for Motion Planning
+
+The C++ code has the following main parts:
+- sco: A library for non-convex optimization. It allows you to define cost and constraint functions with custom convexifications.
+- trajopt: Costs and constraints related to kinematics and collisions
+
+<a href="../sphinx_build/html/index.html">Main trajopt documentation</a>
+
+
+*/

@@ -165,7 +165,10 @@ typedef OpenRAVE::RaveVector<float> RaveVectorf;
 
 void PlotCollisions(const std::vector<Collision>& collisions, OR::EnvironmentBase& env, vector<OR::GraphHandlePtr>& handles, double safe_dist) {
   BOOST_FOREACH(const Collision& col, collisions) {
-    RaveVectorf color = (col.distance < safe_dist) ?  RaveVectorf(1,0,0,1) : RaveVectorf(0,1,0,1);
+    RaveVectorf color;
+    if (col.distance < 0) color = RaveVectorf(1,0,0,1);
+    else if (col.distance < safe_dist) color = RaveVectorf(1,1,0,1);
+    else color = RaveVectorf(0,1,0,1);
     handles.push_back(env.drawarrow(col.ptA, col.ptB, .0025, color));
   }
 }
