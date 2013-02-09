@@ -41,7 +41,15 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 
-html:
+all: sphinx doxygen
+
+doxygen:
+	doxygen Doxyfile
+
+upload:
+	rsync -azvu --delete  ./ pabbeel@rll.berkeley.edu:/var/www/trajopt/doc/
+
+sphinx:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."

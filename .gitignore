@@ -25,3 +25,5 @@ Testing/
 .svn
 build_html
 bigdata/*.pcd
+sphinx_build
+dox_build
