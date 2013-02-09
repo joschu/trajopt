@@ -69,7 +69,7 @@ TEST(collision_checker, box_distance) {
 
   {
     checker->SetContactDistance(.1);
-    box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.1,0,0)));
+    box1->SetTransform(Transform(Vector(1,0,0,0), Vector(1.09,0,0)));
     box0->SetTransform(Transform(Vector(1,0,0,0), Vector(0,0,0)));
     EXPECT_NUM_COLLISIONS(1);
   }
