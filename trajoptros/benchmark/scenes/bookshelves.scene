@@ -1,0 +1,44 @@
+bookshelves
+* bookshelf_bottom
+1
+box
+0.60 1.1 0.02
+0.95 0 0.20
+0 0 0 1
+0 0 0 0
+* bookshelf_shelf1
+1
+box
+0.60 1.1 0.02
+0.95 0 0.60
+0 0 0 1
+0 0 0 0
+* bookshelf_shelf2
+1
+box
+0.60 1.1 0.02
+0.95 0 1.00
+0 0 0 1
+0 0 0 0
+* bookshelf_top
+1
+box
+0.60 1.1 0.02
+0.95 0 1.40
+0 0 0 1
+0 0 0 0
+* bookshelf_left_wall
+1
+box
+0.60 0.02 1.40
+0.95 0.55 0.7
+0 0 0 1
+0 0 0 0
+* bookshelf_right_wall
+1
+box
+0.60 0.02 1.40
+0.95 -0.55 0.7
+0 0 0 1
+0 0 0 0
+.
