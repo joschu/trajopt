@@ -125,7 +125,15 @@ ConstraintFromNumDiff::ConstraintFromNumDiff(VectorOfVectorPtr f, const VarVecto
     Constraint(name), f_(f), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON), enabled_(enabled) {}
 vector<double> ConstraintFromNumDiff::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
-  return toDblVec(f_->call(x));
+  if (enabled_.empty()) return toDblVec(f_->call(x));
+  else {
+    VectorXd y = f_->call(x);
+    DblVec out;
+    for (int i=0; i < enabled_.size(); ++i) {
+      if (enabled_[i]) out.push_back(y[i]);
+    }
+    return out;
+  }
 }
 ConvexConstraintsPtr ConstraintFromNumDiff::convex(const vector<double>& xin, Model* model) {
   VectorXd x = getVec(xin, vars_);

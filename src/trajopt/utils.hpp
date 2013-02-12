@@ -4,7 +4,7 @@
 
 namespace trajopt {
 
-TrajArray getTraj(const vector<double>& x, const VarArray& vars);
+TrajArray TRAJOPT_API getTraj(const vector<double>& x, const VarArray& vars);
 
 inline Vector3d toVector3d(const OR::Vector& v) {
   return Vector3d(v.x, v.y, v.z);

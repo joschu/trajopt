@@ -9,6 +9,7 @@ This code has been tested on Linux and OSX.
 Dependencies:
 
 - OpenRAVE
+- OpenSceneGraph
 - CMake
 - boost
 - Eigen
@@ -16,7 +17,11 @@ Dependencies:
 
 Instructions:
 
-- install CMake, boost, and Eigen using your package manager.
+- install OpenRAVE using `instructions on openrave.org <http://openrave.org/docs/latest_stable>`_
+- install OpenSceneGraph, CMake, boost, and Eigen using your package manager. In Ubuntu, that's::
+
+    sudo apt-get install libopenscene-graph cmake libboost-all-dev libeigen3-dev
+
 - download and install Gurobi from `<http://www.gurobi.com>`_. You'll need to make an account and obtain a license.
 - set the environment variable GUROBI_HOME to point to the folder of your Gurobi directory that contains the folders :file:`include` and :file:`lib`. On my development machines, these are :file:`/home/username/Src/gurobi502/linux64` and :file:`/Library/gurobi501/mac64`.
 - Follow the usual CMake procedure::
@@ -26,9 +31,11 @@ Instructions:
     cmake /path/to/trajopt
     make -j
   
-The build type defaults to RelWithDebInfo.
+The build type is `RelWithDebInfo` by default.
 
-You can check if the build worked by typing::
+You can check if the build worked by typing
+
+::
 
   make test
   
@@ -48,7 +55,9 @@ The output should look something like this::
 
   Total Test time (real) =   1.80 sec
 
-If one of the unit tests fails, you can get more diagnostic information by running the executable separately, e.g.::
+If one of the unit tests fails, you can get more diagnostic information by running the executable separately, e.g.
+
+::
 
   bin/ipi-sco-unit
 

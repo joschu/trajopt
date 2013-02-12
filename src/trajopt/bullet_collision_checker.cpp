@@ -476,10 +476,12 @@ void BulletCollisionChecker::RemoveKinBody(const OR::KinBodyPtr& body) {
   RAVELOG_DEBUG("removing %s\n", body->GetName().c_str());
   BOOST_FOREACH(const OR::KinBody::LinkPtr& link, body->GetLinks()) {
     CollisionObjectWrapper* cow = GetCow(link.get());
-    m_world->removeCollisionObject(cow);
-    m_link2cow.erase(link.get());
-    body->RemoveUserData("bt");
+    if (cow) {
+      m_world->removeCollisionObject(cow);
+      m_link2cow.erase(link.get());      
+    }
   }
+  body->RemoveUserData("bt");
 }
 
 template <typename T>

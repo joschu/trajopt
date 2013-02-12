@@ -191,12 +191,16 @@ public:
   void SetAllTransparency(float a) {
     m_viewer->SetAllTransparency(a);
   }
+  void Idle() {
+    m_viewer->Idle();
+  }
 };
 PyOSGViewer PyGetViewer(py::object py_env) {
   EnvironmentBasePtr env = GetCppEnv(py_env);
   ViewerBasePtr viewer = OSGViewer::GetOrCreate(env);
   return PyOSGViewer(boost::dynamic_pointer_cast<OSGViewer>(viewer));
 }
+
 
 BOOST_PYTHON_MODULE(ctrajoptpy) {
 
@@ -234,6 +238,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
      .def("Step", &PyOSGViewer::Step)
      .def("PlotKinBody", &PyOSGViewer::PlotKinBody)
      .def("SetAllTransparency", &PyOSGViewer::SetAllTransparency)
+     .def("Idle", &PyOSGViewer::Idle)
     ;
   py::def("GetViewer", &PyGetViewer);
 

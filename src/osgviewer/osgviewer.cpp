@@ -209,7 +209,7 @@ void   AddCylinderBetweenPoints(const osg::Vec3& StartPoint, osg::Vec3 EndPoint,
   osg::Vec3   z = osg::Vec3(0,0,1);
   osg::Vec3 p = (StartPoint - EndPoint);
   if (p.length() == 0) {
-    cerr << "tried to draw a cylinder of length 0" << endl;
+//    cerr << "tried to draw a cylinder of length 0" << endl;
     return;
   }
   p.normalize();
@@ -373,6 +373,10 @@ boost::shared_ptr<OSGViewer> OSGViewer::GetOrCreate(OpenRAVE::EnvironmentBasePtr
 }
 
 
+void throw_runtime_error(const osgGA::GUIEventAdapter&) {
+  throw std::runtime_error("pressed escape");
+}
+
 OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false) {
   m_name = "osg";
   m_root = new Group;
@@ -388,6 +392,7 @@ OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false) 
 
   AddKeyCallback('h', boost::bind(&OSGViewer::PrintHelp, this), "Display help");
   AddKeyCallback('p', boost::bind(&OSGViewer::Idle, this), "Toggle idle");
+  AddKeyCallback(osgGA::GUIEventAdapter::KEY_Escape, &throw_runtime_error, "Quit (raise exception)");
   PrintHelp();
 }
 

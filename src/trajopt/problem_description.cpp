@@ -24,6 +24,7 @@ bool gRegisteredMakers = false;
 void RegisterMakers() {
 
   CostInfo::RegisterMaker("pose", &PoseCostInfo::create);
+  CostInfo::RegisterMaker("joint_pos", &JointPosCostInfo::create);
   CostInfo::RegisterMaker("joint_vel", &JointVelCostInfo::create);
   CostInfo::RegisterMaker("collision", &CollisionCostInfo::create);
   CostInfo::RegisterMaker("continuous_collision", &ContinuousCollisionCostInfo::create);
@@ -91,7 +92,7 @@ void fromJson(const Json::Value& v, Vector4d& x) {
 
 namespace trajopt {
 
-ProblemConstructionInfo* gPCI;
+TRAJOPT_API ProblemConstructionInfo* gPCI;
 
 void BasicInfo::fromJson(const Json::Value& v) {
   childFromJson(v, start_fixed, "start_fixed", true);
@@ -157,9 +158,10 @@ void InitInfo::fromJson(const Json::Value& v) {
   string type_str;
   childFromJson(v, type_str, "type");
   int n_steps = gPCI->basic_info.n_steps;
+  int n_dof = gPCI->rad->GetDOF();
 
   if (type_str == "stationary") {
-    data = toVectorXd(gPCI->rad->GetDOFValues()).transpose().replicate(n_steps, 1);;
+    data = toVectorXd(gPCI->rad->GetDOFValues()).transpose().replicate(n_steps, 1);
   }
   else if (type_str == "given_traj") {
     FAIL_IF_FALSE(v.isMember("data"));
@@ -167,12 +169,24 @@ void InitInfo::fromJson(const Json::Value& v) {
     if (vdata.size() != n_steps) {
       PRINT_AND_THROW("given initialization traj has wrong length");
     }
-    int n_dof = gPCI->rad->GetDOF();
     data.resize(n_steps, n_dof);
     for (int i=0; i < n_steps; ++i) {
       DblVec row;
       fromJsonArray(vdata[i], row, n_dof);
       data.row(i) = toVectorXd(row);
+    }
+  }
+  else if (type_str == "straight_line") {
+    FAIL_IF_FALSE(v.isMember("endpoint"));
+    DblVec endpoint;
+    childFromJson(v, endpoint, "endpoint");
+    if (endpoint.size() != n_dof) {
+      PRINT_AND_THROW(boost::format("wrong number of dof values in initialization. expected %i got %j")%n_dof%endpoint.size());
+    }
+    data = TrajArray(n_steps, n_dof);
+    DblVec start = gPCI->rad->GetDOFValues();
+    for (int idof = 0; idof < n_dof; ++idof) {
+      data.col(idof) = VectorXd::LinSpaced(n_steps, start[idof], endpoint[idof]);
     }
   }
 
@@ -364,6 +378,29 @@ void PoseCntInfo::fromJson(const Value& v) {
     PRINT_AND_THROW(boost::format("invalid link name: %s")%linkstr);
   }
 }
+
+void JointPosCostInfo::fromJson(const Value& v) {
+  FAIL_IF_FALSE(v.isMember("params"));
+  int n_steps = gPCI->basic_info.n_steps;
+  const Value& params = v["params"];
+  childFromJson(params, vals, "vals");
+  childFromJson(params, coeffs, "coeffs");
+  if (coeffs.size() == 1) coeffs = DblVec(n_steps, coeffs[0]);
+
+  int n_dof = gPCI->rad->GetDOF();
+  if (vals.size() != n_dof) {
+    PRINT_AND_THROW( boost::format("wrong number of dof vals. expected %i got %i")%n_dof%vals.size());
+  }
+  childFromJson(params, timestep, "timestep", gPCI->basic_info.n_steps-1);
+}
+void JointPosCostInfo::hatch(TrajOptProb& prob) {
+  prob.addCost(CostPtr(new JointPosCost(prob.GetVarRow(timestep), toVectorXd(vals), toVectorXd(coeffs))));
+}
+CostInfoPtr JointPosCostInfo::create() {
+  return CostInfoPtr(new JointPosCostInfo());
+}
+
+
 CntInfoPtr PoseCntInfo::create() {
   return CntInfoPtr(new PoseCntInfo());
 }
@@ -405,7 +442,6 @@ void JointVelCostInfo::fromJson(const Value& v) {
   else if (coeffs.size() != n_dof) {
     PRINT_AND_THROW( boost::format("wrong number of coeffs. expected %i got %i")%n_dof%coeffs.size());
   }
-
 }
 CostInfoPtr JointVelCostInfo::create() {
   return CostInfoPtr(new JointVelCostInfo());

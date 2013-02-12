@@ -28,22 +28,6 @@ PointCloud<pcl::PointXYZ>::Ptr boxFilter(PointCloud<pcl::PointXYZ>::ConstPtr, fl
 PointCloud<pcl::PointXYZ>::Ptr boxFilterNegative(PointCloud<pcl::PointXYZ>::ConstPtr, float xmin, float xmax, float ymin, float ymax, float zmin, float zmax);
 
 
-enum MeshFormat {
-  PLY,
-  VTK,
-  CUSTOM
-};
-/**
- * CUSTOM FORMAT
- * 4   [num vertices]
- * x1 y1 z1
- * x2 y2 z2
- * x3 y3 z3
- * x4 y4 z4
- * 2   [num triangles]
- * 0 1 2
- * 3 1 2
- */
-void saveMesh(pcl::PolygonMesh::ConstPtr mesh, const std::string& fname, MeshFormat fmt);
+void saveMesh(pcl::PolygonMesh::ConstPtr mesh, const std::string& fname);
 
 }

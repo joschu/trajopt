@@ -4,6 +4,7 @@
 #include <boost/format.hpp>
 #include <string>
 #include <sstream>
+#include "trajopt/macros.h"
 
 #define PRINT_AND_THROW(s) do {\
   std::cerr << "\033[1;31mERROR " << s << "\033[0m\n";\
@@ -19,10 +20,10 @@
 
 namespace json_marshal {
 
-void fromJson(const Json::Value& v, bool& ref);
-void fromJson(const Json::Value& v, int& ref);
-void fromJson(const Json::Value& v, double& ref);
-void fromJson(const Json::Value& v, std::string& ref);
+TRAJOPT_API void fromJson(const Json::Value& v, bool& ref);
+TRAJOPT_API void fromJson(const Json::Value& v, int& ref);
+TRAJOPT_API void fromJson(const Json::Value& v, double& ref);
+TRAJOPT_API void fromJson(const Json::Value& v, std::string& ref);
 template <class T>
 inline void fromJson(const Json::Value& v, T& ref) {
   ref.fromJson(v);

@@ -76,6 +76,25 @@ void makeTrajVariablesAndBounds(int n_steps, RobotAndDOFPtr manip, OptProb& prob
 
 }
 
+JointPosCost::JointPosCost(const VarVector& vars, const VectorXd& vals, const VectorXd& coeffs) :
+    Cost("JointVel"), vars_(vars), vals_(vals), coeffs_(coeffs) {
+    for (int i=0; i < vars.size(); ++i) {
+      if (coeffs[i] > 0) {
+        AffExpr diff = exprSub(AffExpr(vars[i]), AffExpr(vals[i]));
+        exprInc(expr_, exprMult(exprSquare(diff), coeffs[i]));
+      }
+    }
+}
+double JointPosCost::value(const vector<double>& xvec) {
+  VectorXd dofs = getVec(xvec, vars_);
+  return ((dofs - vals_).array().square() * coeffs_.array()).sum();
+}
+ConvexObjectivePtr JointPosCost::convex(const vector<double>& x, Model* model) {
+  ConvexObjectivePtr out(new ConvexObjective(model));
+  out->addQuadExpr(expr_);
+  return out;
+}
+
 
 JointVelCost::JointVelCost(const VarArray& vars, const VectorXd& coeffs) :
     Cost("JointVel"), vars_(vars), coeffs_(coeffs) {
@@ -88,8 +107,6 @@ JointVelCost::JointVelCost(const VarArray& vars, const VectorXd& coeffs) :
     }
   }
 }
-
-
 double JointVelCost::value(const vector<double>& xvec) {
   MatrixXd traj = getTraj(xvec, vars_);
   return (diffAxis0(traj).array().square().matrix() * coeffs_.asDiagonal()).sum();
@@ -114,7 +131,6 @@ JointAccCost::JointAccCost(const VarArray& vars, const VectorXd& coeffs) :
     }
   }
 }
-
 double JointAccCost::value(const vector<double>& xvec) {
   MatrixXd traj = getTraj(xvec, vars_);
   return (diffAxis0(diffAxis0(traj)).array().square().matrix() * coeffs_.asDiagonal()).sum();

@@ -43,6 +43,16 @@ public:
   CartVelConstraint(const VarVector& step0vars, const VarVector& step1vars, RobotAndDOFPtr manip, KinBody::LinkPtr link, double distlimit);
 };
 
+class JointPosCost : public Cost {
+public:
+  JointPosCost(const VarVector& vars, const VectorXd& vals, const VectorXd& coeffs);
+  virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model);
+  virtual double value(const vector<double>&);
+private:
+  VarVector vars_;
+  VectorXd vals_, coeffs_;
+  QuadExpr expr_;
+};
 
 class JointVelCost : public Cost {
 public:

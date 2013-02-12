@@ -360,6 +360,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
   assert(retval != INVALID && "should never happen");
   results_.status = retval;
   IPI_LOG_INFO("\n==================\n%s==================", Str(results_));
+  callCallbacks(x_);
 
   return retval;
 

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <openrave/openrave.h>
 #include "robot_and_dof.hpp"
+#include "trajopt/macros.h"
 
 namespace trajopt {
 
@@ -17,10 +18,10 @@ struct Collision {
   Collision(const KinBody::Link* linkA, const KinBody::Link* linkB, const OR::Vector& ptA, const OR::Vector& ptB, const OR::Vector& normalB2A, double distance, float weight=1, float time=0) :
     linkA(linkA), linkB(linkB), ptA(ptA), ptB(ptB), normalB2A(normalB2A), distance(distance), weight(weight), time(0) {}
 };
-std::ostream& operator<<(std::ostream&, const Collision&);
+TRAJOPT_API std::ostream& operator<<(std::ostream&, const Collision&);
 
 
-class CollisionChecker : public OR::UserData {
+class TRAJOPT_API CollisionChecker : public OR::UserData {
 public:
   /** 
   Each CollisionChecker object has a copy of the world, so for performance, don't make too many copies  
@@ -61,9 +62,9 @@ protected:
 };
 typedef boost::shared_ptr<CollisionChecker> CollisionCheckerPtr;
 
-CollisionCheckerPtr CreateCollisionChecker(OR::EnvironmentBaseConstPtr env);
+CollisionCheckerPtr TRAJOPT_API CreateCollisionChecker(OR::EnvironmentBaseConstPtr env);
 
-void PlotCollisions(const std::vector<Collision>& collisions, OR::EnvironmentBase& env, vector<OR::GraphHandlePtr>& handles, double safe_dist);
+TRAJOPT_API void PlotCollisions(const std::vector<Collision>& collisions, OR::EnvironmentBase& env, vector<OR::GraphHandlePtr>& handles, double safe_dist);
 
 }
 

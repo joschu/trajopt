@@ -21,8 +21,12 @@ def request_skeleton(n_steps):
             "params": {"coeffs":[1]}
         },
         {
-            "type":"collision",
-            "params":{"coeffs":[1], "dist_pen":[.01]}
+            "type" : "joint_pos",
+            "params" : {"coeffs": ([.1]*28 + [0]*7), "vals":standing_posture.tolist()}
+        },
+        {
+            "type":"continuous_collision",
+            "params":{"coeffs":[1], "dist_pen":[.04]}
         }
         ],
         "constraints" : [
@@ -33,14 +37,14 @@ def request_skeleton(n_steps):
     }
     for i in xrange(1,n_steps):
         request["costs"].extend([
-        # {
-        #     "type":"potential_energy",
-        #     "params":{"coeff" : .01,"timestep":i}
-        # },
-        {
-            "type":"static_torque",
-            "params":{"coeff" : .1,"timestep":i}
-        }                    
+         #{
+             #"type":"potential_energy",
+             #"params":{"coeff" : .0005,"timestep":i}
+         #},
+        #{
+            #"type":"static_torque",
+            #"params":{"coeff" : .01,"timestep":i}
+        #}                    
         ])
     return request    
 
@@ -162,7 +166,75 @@ def shift_weight_request(robot, n_steps, to_foot):
                 })                    
 
     return request
+
+def press_button_request(robot, hand_xyz, hand_link, foot_links, n_steps):
+    """
+    Sets up the problem to safely shift the weight to the other foot (to_foot)
+    Suppose to_foot = "r_foot"    
+    Then problem constrains both feet to remain at fixed poses (their current poses)
+    at all intermediate timesteps, the center of mass lies over the convex hull of l_foot and r_foot
+    at the final timestep, the center of mass lies over r_foot
+    """    
     
+    from_foot, to_foot = foot_links
+    
+    request = request_skeleton(n_steps)
+    from_foot_xyz, from_foot_quat = xyzQuatFromMatrix(robot.GetLink(from_foot).GetTransform())
+    to_foot_xyz, to_foot_quat = xyzQuatFromMatrix(robot.GetLink(to_foot).GetTransform())
+        
+    for i in xrange(1, n_steps):
+        request["constraints"].extend([
+            {
+                "type":"pose",
+                "name":"from_foot_pose",
+                "params":{
+                    "xyz":list(from_foot_xyz),
+                    "wxyz":list(from_foot_quat),
+                    "link":from_foot,
+                    "timestep":i
+                }
+            },
+            {
+                "type":"pose",
+                "name":"to_foot_pose",
+                "params":{
+                    "xyz":list(to_foot_xyz),
+                    "wxyz":list(to_foot_quat),
+                    "link":to_foot,
+                    "timestep":i
+                }
+            }
+        ])    
+        request["constraints"].append(
+            {
+                "type":"zmp",
+                "params":{"planted_links":[from_foot, to_foot],"timestep":i}
+            })
+    request["constraints"].append(
+        {
+            "type":"pose",
+            "name":"final_hand_pose",
+            "params":{
+                "xyz":list(hand_xyz),
+                "wxyz":[1,0,0,0],
+                "link":hand_link,
+                "pos_coeffs":[1,1,1],
+                "rot_coeffs":[0,0,0],
+                "timestep":i
+            }
+        }        
+    )
+
+    return request
+
+
+    
+def animate_traj(viewer, robot, traj):
+    for (i,row) in enumerate(traj):
+        print "step",i
+        robot.SetActiveDOFValues(row)
+        viewer.Idle()
+        
     
 if __name__ == "__main__":
     
@@ -172,8 +244,8 @@ if __name__ == "__main__":
     if env is None:
         env = rave.Environment()
         env.StopSimulation()
-        loadsuccess = env.Load("/Users/joschu/Proj/drc/gfe.xml")
-        loadsuccess = loadsuccess and env.Load("/Users/joschu/Proj/darpa-proposal/drclogs.env.xml")
+        loadsuccess = env.Load("../bigdata/atlas.xml")
+        loadsuccess = loadsuccess and env.Load("../data/obstructed_door.env.xml")
         assert loadsuccess
         try:
             import IPython
@@ -187,10 +259,15 @@ if __name__ == "__main__":
     robot = env.GetRobots()[0]        
     init_transform = np.eye(4)
     init_transform[:3,3] = [-.35, 1, .92712]
+    init_transform[:3,3] = [.1, 1, .92712]
+    #init_transform[:3,3] = [2.6, 1, .92712]
     robot.SetTransform(init_transform)
     robot.SetDOFValues(np.zeros(robot.GetDOF()))
     robot.SetActiveDOFs(np.arange(robot.GetDOF()), rave.DOFAffine.Transform)
-    
+    # move arms to side
+    robot.SetDOFValues([-1.3],[robot.GetJoint("l_arm_shx").GetDOFIndex()])
+    robot.SetDOFValues([1.3],[robot.GetJoint("r_arm_shx").GetDOFIndex()])
+    standing_posture = robot.GetActiveDOFValues()
     ##################
     trajoptpy.SetInteractive(True)
     
@@ -199,33 +276,51 @@ if __name__ == "__main__":
     cc.ExcludeCollisionPair(robot.GetLink("r_foot"), env.GetKinBody("ProjectRoom").GetLink("Floor"))
     
     n_steps = 6
+
+
+    x_button_press = 2.55 # if robot is at this x-coordinate, he can reach the button
+    xyz_button = env.GetKinBody("bigredbutton").GetTransform()[:3,3]
+    xyz_button[2] += .15;
+
+    totaltraj = []
     
     request = step_forward_request(robot, n_steps, "r_foot",.1, 0)
     s = json.dumps(request)
     prob = trajoptpy.ConstructProblem(s, env)
     result = trajoptpy.OptimizeProblem(prob)
+    totaltraj.extend(result.GetTraj())
     
-    
-    for i in xrange(8):
+    while robot.GetTransform()[0,3] < x_button_press:
     
         request = shift_weight_request(robot, n_steps, "r_foot")
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
+        totaltraj.extend(result.GetTraj())
     
         request = step_forward_request(robot, n_steps, "l_foot",.2, 0)
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
+        totaltraj.extend(result.GetTraj())
     
         request = shift_weight_request(robot, n_steps, "l_foot")
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
+        totaltraj.extend(result.GetTraj())
 
         request = step_forward_request(robot, n_steps, "r_foot",.2, 0)
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
-        
-        
+        totaltraj.extend(result.GetTraj())
+    
+    request = press_button_request(robot, xyz_button, "l_hand", ["l_foot","r_foot"],10)
+    s = json.dumps(request)
+    prob = trajoptpy.ConstructProblem(s, env)
+    result = trajoptpy.OptimizeProblem(prob)
+    totaltraj.extend(result.GetTraj())
+
+    viewer = trajoptpy.GetViewer(env)
+    animate_traj(viewer, robot, totaltraj)

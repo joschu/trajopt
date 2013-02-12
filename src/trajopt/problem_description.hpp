@@ -23,10 +23,10 @@ class TrajOptResult;
 typedef boost::shared_ptr<TrajOptResult> TrajOptResultPtr;
 
 
-TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo&);
-TrajOptProbPtr ConstructProblem(const Json::Value&, OpenRAVE::EnvironmentBasePtr env);
-TrajOptResultPtr OptimizeProblem(TrajOptProbPtr, bool plot);
-void HandlePlanningRequest(OR::EnvironmentBasePtr env, TrajOptRequest&, TrajOptResponse&);
+TrajOptProbPtr TRAJOPT_API ConstructProblem(const ProblemConstructionInfo&);
+TrajOptProbPtr TRAJOPT_API ConstructProblem(const Json::Value&, OpenRAVE::EnvironmentBasePtr env);
+TrajOptResultPtr TRAJOPT_API OptimizeProblem(TrajOptProbPtr, bool plot);
+void TRAJOPT_API HandlePlanningRequest(OR::EnvironmentBasePtr env, TrajOptRequest&, TrajOptResponse&);
 
 
 
@@ -35,7 +35,7 @@ void HandlePlanningRequest(OR::EnvironmentBasePtr env, TrajOptRequest&, TrajOptR
  * Holds all the data for a trajectory optimization problem
  * so you can modify it programmatically, e.g. add your own costs
  */
-class TrajOptProb : public OptProb {
+class TRAJOPT_API TrajOptProb : public OptProb {
 public:
   TrajOptProb();
   TrajOptProb(int n_steps, RobotAndDOFPtr rad);
@@ -62,7 +62,7 @@ private:
   typedef std::pair<string,string> StringPair;
 };
 
-struct TrajOptResult {
+struct TRAJOPT_API TrajOptResult {
   vector<string> cost_names, cnt_names;
   vector<double> cost_vals, cnt_viols;
   TrajArray traj;
@@ -89,7 +89,7 @@ struct InitInfo {
   void fromJson(const Json::Value& v);
 };
 
-struct CostInfo  {
+struct TRAJOPT_API CostInfo  {
 
   string name;
   virtual void fromJson(const Json::Value& v)=0;
@@ -109,7 +109,7 @@ private:
   static std::map<string, MakerFunc> name2maker;
 };
 
-struct CntInfo  {
+struct TRAJOPT_API CntInfo  {
   string name;
   virtual void fromJson(const Json::Value& v) = 0;
 
@@ -127,7 +127,7 @@ private:
 void fromJson(const Json::Value& v, CostInfoPtr&);
 void fromJson(const Json::Value& v, CntInfoPtr&);
 
-struct ProblemConstructionInfo {
+struct TRAJOPT_API ProblemConstructionInfo {
 public:
   BasicInfo basic_info;
   vector<CostInfoPtr> cost_infos;
@@ -142,7 +142,11 @@ public:
 
 };
 
+/**
+ \brief pose error
 
+ See trajopt::PoseCntInfo
+ */
 struct PoseCostInfo : public CostInfo {
   int timestep;
   Vector3d xyz;
@@ -154,6 +158,34 @@ struct PoseCostInfo : public CostInfo {
   void hatch(TrajOptProb& prob);
   static CostInfoPtr create();
 };
+
+
+/**
+  \brief Joint space position cost
+
+  \f{align*}{
+  \sum_i c_i (x_i - xtarg_i)^2
+  \f}
+  where \f$i\f$ indexes over dof and \f$c_i\f$ are coeffs
+ */
+struct JointPosCostInfo : public CostInfo {
+  DblVec vals, coeffs;
+  int timestep;
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
+  static CostInfoPtr create();
+};
+
+
+/**
+  \brief Pose constraint
+
+  let \f$T_{err} = T_{targ}^{-1} * T_{cur}\f$.
+  Let xerr  be the  translation of \f$T_{err}\f$
+  and roterr be the rotation part of the quaternion.
+  Then the error vector is [xerr, roterr], scaled by
+  pos_coeffs and rot_coeffs, respectively
+ */
 struct PoseCntInfo : public CntInfo {
   int timestep;
   Vector3d xyz;
@@ -165,6 +197,12 @@ struct PoseCntInfo : public CntInfo {
   void hatch(TrajOptProb& prob);
   static CntInfoPtr create();
 };
+
+/**
+ \brief Motion constraint on link
+
+ Constrains the change in position of the link in each timestep to be less than distance_limit
+ */
 struct CartVelCntInfo : public CntInfo {
   int first_step, last_step;
   KinBody::LinkPtr link;
@@ -174,32 +212,61 @@ struct CartVelCntInfo : public CntInfo {
   static CntInfoPtr create();
 };
 
+/**
+\brief Joint-space velocity squared
+
+\f{align*}{
+  cost = \sum_{t=0}^{T-2} \sum_j c_j (x_{t+1,j} - x_{t,j})^2
+\f}
+where j indexes over DOF, and \f$c_j\f$ are the coeffs.
+*/
 struct JointVelCostInfo : public CostInfo {
-  /** cost = coeff * v^2
-   * v = dx/dt and dt = (1/T)
-   * */
   DblVec coeffs;
   void fromJson(const Value& v);
   void hatch(TrajOptProb& prob);
   static CostInfoPtr create();
 };
+/**
+\brief %Collision penalty
+
+\f{align*}{
+  cost = \sum_{t=0}^{T-1} \sum_{A, B} | distpen_t - sd(A,B) |^+
+\f}
+*/
 struct CollisionCostInfo : public CostInfo {
-  DblVec coeffs, dist_pen;
+  /// coeffs.size() = num_timesteps
+  DblVec coeffs;
+  /// safety margin: contacts with distance < dist_pen are penalized
+  DblVec dist_pen;
   void fromJson(const Value& v);
   void hatch(TrajOptProb& prob);
   static CostInfoPtr create();
 };
+/**
+\brief continuous-time collision penalty
+
+\f{align*}{
+  cost = \sum_{t=firststep}^{laststep} \sum_{A \in robot,B} | distpen_t - sd(hull(A(t), A(t+1)),B) |^+
+\f}
+*/
 struct ContinuousCollisionCostInfo : public CostInfo {
+  /// first_step and last_step are inclusive
   int first_step, last_step;
-  DblVec coeffs, dist_pen;
+  /// coeffs.size() = last_step - first_step - 1
+  DblVec coeffs;
+  /// see CollisionCostInfo::dist_pen
+  DblVec dist_pen;
   void fromJson(const Value& v);
   void hatch(TrajOptProb& prob);
   static CostInfoPtr create();
 };
-
-
+/**
+joint-space position constraint
+ */
 struct JointConstraintInfo : public CntInfo {
+  /// joint values. list of length 1 automatically gets expanded to list of length n_dof
   DblVec vals;
+  /// which timestep. default = n_timesteps - 1
   int timestep;
   void fromJson(const Value& v);
   void hatch(TrajOptProb& prob);

@@ -6,6 +6,7 @@
 #include <pcl/surface/gp3.h>
 #include <pcl/io/vtk_io.h>
 #include <pcl/io/ply_io.h>
+#include <pcl/io/obj_io.h>
 #include <pcl/surface/organized_fast_mesh.h>
 #include <pcl/surface/marching_cubes_rbf.h>
 #include <pcl/surface/marching_cubes.h>
@@ -16,8 +17,11 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/surface/convex_hull.h>
+
+#include <boost/filesystem.hpp>
 using namespace std;
 using namespace pcl;
+namespace fs = boost::filesystem;
 
 #define FILE_OPEN_ERROR(fname) throw runtime_error( (boost::format("couldn't open %s")%fname).str() )
 
@@ -218,22 +222,20 @@ PointCloud<pcl::PointXYZ>::Ptr boxFilterNegative(PointCloud<pcl::PointXYZ>::Cons
   return out;
 }
 
-void saveMesh(pcl::PolygonMesh::ConstPtr mesh, const std::string& fname, MeshFormat fmt) {
+void saveMesh(pcl::PolygonMesh::ConstPtr mesh, const std::string& fname) {
 
+  string ext = fs::extension(fname);
 
-  switch (fmt) {
-  case PLY:
+  if (ext == "ply") {
     pcl::io::savePLYFile (fname, *mesh);
-    break;
-  case VTK:
-    pcl::io::saveVTKFile (fname, *mesh);
-    break;
-  case CUSTOM:
-    saveTrimeshCustomFmt(mesh, fname);
-    break;
-  default:
-    throw runtime_error( (boost::format("invalid mesh format %i")%fmt).str() );
   }
+  else if (ext == "obj") {
+    pcl::io::saveOBJFile (fname, *mesh);
+  }
+  else if (ext == "vtk") {
+    pcl::io::saveVTKFile (fname, *mesh);
+  }
+  else throw std::runtime_error( (boost::format("filename %s had unrecognized extension")%fname).str() );
 }
 
 }

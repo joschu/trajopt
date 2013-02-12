@@ -4,6 +4,6 @@
 namespace trajopt {
 class TrajOptProb;
 
-Optimizer::Callback PlotCallback(TrajOptProb& prob);
+Optimizer::Callback TRAJOPT_API PlotCallback(TrajOptProb& prob);
 
 }

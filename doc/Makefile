@@ -14,6 +14,9 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
+RSSPAPEREXTERNAL = $(HOME)/Dropbox/Proj/papers/2013-RSS-trajopt/2013-RSS-OBP.pdf
+RSSPAPERLOCAL = ./trajopt-paper.pdf
+
 .PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
 
 help:
@@ -48,6 +51,13 @@ doxygen:
 
 upload:
 	rsync -azvu --delete  ./ pabbeel@rll.berkeley.edu:/var/www/trajopt/doc/
+
+rsspaper: $(RSSPAPERLOCAL)
+
+$(RSSPAPEREXTERNAL):
+
+$(RSSPAPERLOCAL): $(RSSPAPEREXTERNAL)
+	cp $(RSSPAPEREXTERNAL) $(RSSPAPERLOCAL) 
 
 sphinx:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

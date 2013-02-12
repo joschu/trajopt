@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import subprocess, os
+
+import subprocess,os
 
 assert os.getcwd().endswith("bigdata")
-
-subprocess.check_call("wget -r -nH --cut-dirs=2 -l1 --no-parent -e robots=off -A.pcd http://rll.berkeley.edu/trajopt/bigdata",shell=True)
+subprocess.check_call("rsync -azvu --delete pabbeel@rll.berkeley.edu:/var/www/trajopt/bigdata/ ./ --exclude '*.py'", shell=True)

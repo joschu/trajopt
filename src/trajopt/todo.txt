@@ -3,7 +3,6 @@
 Critical
 =========
 
-ENABLED DOESNT WORK
 problem in convexdecomp: we don't check to see if new point is ok in some direction
 bug when using "active" as manip (?)
 
@@ -19,6 +18,11 @@ optimization changes state
 
 Eventually
 ===========
+
+PECost is PE^2
+
+merit_coeff ratio and other optimization params
+constraint scaling
 
 Figure out some consistent scheme for specifiying timestep of costs.
 

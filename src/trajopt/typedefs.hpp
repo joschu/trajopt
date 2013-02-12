@@ -7,6 +7,7 @@
 
 #include "ipi/sco/modeling.hpp"
 #include "utils/basic_array.hpp"
+#include "trajopt/macros.h"
 
 namespace trajopt {
 
