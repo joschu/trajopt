@@ -114,7 +114,7 @@ static bool TestSepAxis(const btConvexPolyhedron& hullA, const btConvexPolyhedro
 
 static int gActualSATPairTests=0;
 
-inline bool IsAlmostZero(const btVector3& v)
+inline bool IsAlmostZero1(const btVector3& v)
 {
 	if(fabsf(v.x())>1e-6 || fabsf(v.y())>1e-6 || fabsf(v.z())>1e-6)	return false;
 	return true;
@@ -329,7 +329,7 @@ bool btPolyhedralContactClipping::findSeparatingAxis(	const btConvexPolyhedron& 
 
 			btVector3 Cross = WorldEdge0.cross(WorldEdge1);
 			curEdgeEdge++;
-			if(!IsAlmostZero(Cross))
+			if(!IsAlmostZero1(Cross))
 			{
 				Cross = Cross.normalize();
 				if (DeltaC2.dot(Cross)<0)

@@ -190,11 +190,13 @@ COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link) {
 }
 
 
-typedef map<btCollisionShape*, HullResult > Shape2Inds;
-Shape2Inds gHullCache;
 
 void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
     OpenRAVE::EnvironmentBase& env, vector<OpenRAVE::GraphHandlePtr>& handles) {
+
+  typedef map<btCollisionShape*, HullResult > Shape2Inds;
+  static Shape2Inds gHullCache;
+
   switch (shape->getShapeType()) {
   case COMPOUND_SHAPE_PROXYTYPE: {
     btCompoundShape* compound = static_cast<btCompoundShape*>(shape);

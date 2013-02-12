@@ -17,14 +17,9 @@ add_library(trajopt SHARED
 	rave_utils.cpp
 	collision_checker.cpp
 	plot_callback.cpp
+	bullet_unity.cpp
 )
-target_link_libraries(trajopt ${BULLET_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY} sco utils json osgviewer)
-
-# set(CMAKE_SHARED_LINKER_FLAGS "-export-symbols-regex,'^foo_'")
-
-#add_library(trajoptplugin SHARED plugin.cpp)
-#set_target_properties(trajoptplugin PROPERTIES COMPILE_FLAGS "${OpenRAVE_CXX_FLAGS}" LINK_FLAGS "${OpenRAVE_LINK_FLAGS}")
-#target_link_libraries(trajoptplugin ${OpenRAVE_LIBRARIES} trajopt)
+target_link_libraries(trajopt ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY} sco utils json osgviewer)
 
 add_subdirectory(test)
 
