@@ -1,3 +1,4 @@
 #include <Eigen/Core>
+#include "macros.h"
 
-Eigen::MatrixXf getSpherePoints(int n);
+TRAJOPT_API Eigen::MatrixXf getSpherePoints(int n);

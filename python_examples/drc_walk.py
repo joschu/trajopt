@@ -288,6 +288,7 @@ if __name__ == "__main__":
     s = json.dumps(request)
     prob = trajoptpy.ConstructProblem(s, env)
     result = trajoptpy.OptimizeProblem(prob)
+    robot.SetActiveDOFValues(result.GetTraj()[-1])    
     totaltraj.extend(result.GetTraj())
     
     while robot.GetTransform()[0,3] < x_button_press:
@@ -296,24 +297,28 @@ if __name__ == "__main__":
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
+        robot.SetActiveDOFValues(result.GetTraj()[-1])
         totaltraj.extend(result.GetTraj())
     
         request = step_forward_request(robot, n_steps, "l_foot",.2, 0)
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
+        robot.SetActiveDOFValues(result.GetTraj()[-1])
         totaltraj.extend(result.GetTraj())
     
         request = shift_weight_request(robot, n_steps, "l_foot")
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
+        robot.SetActiveDOFValues(result.GetTraj()[-1])
         totaltraj.extend(result.GetTraj())
 
         request = step_forward_request(robot, n_steps, "r_foot",.2, 0)
         s = json.dumps(request)
         prob = trajoptpy.ConstructProblem(s, env)
         result = trajoptpy.OptimizeProblem(prob)
+        robot.SetActiveDOFValues(result.GetTraj()[-1])
         totaltraj.extend(result.GetTraj())
     
     request = press_button_request(robot, xyz_button, "l_hand", ["l_foot","r_foot"],10)

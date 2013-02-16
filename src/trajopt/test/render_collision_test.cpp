@@ -42,7 +42,7 @@ int main() {
     assert(success);
   }
   {
-    bool success = env->Load("/home/joschu/Proj/trajoptrave/data/test2.env.xml");
+    bool success = env->Load("/home/joschu/Proj/trajopt/data/test2.env.xml");
     assert(success);
   }
   vector<RobotBasePtr> robots;

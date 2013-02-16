@@ -519,6 +519,11 @@ OpenRAVE::GraphHandlePtr OSGViewer::drawarrow(const RaveVectorf& p1, const RaveV
   return GraphHandlePtr(new OsgGraphHandle(group, m_root.get()));
 }
 
+OpenRAVE::GraphHandlePtr OSGViewer::plot3 (const float *ppoints, int numPoints, int stride, float fPointSize, const RaveVector< float > &color, int drawstyle){
+  vector< RaveVectorf > colors(numPoints, color);
+  return plot3(ppoints, numPoints, stride, fPointSize, (float*)colors.data(), drawstyle);
+}
+
 OpenRAVE::GraphHandlePtr OSGViewer::plot3(const float* ppoints, int numPoints, int stride, float pointsize, const float* colors, int drawstyle, bool bhasalpha) {
 
   osg::Geometry* geom = new osg::Geometry;
@@ -547,15 +552,15 @@ OpenRAVE::GraphHandlePtr OSGViewer::plot3(const float* ppoints, int numPoints, i
   geom->setVertexArray(osgPts);
   geom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,osgPts->size()));
 //
-//  if (colors != NULL) {
-//    Vec4Array* osgCols = new Vec4Array;
-//    for (int i=0; i < numPoints; ++i) {
-//      float* p = colors + i;
-//      osgCols->push_back(osg::Vec4(p[0], p[1], p[2],1));
-//    }
-//    geom->setColorArray(osgCols);
-//    geom->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
-//  }
+  if (colors != NULL) {
+    Vec4Array* osgCols = new Vec4Array;
+    for (int i=0; i < numPoints; ++i) {
+      const float* p = colors + i*4;
+      osgCols->push_back(osg::Vec4(p[0], p[1], p[2],1));
+    }
+    geom->setColorArray(osgCols);
+    geom->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+  }
 
   Geode* geode = new osg::Geode();
   geode->addDrawable(geom);

@@ -39,7 +39,7 @@ import moveit_msgs.srv as ms
 import geometry_msgs.msg as gm
 import trajoptpy.math_utils as mu
 import trajoptpy.kin_utils as ku
-from trajoptpy.check_traj import check_traj
+from trajoptpy.check_traj import traj_is_safe
 import actionlib
 import time
 import numpy as np
@@ -180,7 +180,7 @@ def test_plan_to_pose(xyz, xyzw, leftright, robot, initial_state = build_robot_s
         return dict(returned = True, error_code = mpr.error_code.val, safe=False)
     else:
         traj =  [list(jtp.positions) for jtp in mpr.trajectory.joint_trajectory.points]
-        return dict(returned = True, safe = not check_traj(traj, manip, 100), traj = traj, planning_time = mpr.planning_time.to_sec(), error_code = mpr.error_code.val)
+        return dict(returned = True, safe = traj_is_safe(traj, robot, 100), traj = traj, planning_time = mpr.planning_time.to_sec(), error_code = mpr.error_code.val)
     
 def update_rave_from_ros(robot, ros_values, ros_joint_names):
     inds_ros2rave = np.array([robot.GetJointIndex(name) for name in ros_joint_names])

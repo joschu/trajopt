@@ -93,14 +93,42 @@ As you can see, the pose constraint is satisfied at convergence
 Exploring other costs and constraints
 -----------------------------------------
 
+The best way to learn about the other costs and constraints that are available is to look at the Doxygen documentation for the subclasses of `CostInfo <http://rll.berkeley.edu/trajopt/doc/dox_build/structtrajopt_1_1_cost_info.html>`_ and `CntInfo <http://rll.berkeley.edu/trajopt/doc/dox_build/structtrajopt_1_1_cnt_info.html>`_ because each item under "costs" or "constraints" is first converted to one of these structs when the JSON file is read.
+
+More examples coming soon
+
+.. TODO
+
 Optimizing the base position and torso height
 -----------------------------------------------
 
-Initializing with RRT
-------------------------
+This next example shows how to jointly optimize over the base and torso degrees of freedom of a mobile robot, as well as the arms. This program considers a trajectory with one timestep, and ``start_fixed=False``, so it is really just doing collision-aware numerical IK. You can optimize over a trajectory containing all of these degrees of freedom by setting ``n_steps``. ``basic_info`` is set as follows:
+
+.. literalinclude:: ../python_examples/position_base.py
+  :start-after: BEGIN basic_info
+  :end-before: END basic_info
+
+Note that ``manip="active"``, which makes the selects the degrees of freedom of the optimization problem based on the degrees of freedom of the robot, which we set earlier:
+
+.. literalinclude:: ../python_examples/position_base.py
+  :start-after: BEGIN set_active
+  :end-before: END set_active
+
+Numerical IK is very unreliable since the forward kinematics function is so nonlinear. Therefore, we do a series of random initializations:
+
+.. literalinclude:: ../python_examples/position_base.py
+  :start-after: BEGIN random_init
+  :end-before: END random_init
 
 Walking with humanoid robot
 ----------------------------
 
+See :file:`python_examples/drc_walk.py` for a rather simple example of planning footsteps with the Atlas robot model (for DARPA robotics challenge).
+
+
 Using point cloud data
 -------------------------
+
+.. TODO
+
+This section will discuss how load various types of perception data into the collision world in a way that is favorable for speed, success rate, and safety.

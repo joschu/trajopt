@@ -70,7 +70,8 @@ int RobotAndDOF::GetDOF() const {
   return joint_inds.size() + RaveGetAffineDOF(affinedofs);
 }
 DblMatrix RobotAndDOF::PositionJacobian(int link_ind, const OR::Vector& pt) const {
-  robot->SetActiveDOFs(joint_inds, affinedofs);
+  OR::RobotBase::RobotStateSaver saver = const_cast<RobotAndDOF*>(this)->Save();
+  const_cast<RobotAndDOF*>(this)->SetRobotActiveDOFs();
   vector<double> jacdata;
   robot->CalculateActiveJacobian(link_ind, pt, jacdata);
   return Eigen::Map<DblMatrix>(jacdata.data(), 3, GetDOF());

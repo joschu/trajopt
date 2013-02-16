@@ -5,7 +5,7 @@
 #include <iostream>
 #include <openrave/openrave.h>
 #include "robot_and_dof.hpp"
-#include "trajopt/macros.h"
+#include "macros.h"
 
 namespace trajopt {
 

@@ -9,7 +9,6 @@ using namespace util;
 namespace trajopt {
 
 void PlotTraj(OSGViewer& viewer, RobotAndDOF& rad, const TrajArray& x, vector<GraphHandlePtr>& handles) {
-  RobotBase::RobotStateSaver saver = rad.Save();
   for (int i=0; i < x.rows(); ++i) {
     rad.SetDOFValues(toDblVec(x.row(i)));
     handles.push_back(viewer.PlotKinBody(rad.GetRobot()));
@@ -30,19 +29,16 @@ void PlotCosts(OSGViewer& viewer, vector<CostPtr>& costs, vector<ConstraintPtr>&
       plotter->Plot(x, *rad.GetRobot()->GetEnv(), handles);
     }
   }
-  PlotTraj(viewer, rad, getTraj(x, vars), handles);
+  TrajArray traj = getTraj(x, vars);
+  PlotTraj(viewer, rad, traj, handles);
   viewer.Idle();
+  rad.SetDOFValues(toDblVec(traj.row(traj.rows()-1)));
 }
 
 
 
 Optimizer::Callback PlotCallback(TrajOptProb& prob) {
   OSGViewerPtr viewer = OSGViewer::GetOrCreate(prob.GetEnv());
-  if (!viewer) {
-    printf("creating a new viewer\n");
-    viewer.reset(new OSGViewer(prob.GetEnv()));
-    prob.GetEnv()->AddViewer(viewer);
-  }
   vector<ConstraintPtr> cnts = prob.getConstraints();
   return boost::bind(&PlotCosts, boost::ref(*viewer),
                       boost::ref(prob.getCosts()),

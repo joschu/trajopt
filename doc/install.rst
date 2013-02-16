@@ -18,6 +18,9 @@ Dependencies:
 Instructions:
 
 - install OpenRAVE using `instructions on openrave.org <http://openrave.org/docs/latest_stable>`_
+
+.. warning:: If you are solving problems involving base motion as degrees of freedom, you should install at least version 0.9, due to a recently-fixed bug in the Jacobian calculation.
+
 - install OpenSceneGraph, CMake, boost, and Eigen using your package manager. In Ubuntu, that's::
 
     sudo apt-get install libopenscene-graph cmake libboost-all-dev libeigen3-dev
@@ -69,3 +72,17 @@ Add the following two paths to your PYTHONPATH::
   /path/to/build_trajopt/lib      # here's where the extension modules (.so files) go
 
 Now you should be able to run the scripts in the python_examples directory.
+
+Common installation problems
+-------------------------------
+
+* All tests fail, due to Gurobi license issue. Make sure Gurobi license is set up properly.
+* You get an error from libbulletrave.so, e.g.
+
+::
+
+  [plugindatabase.h:929] /usr/local/share/openrave-0.9/plugins/libbulletrave.so: /usr/local/share/openrave-0.9/plugins/libbulletrave.so: undefined symbol: _ZNK16btCollisionShape17getBoundingSphereER9btVector3Rf
+  Segmentation fault (core dumped)
+
+
+| One crude solution: ``rm /path/to/libbulletrave.so``. OpenRAVE uses ODE rather than bullet by default, so there's no harm in removing the bullet plugin.

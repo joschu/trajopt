@@ -5,7 +5,7 @@ include(cmake/main.cmake)
 
 find_package(Eigen REQUIRED)
 find_package(Boost COMPONENTS system python thread program_options REQUIRED)
-find_package(OpenRAVE 0.9 REQUIRED)
+find_package(OpenRAVE REQUIRED)
 
 
 # http://cmake.3232098.n2.nabble.com/Default-value-for-CMAKE-BUILD-TYPE-td7550756.html
@@ -34,3 +34,5 @@ option(BUILD_SANDBOX "build sandbox programs" OFF)
 
 add_subdirectory(ext)
 add_subdirectory(src)
+
+include(add_python_unit_tests.cmake)

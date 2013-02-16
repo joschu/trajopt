@@ -24,7 +24,7 @@ import moveit_msgs.srv as ms
 import trajoptpy.math_utils as mu
 import trajectory_msgs.msg as tm
 import geometry_msgs.msg as gm
-from trajoptpy.check_traj import check_traj
+from trajoptpy.check_traj import traj_is_safe
 
 FAILURE = -1
 SUCCESS = 1
@@ -157,7 +157,8 @@ def callback(getreq):
         
         traj = result.GetTraj()
         
-        if check_traj(traj, robot.GetManipulator(manip)):                       
+        prob.SetRobotActiveDOFs()
+        if not traj_is_safe(traj, robot):                       
             print "aw, there's a collision"
         else:
             print "no collisions"

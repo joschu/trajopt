@@ -11,10 +11,7 @@ can't start at non-origin position? (cloud drive reach)
 
 setcontactdistance screws you up if you have multiple collision cost groups
 
-optimization changes state
-
-
-
+unify logging. probably replace ipi stuff. remove ipi namespaces?
 
 Eventually
 ===========
@@ -27,30 +24,27 @@ constraint scaling
 Figure out some consistent scheme for specifiying timestep of costs.
 
 Run automated tests with python examples
+(Can't do it now because of segfaults on exit)
 
 velocity cost uses timestamps
 make optimization parameters settable
-
-two things don't work about drc example:
-1. go thru obstacle
-2. sometimes don't satisfy pose constraint
 
 Issue: now the collision checker will fail to find grazing self-collisions, since right now the continuous check
 doesn't look at robot-robot collisions.
 
 make a function specifically for self-collision testing
 
-error message for unrecognized arguments
-
 Maybe
 =======
 
+error message for unrecognized arguments
+
 Partition links into groups and do broadphase filtering (?)
+Do some smarter self-collision filtering, e.g. with custom code for each robot.
+No need to do all the hulls every time you load up the robot.
+
 Modifying bttransformaabb is a bad hack. figure out a better way.
+
 make it easier to print stuff out for debugging optimization
 
 collisionchecker segfaults if bullet world isn't updated
-
-
-
-

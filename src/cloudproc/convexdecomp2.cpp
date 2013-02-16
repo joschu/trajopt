@@ -102,14 +102,14 @@ vector<int> getUnlabeled(const vector<int>& nbs, const vector<int>& labels) {
 namespace cloudproc {
 
 
-void ConvexDecomp(const pcl::PointCloud<pcl::PointNormal>::ConstPtr& cloud, float thresh,
+void ConvexDecomp(pcl::PointCloud<pcl::PointNormal>::ConstPtr cloud, float thresh,
     /*optional outputs: */ std::vector<IntVec>* indices, std::vector< IntVec >* hull_indices) {
 
   float nb_rad = 2*thresh;
   int k_neighbs = 5;
   pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZ>(true));
   tree->setEpsilon(0);
-  tree->setInputCloud (toXYZ(cloud));
+  tree->setInputCloud (toXYZ<PointNormal>(cloud));
   int n_pts = cloud->size();
 
 

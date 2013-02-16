@@ -48,6 +48,9 @@ public:
     vector<int> inds = m_prob->GetRAD()->GetJointIndices();
     return toPyList(inds);
   }
+  void SetRobotActiveDOFs() {
+    m_prob->GetRAD()->SetRobotActiveDOFs();
+  }
 };
 
 Json::Value readJsonFile(const std::string& doc) {
@@ -208,9 +211,10 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
 
   py::class_<PyTrajOptProb>("TrajOptProb", py::no_init)
       .def("GetDOFIndices", &PyTrajOptProb::GetDOFIndices)
+      .def("SetRobotActiveDOFs", &PyTrajOptProb::SetRobotActiveDOFs, "Sets the active DOFs of the robot to the DOFs in the optimization problem")
   ;
-  py::def("SetInteractive", &SetInteractive);
-  py::def("ConstructProblem", &PyConstructProblem);
+  py::def("SetInteractive", &SetInteractive, "if True, pause and plot every iteration");
+  py::def("ConstructProblem", &PyConstructProblem, "create problem from JSON string");
   py::def("OptimizeProblem", &PyOptimizeProblem);
 
   py::class_<PyTrajOptResult>("TrajOptResult", py::no_init)
@@ -240,6 +244,6 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
      .def("SetAllTransparency", &PyOSGViewer::SetAllTransparency)
      .def("Idle", &PyOSGViewer::Idle)
     ;
-  py::def("GetViewer", &PyGetViewer);
+  py::def("GetViewer", &PyGetViewer, "Get OSG viewer for environment or create a new one");
 
 }

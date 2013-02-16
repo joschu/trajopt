@@ -2,7 +2,7 @@
   <KinBody name="table">
     <Body type="static" name="table_link">
       <Geom type="box">
-        <Translation> 1.1 0 .65 </Translation>
+        <Translation> 1.1 0 .635 </Translation>
         <extents> .85 .55 .06 </extents>
       </Geom>
     </Body>

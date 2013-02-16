@@ -1,6 +1,6 @@
 #pragma once
 #include <openrave/openrave.h>
-#include "trajopt/macros.h"
+#include "macros.h"
 
 namespace trajopt {
 
