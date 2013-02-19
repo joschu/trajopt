@@ -1,0 +1,7 @@
+#include "hacdGraph.cpp"
+#include "hacdHACD.cpp"
+#include "hacdICHull.cpp"
+#include "hacdManifoldMesh.cpp"
+#include "hacdMeshDecimator.cpp"
+#include "hacdMicroAllocator.cpp"
+#include "hacdRaycastMesh.cpp"

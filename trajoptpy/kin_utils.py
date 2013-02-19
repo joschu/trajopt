@@ -37,11 +37,11 @@ def shortest_paths(ncost_nk,ecost_nkk):
 
     return np.array(paths).T, path_costs
 
-def pairwise_squared_dist(x,y):
+def pairwise_squared_dist(x,y, timestep=None):
     "pairwise squared distance between rows of matrices x and y"
     return (x**2).sum(axis=1)[:,None]+(y**2).sum(axis=1)[None,:]-2*x.dot(y.T)    
 
-def traj_cart2joint(hmats, ikfunc, start_joints = None, nodecost=None):
+def traj_cart2joint(hmats, ikfunc, start_joints = None, nodecost=None, edgecost = None):
     """
     hmats: poses at times t = 0,1,2,...T-1
     ikfunc: a function f: R^(4x4) -> [R^k]
@@ -49,7 +49,10 @@ def traj_cart2joint(hmats, ikfunc, start_joints = None, nodecost=None):
     start_joints: None, starting joint state, or list of starting joint states
         if start_joints is supplied, the first element of hmats is ignored
     nodecost (optional): the cost of a joint state
-        function f : R^k -> R
+        function f : R^k, timestep -> R
+    edgecost (optional): the cost of transitions
+        function f : R^(n x k), R^(m x k), timestep -> R^(n x m)
+        defaults to squared euclidean distance
 
     
     returns:  (trajectories, costs, timesteps)    
@@ -69,6 +72,10 @@ def traj_cart2joint(hmats, ikfunc, start_joints = None, nodecost=None):
         if len(solns) > 0:
             iksolns.append(solns)
             timesteps.append(i)
+    
+    if edgecost is None:
+        edgecost = pairwise_squared_dist
+        
             
     N = len(iksolns)
     
@@ -78,10 +85,10 @@ def traj_cart2joint(hmats, ikfunc, start_joints = None, nodecost=None):
     for i in xrange(0,len(iksolns)):
         solns0 = iksolns[i]
         if nodecost is None: ncost_nk.append(np.zeros(len(solns0)))
-        else: ncost_nk.append(np.array([nodecost(soln) for soln in solns0]))
+        else: ncost_nk.append(np.array([nodecost(soln, timesteps[i]) for soln in solns0]))
         if i>0:
             solnsprev = iksolns[i-1]
-            ecost_nkk.append(pairwise_squared_dist(solnsprev, solns0))
+            ecost_nkk.append(pairwise_squared_dist(solnsprev, solns0, i-1))
     
     paths, path_costs = shortest_paths(ncost_nk, ecost_nkk)
     return [np.array([iksolns[t][i] for (t,i) in enumerate(path)]) for path in paths], path_costs, timesteps

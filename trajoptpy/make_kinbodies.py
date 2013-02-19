@@ -2,6 +2,12 @@ from __future__ import division
 import openravepy as rave
 import numpy as np
 
+def create_trimesh(env, verts, faces, name="mesh"):  
+  body = rave.RaveCreateKinBody(env, "")
+  body.InitFromTrimesh(trimesh=rave.TriMesh(verts, faces),draw=True) 
+  body.SetName(name) 
+  env.Add(body)   
+
 def create_box_from_bounds(env, bounds, name="box"):
   xmin, xmax, ymin, ymax, zmin, zmax = bounds
   xml_str = """

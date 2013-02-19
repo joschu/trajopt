@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(trajoptrave)
+project(trajopt)
 
 include(cmake/main.cmake)
 
@@ -26,11 +26,13 @@ set(BULLET_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/bullet/src)
 set(BULLET_LIBRARIES BulletCollision LinearMath)
 set(GTEST_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/gtest/include)
 set(JSON_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/json/include)
+set(HACD_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/HACD_Lib/inc ${CMAKE_SOURCE_DIR}/ext/HACD_Lib/src)
 
 enable_testing()
 
 option(BUILD_CLOUDPROC "build point cloud processing stuff" OFF)
 option(BUILD_SANDBOX "build sandbox programs" OFF)
+option(BUILD_HUMANOIDS "build humanoids stuff" OFF)
 
 add_subdirectory(ext)
 add_subdirectory(src)

@@ -156,7 +156,7 @@ void BasicTrustRegionSQP::initParameters() {
   trust_expand_ratio_ = 1.5;
   cnt_tolerance_ = 1e-4;
   max_merit_coeff_increases_ = 5;
-  merit_coeff_increase_ratio_ = 3;
+  merit_coeff_increase_ratio_ = 10;
   max_time_ = INFINITY;
 
   merit_error_coeff_ = 10;

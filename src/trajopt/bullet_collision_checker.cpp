@@ -38,6 +38,10 @@ public:
   void manage(T* t) { // manage memory of this object
     m_data.push_back(boost::shared_ptr<T>(t));
   }
+  template<class T>
+  void manage(shared_ptr<T> t) {
+    m_data.push_back(t);
+  }
 };
 typedef CollisionObjectWrapper COW;
 typedef boost::shared_ptr<CollisionObjectWrapper> COWPtr;
@@ -81,7 +85,7 @@ bool isIdentity(const OpenRAVE::Transform& T) {
 
 
 
-btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom) {
+btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool useTrimesh, CollisionObjectWrapper* cow) {
 
   btCollisionShape* subshape;
 
@@ -102,43 +106,48 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom) {
   case KinBody::Link::GEOMPROPERTIES::GeomTrimesh: {
     const KinBody::Link::TRIMESH &mesh = geom->GetCollisionMesh();
     assert(mesh.indices.size() >= 3);
-    btTriangleMesh ptrimesh;
+    boost::shared_ptr<btTriangleMesh> ptrimesh(new btTriangleMesh());
 
     for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-      ptrimesh.addTriangle(toBt(mesh.vertices[mesh.indices[i]]), toBt(mesh.vertices[mesh.indices[i + 1]]),
+      ptrimesh->addTriangle(toBt(mesh.vertices[mesh.indices[i]]), toBt(mesh.vertices[mesh.indices[i + 1]]),
               toBt(mesh.vertices[mesh.indices[i + 2]]));
     }
 
-    btConvexTriangleMeshShape convexTrimesh(&ptrimesh);
-    convexTrimesh.setMargin(MARGIN); // margin: hull padding
-
-
-    //Create a hull shape to approximate Trimesh
-
-    bool useShapeHull;
-
-    btShapeHull shapeHull(&convexTrimesh);
-    if (mesh.vertices.size() >= 50) {
-      bool success = shapeHull.buildHull(-666); // note: margin argument not used
-      if (!success) RAVELOG_WARN("shapehull convex hull failed! falling back to original vertices\n");
-      useShapeHull = success;
+    if (useTrimesh) {
+      subshape = new btBvhTriangleMeshShape(ptrimesh.get(), true);
+      cow->manage(ptrimesh);
     }
-    else {
-      useShapeHull = false;
-    }
+    else { // CONVEX HULL
+      btConvexTriangleMeshShape convexTrimesh(ptrimesh.get());
+      convexTrimesh.setMargin(MARGIN); // margin: hull padding
+      //Create a hull shape to approximate Trimesh
 
-    btConvexHullShape *convexShape = new btConvexHullShape();
-    subshape = convexShape;
-    if (useShapeHull) {
-      for (int i = 0; i < shapeHull.numVertices(); ++i)
-        convexShape->addPoint(shapeHull.getVertexPointer()[i]);
-      break;
-    }
-    else {
-      for (int i = 0; i < mesh.vertices.size(); ++i)
-        convexShape->addPoint(toBt(mesh.vertices[i]));
-      break;
-    }
+      bool useShapeHull;
+
+      btShapeHull shapeHull(&convexTrimesh);
+      if (mesh.vertices.size() >= 50) {
+        bool success = shapeHull.buildHull(-666); // note: margin argument not used
+        if (!success) RAVELOG_WARN("shapehull convex hull failed! falling back to original vertices\n");
+        useShapeHull = success;
+      }
+      else {
+        useShapeHull = false;
+      }
+
+      btConvexHullShape *convexShape = new btConvexHullShape();
+      subshape = convexShape;
+      if (useShapeHull) {
+        for (int i = 0; i < shapeHull.numVertices(); ++i)
+          convexShape->addPoint(shapeHull.getVertexPointer()[i]);
+        break;
+      }
+      else {
+        for (int i = 0; i < mesh.vertices.size(); ++i)
+          convexShape->addPoint(toBt(mesh.vertices[i]));
+        break;
+      }
+      
+    }     
   }
   default:
     assert(0 && "unrecognized collision shape type");
@@ -147,33 +156,32 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom) {
   return subshape;
 }
 
-COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link) {
+
+COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link, bool useTrimesh) {
   RAVELOG_DEBUG("creating bt collision object from from %s\n",link->GetName().c_str());
 
   const std::vector<boost::shared_ptr<OpenRAVE::KinBody::Link::GEOMPROPERTIES> > & geometries=link->GetGeometries();
 
   if (geometries.empty()) return COWPtr();
 
-  //	bool useCompound = geometries.size() > 1;
-
   COWPtr cow(new CollisionObjectWrapper(link.get()));
 
   if ( false && (link->GetGeometries().size() == 1) && isIdentity(link->GetGeometry(0)->GetTransform())) {
-    btCollisionShape* shape = createShapePrimitive(link->GetGeometry(0));
+    btCollisionShape* shape = createShapePrimitive(link->GetGeometry(0), useTrimesh, cow.get());
     shape->setMargin(MARGIN);
     cow->manage(shape);
     cow->setCollisionShape(shape);
 
   }
   else {
-    btCompoundShape* compound = new btCompoundShape(false);
+    btCompoundShape* compound = new btCompoundShape(/*dynamicAABBtree=*/false);
     cow->manage(compound);
     compound->setMargin(MARGIN); //margin: compound. seems to have no effect when positive but has an effect when negative
     cow->setCollisionShape(compound);
 
     BOOST_FOREACH(const boost::shared_ptr<OpenRAVE::KinBody::Link::GEOMPROPERTIES>& geom, geometries) {
 
-      btCollisionShape* subshape = createShapePrimitive(geom);
+      btCollisionShape* subshape = createShapePrimitive(geom, useTrimesh, cow.get());
       if (subshape != NULL) {
         cow->manage(subshape);
         subshape->setMargin(MARGIN);
@@ -195,7 +203,7 @@ void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
     OpenRAVE::EnvironmentBase& env, vector<OpenRAVE::GraphHandlePtr>& handles) {
 
   typedef map<btCollisionShape*, HullResult > Shape2Inds;
-  static Shape2Inds gHullCache;
+  Shape2Inds gHullCache;
 
   switch (shape->getShapeType()) {
   case COMPOUND_SHAPE_PROXYTYPE: {
@@ -456,9 +464,11 @@ void BulletCollisionChecker::AddKinBody(const OR::KinBodyPtr& body) {
   const vector<OR::KinBody::LinkPtr> links = body->GetLinks();
 
   body->SetUserData("bt", cd);
+  
+  bool useTrimesh = body->GetUserData("bt_use_trimesh");
   BOOST_FOREACH(const OR::KinBody::LinkPtr& link, links) {
     if (link->GetGeometries().size() > 0) {
-      COWPtr new_cow = CollisionObjectFromLink(link);
+      COWPtr new_cow = CollisionObjectFromLink(link, useTrimesh); 
       if (new_cow) {
         SetCow(link.get(), new_cow.get());
         m_world->addCollisionObject(new_cow.get(), filterGroup);

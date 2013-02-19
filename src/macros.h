@@ -1,3 +1,5 @@
+#pragma once
+
 // Generic helper definitions for shared library support
 #if defined _WIN32 || defined __CYGWIN__
   #define TRAJOPT_HELPER_DLL_IMPORT __declspec(dllimport)
@@ -47,3 +49,9 @@
 #define FAIL_IF_FALSE(expr) if (!expr) {\
     PRINT_AND_THROW( "expected true: " #expr);\
   }
+
+#ifdef __CDT_PARSER__
+#define BOOST_FOREACH(a,b) for(;;)
+#endif
+
+#define ALWAYS_ASSERT(exp) if (!(exp)) {printf("%s failed in file %s at line %i\n", #exp, __FILE__, __LINE__ ); abort();}

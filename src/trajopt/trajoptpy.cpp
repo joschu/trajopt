@@ -3,7 +3,7 @@
 #include "trajopt/problem_description.hpp"
 #include "osgviewer/osgviewer.hpp"
 #include <boost/foreach.hpp>
-
+#include "macros.h"
 using namespace trajopt;
 using namespace Eigen;
 using namespace OpenRAVE;
@@ -180,7 +180,6 @@ PyCollisionChecker PyGetCollisionChecker(py::object py_env) {
 }
 
 class PyOSGViewer {
-  OSGViewerPtr m_viewer;
 public:
     PyOSGViewer(OSGViewerPtr viewer) : m_viewer(viewer) {}
   int Step() {
@@ -195,13 +194,18 @@ public:
     m_viewer->SetAllTransparency(a);
   }
   void Idle() {
+    assert(!!m_viewer);
     m_viewer->Idle();
   }
+private:
+  OSGViewerPtr m_viewer;
+  PyOSGViewer() {}
 };
 PyOSGViewer PyGetViewer(py::object py_env) {
   EnvironmentBasePtr env = GetCppEnv(py_env);
-  ViewerBasePtr viewer = OSGViewer::GetOrCreate(env);
-  return PyOSGViewer(boost::dynamic_pointer_cast<OSGViewer>(viewer));
+  OSGViewerPtr viewer = OSGViewer::GetOrCreate(env);
+  ALWAYS_ASSERT(!!viewer);
+  return PyOSGViewer(viewer);
 }
 
 

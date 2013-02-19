@@ -15,12 +15,8 @@
 #include <pcl/surface/convex_hull.h>
 #include "pcl/impl/instantiate.hpp"
 #include <boost/filesystem.hpp>
-
-#define CLOUDPROC_POINT_TYPES   \
-  (pcl::PointXYZ)             \
-  (pcl::PointXYZRGB)          \
-  (pcl::PointNormal)          \
-
+#include <pcl/filters/median_filter.h>
+#include <pcl/filters/fast_bilateral.h>
 
 using namespace std;
 using namespace pcl;
@@ -49,8 +45,6 @@ typename pcl::PointCloud<T>::Ptr readPCD(const std::string& pcdfile) {
   pcl::fromROSMsg (cloud_blob, *cloud);
   return cloud;
 }
-#define PCL_INSTANTIATE_readPCD(T) template pcl::PointCloud<T>::Ptr readPCD<T>(const std::string& pcdfile);
-PCL_INSTANTIATE(readPCD, CLOUDPROC_POINT_TYPES);
 
 template<class T>
 void saveCloud(const typename pcl::PointCloud<T>& cloud, const std::string& fname) {
@@ -59,22 +53,18 @@ void saveCloud(const typename pcl::PointCloud<T>& cloud, const std::string& fnam
   else if (ext == ".ply") pcl::io::savePLYFile(fname, cloud, true);
   else throw std::runtime_error( (boost::format("%s has unrecognized extension")%fname).str() );
 }
-#define PCL_INSTANTIATE_saveCloud(T) template void saveCloud(const  pcl::PointCloud<T>& cloud, const std::string& fname);
-PCL_INSTANTIATE(saveCloud, CLOUDPROC_POINT_TYPES);
 
 ///////////////////////////
 
-template<class PointT>
-typename pcl::PointCloud<PointT>::Ptr downsampleCloud(typename pcl::PointCloud<PointT>::ConstPtr in, float vsize) {
-  typename pcl::PointCloud<PointT>::Ptr out (new typename pcl::PointCloud<PointT>);
-  pcl::VoxelGrid< PointT > sor;
+template<class T>
+typename pcl::PointCloud<T>::Ptr downsampleCloud(typename pcl::PointCloud<T>::ConstPtr in, float vsize) {
+  typename pcl::PointCloud<T>::Ptr out (new typename pcl::PointCloud<T>);
+  pcl::VoxelGrid< T > sor;
   sor.setInputCloud (in);
   sor.setLeafSize (vsize, vsize, vsize);
   sor.filter (*out);
   return out;
 }
-#define PCL_INSTANTIATE_downsampleCloud(PointT) template pcl::PointCloud<PointT>::Ptr downsampleCloud<PointT>(PointCloud<PointT>::ConstPtr in, float vsize);
-PCL_INSTANTIATE(downsampleCloud, CLOUDPROC_POINT_TYPES);
 
 //////////////////////////
 
@@ -200,28 +190,23 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr toXYZ(typename pcl::PointCloud<T>::ConstPtr 
   }
   return out;
 }
-#define PCL_INSTANTIATE_toXYZ(T) template PointCloud<pcl::PointXYZ>::Ptr toXYZ<T>(PointCloud<T>::ConstPtr in);
-PCL_INSTANTIATE(toXYZ, CLOUDPROC_POINT_TYPES);
 
-
-template <class PointT>
-VectorXb boxMask(typename pcl::PointCloud<PointT>::ConstPtr in, const Eigen::Vector3f& mins, const Eigen::Vector3f& maxes) {
+template <class T>
+VectorXb boxMask(typename pcl::PointCloud<T>::ConstPtr in, float xmin, float ymin, float zmin, float xmax, float ymax, float zmax) {
   int i=0;
   VectorXb out(in->size());
-  BOOST_FOREACH(const PointT& pt, in->points) {
-    out[i] = (pt.x >= mins.x() && pt.x <= maxes.x() && pt.y >= mins.y() && pt.y <= maxes.y() && pt.z >= mins.z() && pt.z <= maxes.z());
+  BOOST_FOREACH(const T& pt, in->points) {
+    out[i] = (pt.x >= xmin && pt.x <= xmax && pt.y >= ymin && pt.y <= ymax && pt.z >= zmin && pt.z <= zmax);
     ++i;
   }
   return out;
 }
-#define PCL_INSTANTIATE_boxMask(PointT) template VectorXb boxMask<PointT>(pcl::PointCloud<PointT>::ConstPtr in, const Eigen::Vector3f& mins, const Eigen::Vector3f& maxes);
-PCL_INSTANTIATE(boxMask, CLOUDPROC_POINT_TYPES);
 
 
-template <class PointT>
-typename pcl::PointCloud<PointT>::Ptr maskFilter(typename pcl::PointCloud<PointT>::ConstPtr in, const VectorXb& mask) {
+template <class T>
+typename pcl::PointCloud<T>::Ptr maskFilter(typename pcl::PointCloud<T>::ConstPtr in, const VectorXb& mask) {
   int n = mask.sum();
-  typename pcl::PointCloud<PointT>::Ptr out(new typename pcl::PointCloud<PointT>());
+  typename pcl::PointCloud<T>::Ptr out(new typename pcl::PointCloud<T>());
   out->points.reserve(n);
   for (int i=0; i < mask.size(); ++i) {
     if (mask[i]) out->points.push_back(in->points[i]);
@@ -229,25 +214,77 @@ typename pcl::PointCloud<PointT>::Ptr maskFilter(typename pcl::PointCloud<PointT
   setWidthToSize(out);
   return out;
 }
-#define PCL_INSTANTIATE_maskFilter(PointT) template pcl::PointCloud<PointT>::Ptr maskFilter<PointT>(pcl::PointCloud<PointT>::ConstPtr in, const VectorXb& mask);
-PCL_INSTANTIATE(maskFilter, CLOUDPROC_POINT_TYPES);
 
+template <class T>
+typename pcl::PointCloud<T>::Ptr medianFilter(typename pcl::PointCloud<T>::ConstPtr in, int windowSize, float maxAllowedMovement) {
+  pcl::MedianFilter<T> mf;
+  mf.setWindowSize(windowSize);
+  mf.setMaxAllowedMovement(maxAllowedMovement);
+  typename PointCloud<T>::Ptr out(new PointCloud<T>());
+  mf.setInputCloud(in);
+  mf.filter(*out);
+  return out;
+}
 
+template <class T>
+typename pcl::PointCloud<T>::Ptr fastBilateralFilter(typename pcl::PointCloud<T>::ConstPtr in, float sigmaS, float sigmaR) {
+  pcl::FastBilateralFilter<T> mf;
+  mf.setSigmaS(sigmaS);
+  mf.setSigmaR(sigmaR);
+  typename PointCloud<T>::Ptr out(new PointCloud<T>());
+  mf.setInputCloud(in);
+  mf.applyFilter(*out);
+  return out;
+}
 
-void saveMesh(const pcl::PolygonMesh& mesh, const std::string& fname) {
+void removenans(sensor_msgs::PointCloud2& cloud, float fillval=0);
+void removenans(sensor_msgs::PointCloud2& cloud, float fillval) {
+  int npts = cloud.width * cloud.height;
+  for (int i=0; i < npts; ++i) {
+    float* ptdata = (float*)(cloud.data.data() + cloud.point_step * i);
+    for (int j=0; j < 3; ++j) {
+      if (!isfinite(ptdata[j])) ptdata[j] = fillval;
+    }
+  }
+}
+
+void saveMesh(const pcl::PolygonMesh& origmesh, const std::string& fname) {
+  pcl::PolygonMesh mesh = origmesh;
+  removenans(mesh.cloud);
+
+  string ext = fs::extension(fname);
+  int errcode;
+  if (ext == ".ply") {
+    errcode = pcl::io::savePLYFileBinary (fname, mesh);
+  }
+  else if (ext == ".obj") {
+    bool success = pcl::io::saveOBJFile (fname, mesh);
+  }
+  else if (ext == ".vtk") {
+    bool success = pcl::io::saveVTKFile (fname, mesh);
+  }
+  else PRINT_AND_THROW(boost::format("filename %s had unrecognized extension")%fname);
+  if (errcode) PRINT_AND_THROW(boost::format("saving mesh to file %s failed")%fname);
+}
+
+pcl::PolygonMesh::Ptr loadMesh(const std::string& fname) {
+  pcl::PolygonMesh::Ptr out(new PolygonMesh());
 
   string ext = fs::extension(fname);
 
   if (ext == ".ply") {
-    pcl::io::savePLYFile (fname, mesh);
+    pcl::io::loadPolygonFilePLY(fname, *out);
   }
   else if (ext == ".obj") {
-    pcl::io::saveOBJFile (fname, mesh);
+    pcl::io::loadPolygonFileOBJ (fname, *out);
   }
   else if (ext == ".vtk") {
-    pcl::io::saveVTKFile (fname, mesh);
+    pcl::io::loadPolygonFileVTK (fname, *out);
   }
   else PRINT_AND_THROW(boost::format("filename %s had unrecognized extension")%fname);
+  return out;
 }
 
+#include "autogen_instantiations.cpp"
 }
+

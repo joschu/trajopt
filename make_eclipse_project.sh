@@ -7,4 +7,4 @@ cd $BUILD_DIR
 rm -rf trajopt-eclipse
 mkdir trajopt-eclipse
 cd trajopt-eclipse
-cmake -G"Eclipse CDT4 - Unix Makefiles" $SOURCE_DIR
+cmake -G"Eclipse CDT4 - Unix Makefiles"  -DBUILD_HUMANOIDS=ON -DBUILD_CLOUDPROC=ON -DBUILD_SANDBOX=ON $SOURCE_DIR
