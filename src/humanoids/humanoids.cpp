@@ -213,7 +213,7 @@ MatrixT concat0(const MatrixT& x, const MatrixT& y) {
 /**
 import openravepy
 env = openravepy.Environment()
-env.Load("gfe.xml")
+env.Load("atlas.xml")
 robot = env.GetRobots()[0]
 rfoot = robot.GetLink("r_foot")
 aabb = rfoot.ComputeLocalAABB(rfoot)
@@ -226,6 +226,7 @@ MatrixX2d GetLocalAabbPoly() {
       0.17939, -0.061646,
       -0.08246, -0.061646,
       -0.08246, 0.061646;
+  out =( out.rowwise() + Eigen::Vector2d(0.048465 ,  0.0005305).transpose())/2;
   return out;
 }
 MatrixX2d local_aabb_poly = GetLocalAabbPoly();
@@ -272,7 +273,7 @@ struct ZMPConstraintCntInfo : public CntInfo {
 };
 
 
-void RegisterHumanoidCostsAndCnts() {
+TRAJOPT_API void RegisterHumanoidCostsAndCnts() {
   CostInfo::RegisterMaker("potential_energy", &PECostInfo::create);
   CostInfo::RegisterMaker("static_torque", &StaticTorqueCostCostInfo::create);
   CntInfo::RegisterMaker("zmp", &ZMPConstraintCntInfo::create);

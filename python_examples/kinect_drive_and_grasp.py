@@ -9,9 +9,8 @@ cloud_orig = cloudprocpy.readPCDXYZ("../bigdata/pr2_table_cloud_xyz.pcd")
 cloud_filt = cloudprocpy.fastBilateralFilter(cloud_orig, 15, .05)
 big_mesh = cloudprocpy.meshOFM(cloud_filt, 3, .1)
 big_mesh.save("/tmp/big_mesh.ply")
-simple_mesh = cloudprocpy.quadricSimplifyVTK(big_mesh, .05)
+simple_mesh = cloudprocpy.quadricSimplifyVTK(big_mesh, .01)
 simple_mesh.save("/tmp/simple_mesh.ply")
-convex_meshes = cloudprocpy.convexDecompHACD(simple_mesh)
 
 import openravepy, trajoptpy
 import trajoptpy.make_kinbodies as mk
@@ -38,15 +37,15 @@ T_w_k = robot.GetLink("narrow_stereo_gazebo_r_stereo_camera_optical_frame").GetT
 mk.create_trimesh(env, simple_mesh.getCloud().to2dArray().dot(T_w_k.T), np.array(simple_mesh.getFaces()), name="simple_mesh")
 viewer.Idle()
 
+convex_meshes = cloudprocpy.convexDecompHACD(simple_mesh)
 for (i,mesh) in enumerate(convex_meshes):
     name = "mesh%i"%i
     pts_cam = mesh.getCloud().to2dArray()
-    pts_cam[:,3] = 1
-    verts = pts_cam.dot(T_w_k.T)
-    mk.create_trimesh(env, verts, np.array(mesh.getFaces()), name=name)
+    verts = pts_cam.dot(T_w_k.T)[:,:3]
+    mk.create_trimesh(env, verts, mesh.getTriangles(), name=name)
     env.GetKinBody(name).GetLinks()[0].GetGeometries()[0].SetAmbientColor(np.random.rand(3))
     env.GetKinBody(name).GetLinks()[0].GetGeometries()[0].SetDiffuseColor(np.random.rand(3))
-    #handles.append(env.drawtrimesh(mesh.getVertices(), np.array(mesh.getFaces())))
+    #handles.append(env.drawtrimesh(mesh.getVertices(), mesh.getTriangles()))
 viewer.Idle()
 
 

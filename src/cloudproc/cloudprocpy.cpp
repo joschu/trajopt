@@ -118,6 +118,15 @@ py::object PolygonMesh_getFaces(const PolygonMesh* mesh) {
   }
   return out;
 }
+py::object PolygonMesh_getTriangles(const PolygonMesh* mesh) {
+  vector<int> tridata(mesh->polygons.size()*3);
+  for (int i=0; i < mesh->polygons.size(); ++i) {
+    const pcl::Vertices& poly = mesh->polygons[i];
+    if (poly.vertices.size() != 3) throw std::runtime_error("error: input PolygonMesh contains non-triangle polygons");
+    for (int j=0; j < 3; ++j) tridata[3*i+j] = poly.vertices[j];
+  }
+  return toNdarray2<int>(tridata.data(), mesh->polygons.size(), 3);
+}
 void PolygonMesh_save(const PolygonMesh* mesh, const std::string& outfile) {
   saveMesh(*mesh, outfile);
 }
@@ -171,6 +180,7 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
       .def("getCloud", &PolygonMesh_getCloud)
       .def("getVertices", &PolygonMesh_getVertices)
       .def("getFaces", &PolygonMesh_getFaces)
+      .def("getTriangles", &PolygonMesh_getTriangles)
       .def("save", &PolygonMesh_save)
       ;
 
