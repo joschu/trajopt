@@ -3,11 +3,7 @@
 Critical
 =========
 
-problem in convexdecomp: we don't check to see if new point is ok in some direction
-bug when using "active" as manip (?)
-
-cloud_drive_reach.py--error
-can't start at non-origin position? (cloud drive reach)
+cloud_drive_reach.py--error. can't start at non-origin position? (cloud drive reach)
 
 setcontactdistance screws you up if you have multiple collision cost groups
 
@@ -15,6 +11,8 @@ unify logging. probably replace ipi stuff. remove ipi namespaces?
 
 Eventually
 ===========
+
+voxel grid collision checking
 
 PECost is PE^2
 

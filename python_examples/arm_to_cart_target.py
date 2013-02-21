@@ -1,6 +1,7 @@
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("--interactive", action="store_true")
+parser.add_argument("--position_only", action="store_true")
 args = parser.parse_args()
 
 import openravepy
@@ -58,9 +59,11 @@ request = {
     "type" : "pose", 
     "params" : {"xyz" : xyz_target, 
                 "wxyz" : quat_target, 
-                "link": "r_gripper_tool_frame"
+                "link": "r_gripper_tool_frame",
                 # "timestep" : 9
                 # omitted because timestep = n_steps-1 is default
+                # "pos_coeffs" : [1,1,1], # omitted because that's default
+                "rot_coeffs" : ([0,0,0] if args.position_only else [1,1,1])
                 }
                  
   }
@@ -81,4 +84,15 @@ print result
 from trajoptpy.check_traj import traj_is_safe
 prob.SetRobotActiveDOFs() # set robot DOFs to DOFs in optimization problem
 assert traj_is_safe(result.GetTraj(), robot) # Check that trajectory is collision free
-# TODO: check that constraints are satisfied
+
+# Now we'll check to see that the final constraint was satisfied
+robot.SetActiveDOFValues(result.GetTraj()[-1])
+posevec = openravepy.poseFromMatrix(robot.GetLink("r_gripper_tool_frame").GetTransform())
+quat, xyz = posevec[0:4], posevec[4:7]
+
+assert (xyz - xyz_target).max() < 1e-3
+quat *= np.sign(quat.dot(quat_target))
+if args.position_only:
+    assert (quat - quat_target).max() > 1e-3
+else:
+    assert (quat - quat_target).max() < 1e-3

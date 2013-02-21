@@ -21,11 +21,11 @@ struct Collision {
 TRAJOPT_API std::ostream& operator<<(std::ostream&, const Collision&);
 
 
+/** 
+Each CollisionChecker object has a copy of the world, so for performance, don't make too many copies  
+*/ 
 class TRAJOPT_API CollisionChecker : public OR::UserData {
 public:
-  /** 
-  Each CollisionChecker object has a copy of the world, so for performance, don't make too many copies  
-  */ 
 
   /** check everything vs everything else */
   virtual void AllVsAll(vector<Collision>& collisions)=0;

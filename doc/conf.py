@@ -41,7 +41,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'trajopt'
-copyright = u'2013, John Schulman'
+copyright = u'2013, John Schulman and the Robot Learning Lab, UC Berkeley'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

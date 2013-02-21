@@ -121,19 +121,11 @@ ConvexObjectivePtr CostFromNumDiffErr::convex(const vector<double>& xin, Model* 
 }
 
 
-ConstraintFromNumDiff::ConstraintFromNumDiff(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name, const BoolVec& enabled) :
-    Constraint(name), f_(f), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON), enabled_(enabled) {}
+ConstraintFromNumDiff::ConstraintFromNumDiff(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name) :
+    Constraint(name), f_(f), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON) {}
 vector<double> ConstraintFromNumDiff::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
-  if (enabled_.empty()) return toDblVec(f_->call(x));
-  else {
-    VectorXd y = f_->call(x);
-    DblVec out;
-    for (int i=0; i < enabled_.size(); ++i) {
-      if (enabled_[i]) out.push_back(y[i]);
-    }
-    return out;
-  }
+  return toDblVec(f_->call(x));
 }
 ConvexConstraintsPtr ConstraintFromNumDiff::convex(const vector<double>& xin, Model* model) {
   VectorXd x = getVec(xin, vars_);
@@ -141,15 +133,13 @@ ConvexConstraintsPtr ConstraintFromNumDiff::convex(const vector<double>& xin, Mo
   ConvexConstraintsPtr out(new ConvexConstraints(model));
   VectorXd y = f_->call(x);
   for (int i=0; i < jac.rows(); ++i) {
-    if (enabled_.empty() || enabled_[i]) {
-      AffExpr aff;
-      aff.constant = y[i] - jac.row(i).dot(x);
-      aff.coeffs = toDblVec(jac.row(i));
-      aff.vars = vars_;
-      aff = cleanupAff(aff);
-      if (type() == INEQ) out->addIneqCnt(aff);
-      else out->addEqCnt(aff);
-    }
+    AffExpr aff;
+    aff.constant = y[i] - jac.row(i).dot(x);
+    aff.coeffs = toDblVec(jac.row(i));
+    aff.vars = vars_;
+    aff = cleanupAff(aff);
+    if (type() == INEQ) out->addIneqCnt(aff);
+    else out->addEqCnt(aff);
   }
   return out;
 }
