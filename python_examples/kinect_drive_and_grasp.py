@@ -1,16 +1,21 @@
 import argparse
 parser = argparse.ArgumentParser()
+parser.add_argument("scene_name")
 parser.add_argument("--interactive", action="store_true")
+parser.add_argument("--save_tmp")
 args = parser.parse_args()
 
-import numpy as np
-import cloudprocpy
-cloud_orig = cloudprocpy.readPCDXYZ("../bigdata/pr2_table_cloud_xyz.pcd")
+import numpy as np, os.path as osp
+import cloudprocpy,trajoptpy
+cloud_orig = cloudprocpy.readPCDXYZ(osp.join(trajoptpy.bigdata_dir,args.scene_name,"cloud.pcd"))
+dof_vals = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "dof_vals.txt"))
+T_w_k = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "kinect_frame.txt"))
+
 cloud_filt = cloudprocpy.fastBilateralFilter(cloud_orig, 15, .05)
 big_mesh = cloudprocpy.meshOFM(cloud_filt, 3, .1)
-big_mesh.save("/tmp/big_mesh.ply")
+if args.save_tmp: big_mesh.save("/tmp/big_mesh.ply")
 simple_mesh = cloudprocpy.quadricSimplifyVTK(big_mesh, .01)
-simple_mesh.save("/tmp/simple_mesh.ply")
+if args.save_tmp: simple_mesh.save("/tmp/simple_mesh.ply")
 
 import openravepy, trajoptpy
 import trajoptpy.make_kinbodies as mk
@@ -25,9 +30,10 @@ handles = []
 #handles.append(env.plot3(cloud_orig.to2dArray().dot(T_w_k.T),3))
 #viewer.Idle()
 
+robot.SetDOFValues(dof_vals)
 
-robot.SetDOFValues([1],[14])
-T_w_k = robot.GetLink("narrow_stereo_gazebo_r_stereo_camera_optical_frame").GetTransform()
+
+#T_w_k = robot.GetLink("narrow_stereo_gazebo_r_stereo_camera_optical_frame").GetTransform()
 
 #handles.append(env.plot3(cloud_orig.to2dArray().dot(T_w_k.T),3))
 #viewer.Idle()
@@ -49,7 +55,7 @@ for (i,mesh) in enumerate(convex_meshes):
 viewer.Idle()
 
 
-
+"""
 
 import trajoptpy
 import openravepy as rave
@@ -247,3 +253,4 @@ else:
     print "failed to find a valid solution :("
     raise Exception("fail")
     
+"""
