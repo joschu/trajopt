@@ -3,7 +3,6 @@
 #include <cmath>
 #include <algorithm>
 
-namespace ipi {
 namespace sco {
 
 using std::vector;
@@ -43,6 +42,5 @@ inline double vecDot(const DblVec& a, const DblVec& b) {
 
 
 
-}
 }
 

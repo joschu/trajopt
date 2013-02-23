@@ -1,8 +1,6 @@
-#if 1
 #include "solver_interface.hpp"
 #include "gurobi_interface.hpp"
-#define IPI_LOG_THRESH IPI_LEVEL_INFO
-#include "ipi/logging.hpp"
+#include "utils/logging1.hpp"
 extern "C" {
 #include "gurobi_c.h"
 }
@@ -10,9 +8,14 @@ extern "C" {
 #include "sco_common.hpp"
 #include <map>
 #include <utility>
+#include "macros.h"
+#include <sstream>
+#include <stdexcept>
+#include <iostream>
+#include "utils/stl_to_string.hpp"
+
 using namespace std;
 
-namespace ipi {
 namespace sco {
 
 GRBenv* gEnv;
@@ -81,7 +84,7 @@ ModelPtr createGurobiModel() {
 GurobiModel::GurobiModel() {
   if (!gEnv) {
     GRBloadenv(&gEnv, NULL);
-    if (logging::filter() < IPI_LEVEL_DEBUG) {
+    if (util::GetLogLevel() < util::LevelDebug) {
       ENSURE_SUCCESS(GRBsetintparam(gEnv, "OutputFlag",0));
     }
   }
@@ -108,7 +111,7 @@ Var GurobiModel::addVar(const string& name, double lb, double ub) {
 
 
 Cnt GurobiModel::addEqCnt(const AffExpr& expr, const string& name) {
-  IPI_LOG_DEBUG("adding ineq: %s <= 0", expr);
+  LOG_DEBUG("adding ineq: %s <= 0", CSTR(expr));
   vector<int> inds = vars2inds(expr.vars);
   vector<double> vals = expr.coeffs;
   simplify2(inds, vals);
@@ -118,7 +121,7 @@ Cnt GurobiModel::addEqCnt(const AffExpr& expr, const string& name) {
   return cnts.back();
 }
 Cnt GurobiModel::addIneqCnt(const AffExpr& expr, const string& name) {
-  IPI_LOG_DEBUG("adding ineq: %s <= 0", expr);
+  LOG_DEBUG("adding ineq: %s <= 0", CSTR(expr));
   vector<int> inds = vars2inds(expr.vars);
   vector<double> vals = expr.coeffs;
   simplify2(inds, vals);
@@ -128,7 +131,7 @@ Cnt GurobiModel::addIneqCnt(const AffExpr& expr, const string& name) {
   return cnts.back();
 }
 Cnt GurobiModel::addIneqCnt(const QuadExpr&, const string& name) {
-  IPI_ABORT("NOT IMPLEMENTED");
+  PRINT_AND_THROW("NOT IMPLEMENTED");
   return 0;
 }
 
@@ -185,7 +188,7 @@ CvxOptStatus GurobiModel::optimize(){
   GRBgetintattr(model, GRB_INT_ATTR_STATUS, &status);
   if (status == GRB_OPTIMAL) {
     double objval; GRBgetdblattr(model, GRB_DBL_ATTR_OBJVAL, &objval);
-    IPI_LOG_DEBUG("solver objective value: %.3e", objval);
+    LOG_DEBUG("solver objective value: %.3e", objval);
     return CVX_SOLVED;
   }
   else if (status == GRB_INFEASIBLE) return CVX_INFEASIBLE;
@@ -263,6 +266,4 @@ GurobiModel::~GurobiModel() {
 }
 
 }
-}
 
-#endif

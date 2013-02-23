@@ -1,13 +1,13 @@
 #pragma once
-#include "ipi/sco/modeling.hpp"
-#include "ipi/sco/modeling_utils.hpp"
-#include "ipi/sco/sco_fwd.hpp"
+#include "sco/modeling.hpp"
+#include "sco/modeling_utils.hpp"
+#include "sco/sco_fwd.hpp"
 #include <Eigen/Core>
 #include "trajopt/common.hpp"
 #include <openrave/openrave.h>
 namespace trajopt {
 
-using namespace ipi::sco;
+using namespace sco;
 typedef BasicArray<Var> VarArray;
 
 void makeTrajVariablesAndBounds(int n_steps, const RobotAndDOF& manip, OptProb& prob_out, VarArray& vars_out);

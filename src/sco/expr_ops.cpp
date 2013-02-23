@@ -3,7 +3,6 @@
 
 static inline double sq(double x) {return x*x;}
 
-namespace ipi {
 namespace sco {
 QuadExpr exprSquare(const Var& a) {
   QuadExpr out;
@@ -69,5 +68,4 @@ QuadExpr cleanupQuad(const QuadExpr& q) {
 ///////////////////////////////////////////////////////////////
 
 
-}
 }

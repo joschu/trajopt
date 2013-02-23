@@ -1,15 +1,15 @@
 #include "trajopt/collision_avoidance.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/utils.hpp"
-#include "ipi/sco/expr_vec_ops.hpp"
-#include "ipi/sco/expr_ops.hpp"
-#include "ipi/sco/sco_common.hpp"
+#include "sco/expr_vec_ops.hpp"
+#include "sco/expr_ops.hpp"
+#include "sco/sco_common.hpp"
 #include <boost/foreach.hpp>
 #include "utils/eigen_conversions.hpp"
-#include "ipi/sco/modeling_utils.hpp"
+#include "sco/modeling_utils.hpp"
 #include "utils/stl_to_string.hpp"
 using namespace OpenRAVE;
-using namespace ipi::sco;
+using namespace sco;
 using namespace util;
 using namespace std;
 

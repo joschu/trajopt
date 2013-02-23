@@ -1,15 +1,14 @@
 #include <gtest/gtest.h>
-#include "ipi/sco/solver_interface.hpp"
-#include "ipi/logging.hpp"
-#include "ipi/sco/expr_ops.hpp"
+#include "sco/solver_interface.hpp"
+#include "utils/logging1.hpp"
+#include "sco/expr_ops.hpp"
 #include <cstdio>
 #include <boost/foreach.hpp>
 #include <iostream>
-#undef IPI_LOG_THRESH
-#define IPI_LOG_THRESH IPI_LEVEL_DEBUG
+#include "utils/stl_to_string.hpp"
 using namespace std;
 
-using namespace ipi::sco;
+using namespace sco;
 
 
 
@@ -34,8 +33,8 @@ TEST(solver_interface, setup_problem) {
   QuadExpr affsquared = exprSquare(aff);
   solver->setObjective(affsquared);
   solver->update();
-  IPI_LOG_ALERT("objective: %s", affsquared);
-  IPI_LOG_ALERT("please manually check that /tmp/solver-interface-test.lp matches this");
+  LOG_INFO("objective: %s", CSTR(affsquared));
+  LOG_INFO("please manually check that /tmp/solver-interface-test.lp matches this");
   solver->writeToFile("/tmp/solver-interface-test.lp");
 
   solver->optimize();

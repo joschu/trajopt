@@ -1,7 +1,7 @@
 #include "rave_utils.hpp"
 using namespace OpenRAVE;
 #include <boost/foreach.hpp>
-#include "ipi/logging.hpp"
+#include "utils/logging1.hpp"
 #include <Eigen/Core>
 #include "typedefs.hpp"
 using namespace std;
@@ -40,14 +40,14 @@ RobotBasePtr GetRobot(EnvironmentBase& env) {
   vector<RobotBasePtr> robots;
   env.GetRobots(robots);
   if (robots.size() == 0) {
-    IPI_LOG_ERR("no robots!");
+    LOG_ERROR("no robots!");
     return RobotBasePtr();
   }
   else if (robots.size() == 1) {
     return robots[0];
   }
   else {
-    IPI_LOG_ERR("I don't know which robot you want");
+    LOG_ERROR("I don't know which robot you want");
     return RobotBasePtr();
   }
 }

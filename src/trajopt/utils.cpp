@@ -1,5 +1,5 @@
 #include "utils.hpp"
-#include "ipi/sco/solver_interface.hpp"
+#include "sco/solver_interface.hpp"
 #include <Eigen/Geometry>
 namespace trajopt {
 TrajArray getTraj(const vector<double>& x, const VarArray& vars) {

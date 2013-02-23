@@ -1,8 +1,8 @@
 #include "humanoids.hpp"
-#include "ipi/sco/modeling_utils.hpp"
-#include "ipi/sco/expr_ops.hpp"
-#include "ipi/sco/expr_vec_ops.hpp"
-#include "ipi/sco/expr_op_overloads.hpp"
+#include "sco/modeling_utils.hpp"
+#include "sco/expr_ops.hpp"
+#include "sco/expr_vec_ops.hpp"
+#include "sco/expr_op_overloads.hpp"
 #include <boost/foreach.hpp>
 #include "utils/eigen_conversions.hpp"
 #include "trajopt/problem_description.hpp"

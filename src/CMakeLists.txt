@@ -13,7 +13,7 @@ endif()
 
 set(OpenRAVE_BOTH_LIBRARIES ${OpenRAVE_LIBRARIES} ${OpenRAVE_CORE_LIBRARIES})
 
-add_subdirectory(ipi)
+add_subdirectory(sco)
 add_subdirectory(trajopt)
 add_subdirectory(utils)
 if(BUILD_CLOUDPROC) 

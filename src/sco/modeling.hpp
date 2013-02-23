@@ -9,10 +9,9 @@
 
 #include <vector>
 #include <boost/shared_ptr.hpp>
-#include "ipi/sco/sco_fwd.hpp"
-#include "ipi/sco/solver_interface.hpp"
+#include "sco/sco_fwd.hpp"
+#include "sco/solver_interface.hpp"
 
-namespace ipi {
 namespace sco {
 
 using std::vector;
@@ -179,4 +178,4 @@ protected:
   OptProb(OptProb&);
 };
 
-}}
+}

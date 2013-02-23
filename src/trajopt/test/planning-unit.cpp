@@ -5,7 +5,7 @@
 #include "utils/stl_to_string.hpp"
 #include "trajopt/common.hpp"
 #include "trajopt/problem_description.hpp"
-#include "ipi/sco/optimizers.hpp"
+#include "sco/optimizers.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "osgviewer/osgviewer.hpp"
 #include <ctime>

@@ -1,7 +1,6 @@
 #pragma once
 #include "expr_ops.hpp"
 
-namespace ipi {
 namespace sco {
 
 inline AffExpr operator+(const Var& x, double y) {
@@ -118,5 +117,4 @@ inline AffExpr operator-(const AffExpr& a) {
   return exprMult(a, -1);
 }
 
-}
 }

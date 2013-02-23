@@ -11,6 +11,6 @@ add_library(sco SHARED
 	modeling_utils.cpp
 	num_diff.cpp
 )
-target_link_libraries(sco ${GUROBI_LIBRARIES} ipi_base utils)
+target_link_libraries(sco ${GUROBI_LIBRARIES} utils)
 
 add_subdirectory(test)

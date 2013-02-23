@@ -1,7 +1,6 @@
 #include "optimizers.hpp"
 #include "modeling.hpp"
-#define IPI_LOG_THRESH IPI_LEVEL_DEBUG
-#include "ipi/logging.hpp"
+#include "utils/logging1.hpp"
 #include <boost/foreach.hpp>
 #include "solver_interface.hpp"
 #include "expr_ops.hpp"
@@ -10,10 +9,10 @@
 #include "sco_common.hpp"
 #include "utils/stl_to_string.hpp"
 #include "macros.h"
+#include <boost/format.hpp>
 using namespace std;
 using namespace util;
 
-namespace ipi {
 namespace sco {
 
 typedef vector<double> DblVec;
@@ -239,8 +238,8 @@ OptStatus BasicTrustRegionSQP::optimize() {
     for (int iter=1; ; ++iter) { /* sqp loop */
       callCallbacks(x_);
 
-      IPI_LOG_DEBUG("current iterate: %s", Str(x_));
-      IPI_LOG_INFO("iteration %i", iter);
+      LOG_DEBUG("current iterate: %s", CSTR(x_));
+      LOG_INFO("iteration %i", iter);
 
       // speedup: if you just evaluated the cost when doing the line search, use that
       if (results_.cost_vals.empty()) { //only happens on the first iteration
@@ -270,7 +269,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
 //      BOOST_FOREACH(ConvexObjectivePtr& cost, cost_models) {
 //        model_cost_vals.push_back(cost->value(x));
 //      }
-//      IPI_LOG_DEBUG("model costs %s should equalcosts  %s", printer(model_cost_vals), printer(cost_vals));
+//      LOG_DEBUG("model costs %s should equalcosts  %s", printer(model_cost_vals), printer(cost_vals));
 //    }
 
       while (trust_box_size_ >= min_trust_box_size_) {
@@ -279,7 +278,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
         CvxOptStatus status = model_->optimize();
         ++results_.n_qp_solves;
         if (status != CVX_SOLVED) {
-          IPI_LOG_ERR("convex solver failed! set IPI_LOG_LEVEL=DEBUG to see solver output. saving model to /tmp/fail.lp");
+          LOG_ERROR("convex solver failed! set LOG_DEBUG_LEVEL=DEBUG to see solver output. saving model to /tmp/fail.lp");
           model_->writeToFile("/tmp/fail.lp");
           retval = OPT_FAILED;
           goto cleanup;
@@ -292,9 +291,9 @@ OptStatus BasicTrustRegionSQP::optimize() {
         // the n variables of the OptProb happen to be the first n variables in the Model
         DblVec new_x(model_var_vals.begin(), model_var_vals.begin() + x_.size());
 
-        if (logging::filter() >= IPI_LEVEL_DEBUG) {
+        if (GetLogLevel() >= util::LevelDebug) {
           DblVec model_cnt_viols2 = evaluateModelCosts(cnt_cost_models, model_var_vals);
-          IPI_LOG_DEBUG("SHOULD BE THE SAME: %.2f*%s ?= %s", merit_error_coeff_, Str(model_cnt_viols), Str(model_cnt_viols2));
+          LOG_DEBUG("SHOULD BE THE SAME: %.2f*%s ?= %s", merit_error_coeff_, CSTR(model_cnt_viols), CSTR(model_cnt_viols2));
         }
 
         DblVec new_cost_vals = evaluateCosts(prob_->getCosts(), new_x);
@@ -308,8 +307,8 @@ OptStatus BasicTrustRegionSQP::optimize() {
         double exact_merit_improve = old_merit - new_merit;
         double merit_improve_ratio = exact_merit_improve / approx_merit_improve;
 
-        if (logging::filter() >= IPI_LEVEL_INFO) {
-          IPI_LOG_INFO("");
+        if (util::GetLogLevel() >= util::LevelInfo) {
+          LOG_INFO("");
           printCostInfo(results_.cost_vals, model_cost_vals, new_cost_vals,
                         results_.cnt_viols, model_cnt_viols, new_cnt_viols, cost_names,
                         cnt_names, merit_error_coeff_);
@@ -317,15 +316,15 @@ OptStatus BasicTrustRegionSQP::optimize() {
         }
 
         if (approx_merit_improve < -1e-4) {
-          IPI_LOG_ERR("approximate merit function got worse (%.3e). (convexification is probably wrong to zeroth order)", approx_merit_improve);
+          LOG_ERROR("approximate merit function got worse (%.3e). (convexification is probably wrong to zeroth order)", approx_merit_improve);
         }
         if (approx_merit_improve < min_approx_improve_) {
-          IPI_LOG_INFO("converged because improvement was small (%.3e < %.3e)", approx_merit_improve, min_approx_improve_);
+          LOG_INFO("converged because improvement was small (%.3e < %.3e)", approx_merit_improve, min_approx_improve_);
           retval = OPT_CONVERGED;
           goto penaltyadjustment;
         }
         if (approx_merit_improve / old_merit < min_approx_improve_frac_) {
-          IPI_LOG_INFO(
+          LOG_INFO(
               "converged because improvement ratio was small (%.3e < %.3e)",
               approx_merit_improve/old_merit, min_approx_improve_frac_);
           retval = OPT_CONVERGED;
@@ -333,24 +332,24 @@ OptStatus BasicTrustRegionSQP::optimize() {
         } 
         else if (exact_merit_improve < 0 || merit_improve_ratio < improve_ratio_threshold_) {
           adjustTrustRegion(trust_shrink_ratio_);
-          IPI_LOG_INFO("shrunk trust region. new box size: %.4f",
+          LOG_INFO("shrunk trust region. new box size: %.4f",
               trust_box_size_);
         } else {
           x_ = new_x;
           results_.cost_vals = new_cost_vals;
           results_.cnt_viols = new_cnt_viols;
           adjustTrustRegion(trust_expand_ratio_);
-          IPI_LOG_INFO("expanded trust region. new box size: %.4f",trust_box_size_);
+          LOG_INFO("expanded trust region. new box size: %.4f",trust_box_size_);
           break;
         }
       }
 
       if (trust_box_size_ < min_trust_box_size_) {
-        IPI_LOG_INFO("converged because trust region is tiny");
+        LOG_INFO("converged because trust region is tiny");
         retval = OPT_CONVERGED;
         goto penaltyadjustment;
       } else if (iter >= max_iter_) {
-        IPI_LOG_INFO("iteration limit");
+        LOG_INFO("iteration limit");
         retval = OPT_ITERATION_LIMIT;
         goto cleanup;
       }
@@ -358,11 +357,11 @@ OptStatus BasicTrustRegionSQP::optimize() {
 
     penaltyadjustment:
     if (results_.cnt_viols.empty() || vecMax(results_.cnt_viols) < cnt_tolerance_) {
-      if (results_.cnt_viols.size() > 0) IPI_LOG_INFO("woo-hoo! constraints are satisfied (to tolerance %.2e)", cnt_tolerance_);
+      if (results_.cnt_viols.size() > 0) LOG_INFO("woo-hoo! constraints are satisfied (to tolerance %.2e)", cnt_tolerance_);
       goto cleanup;
     }
     else {
-      IPI_LOG_INFO("not all constraints are satisfied. increasing penalties");
+      LOG_INFO("not all constraints are satisfied. increasing penalties");
       merit_error_coeff_ *= merit_coeff_increase_ratio_;
       trust_box_size_ = fmax(trust_box_size_, min_trust_box_size_ * 5);
     }
@@ -371,14 +370,14 @@ OptStatus BasicTrustRegionSQP::optimize() {
 
   }
   retval = OPT_ITERATION_LIMIT;
-  IPI_LOG_INFO("optimization couldn't satisfy all constraints");
+  LOG_INFO("optimization couldn't satisfy all constraints");
 
 
   cleanup:
   assert(retval != INVALID && "should never happen");
   results_.status = retval;
   results_.total_cost = vecSum(results_.cost_vals);
-  IPI_LOG_INFO("\n==================\n%s==================", Str(results_));
+  LOG_INFO("\n==================\n%s==================", CSTR(results_));
   callCallbacks(x_);
 
   return retval;
@@ -386,4 +385,4 @@ OptStatus BasicTrustRegionSQP::optimize() {
 }
 
 
-}}
+}

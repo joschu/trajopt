@@ -4,11 +4,11 @@
 #include "trajopt/problem_description.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/utils.hpp"
-#include "ipi/sco/expr_op_overloads.hpp"
-#include "ipi/sco/optimizers.hpp"
+#include "sco/expr_op_overloads.hpp"
+#include "sco/optimizers.hpp"
 using namespace OpenRAVE;
 using namespace trajopt;
-using namespace ipi::sco;
+using namespace sco;
 using namespace Eigen;
 using namespace std;
 

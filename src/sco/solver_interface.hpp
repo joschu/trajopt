@@ -13,7 +13,6 @@
   However, our intention is to allow for different solvers to be used as backends.
  */
 
-namespace ipi{
 namespace sco{
 
 using std::string;
@@ -150,4 +149,4 @@ enum CvxSolverID {
 };
 ModelPtr createModel(CvxSolverID);
 
-}}
+}

@@ -6,7 +6,6 @@
  * Algorithms for non-convex, constrained optimization
  */
 
-namespace ipi{
 namespace sco {
 
 using std::string;
@@ -108,5 +107,4 @@ protected:
 };
 
 
-}
 }

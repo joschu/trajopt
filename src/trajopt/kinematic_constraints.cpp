@@ -2,9 +2,9 @@
 #include "trajopt/kinematic_constraints.hpp"
 #include "trajopt/utils.hpp"
 #include "trajopt/rave_utils.hpp"
-#include "ipi/logging.hpp"
-#include "ipi/sco/expr_ops.hpp"
-#include "ipi/sco/modeling_utils.hpp"
+#include "utils/logging1.hpp"
+#include "sco/expr_ops.hpp"
+#include "sco/modeling_utils.hpp"
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <iostream>
@@ -13,7 +13,7 @@
 #include "utils/eigen_conversions.hpp"
 #include "utils/eigen_slicing.hpp"
 using namespace std;
-using namespace ipi::sco;
+using namespace sco;
 using namespace Eigen;
 using namespace util;
 
@@ -60,7 +60,7 @@ void makeTrajVariablesAndBounds(int n_steps, RobotAndDOFPtr manip, OptProb& prob
   int n_dof = manip->GetDOF();
   DblVec lower, upper;
   manip->GetDOFLimits(lower, upper);
-  IPI_LOG_INFO("Dof limits: %s, %s", Str(lower), Str(upper));
+  LOG_INFO("Dof limits: %s, %s", CSTR(lower), CSTR(upper));
   vector<double> vlower, vupper;
   vector<string> names;
   for (int i=0; i < n_steps; ++i) {

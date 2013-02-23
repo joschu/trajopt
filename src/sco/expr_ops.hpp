@@ -3,7 +3,6 @@
 #include "sco_fwd.hpp"
 #include "solver_interface.hpp"
 
-namespace ipi {
 namespace sco {
 
 
@@ -168,5 +167,4 @@ AffExpr cleanupAff(const AffExpr&);
 QuadExpr cleanupQuad(const QuadExpr&); //warning: might make it non-psd!
 
 
-}
 }

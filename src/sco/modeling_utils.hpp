@@ -13,7 +13,6 @@ using numerical derivatives or user-defined analytic derivatives.
 
 
 
-namespace ipi {
 namespace sco {
 
 enum PenaltyType {
@@ -67,5 +66,4 @@ protected:
 };
 
 
-}
 }

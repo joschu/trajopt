@@ -47,6 +47,7 @@ std::string Str(const T& x) {
   ss << x;
   return ss.str();
 }
+#define CSTR(x) util::Str(x).c_str()
 
 
 template<class K, class V>

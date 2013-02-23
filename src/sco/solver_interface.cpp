@@ -1,10 +1,8 @@
 #include "solver_interface.hpp"
 #include <iostream>
 #include <boost/foreach.hpp>
-#include "ipi/logging.hpp"
 using namespace std;
 
-namespace ipi {
 namespace sco {
 
 double AffExpr::value(const double* x) const {
@@ -101,4 +99,4 @@ ModelPtr createModel(CvxSolverID solver) {
 
 
 }
-}
+

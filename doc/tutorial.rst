@@ -49,7 +49,7 @@ The "cont_collision" lines each refer to the collision cost for a time interval 
 As you can see, all of the collision costs are zero, meaning the trajectory is safely out of collision, with a safety margin of `dist_pen` meters.
 Note that there's no term for the "joint" constraint. That's because this constraint is a linear constraint in the optimization problem, and the table only shows nonlinear constraints which must be approximated at each iteration.
 As you can see, there's not a 1-1 correspondence between the "cost" and "constraint" items in the json file and the costs and constraints that the optimization algorithm sees.
-(If you're digging into the C++ API, note that the table rows correspond to `Cost <../../dox_build/classipi_1_1sco_1_1_cost.html>`_ and `Constraint <../../dox_build/classipi_1_1sco_1_1_constraint.html>`_ objects).
+(If you're digging into the C++ API, note that the table rows correspond to `Cost <../../dox_build/classsco_1_1_cost.html>`_ and `Constraint <../../dox_build/classsco_1_1_constraint.html>`_ objects).
 
 .. note:: Why do we use a collision cost, rather than a constraint? In the sequential convex optimization procedure, constraints get converted into costs--specifically, :math:`\ell_1` penalties (see the paper). So the difference between a constraint and an :math:`\ell_1` cost is that for a constraint, the optimizer checks to see if it is satisfied (to some tolerance), and if not, it jacks up the penalty coefficient. The thing about collisions is that it's often necessary to violate the safety margin, e.g. when you need to contact an object. So you're best off handling the logic yourself of adjusting penalties and safety margins, based on your specific problem.
 
@@ -129,6 +129,6 @@ See :file:`python_examples/drc_walk.py` for a rather simple example of planning 
 Using point cloud data
 -------------------------
 
-.. TODO
-
 This section will discuss how load various types of perception data into the collision world in a way that is favorable for speed, success rate, and safety.
+
+(TODO)

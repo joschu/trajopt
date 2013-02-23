@@ -1,7 +1,7 @@
 #pragma once
 #include <Eigen/Core>
 #include <trajopt/common.hpp>
-#include "ipi/sco/modeling_utils.hpp"
+#include "sco/modeling_utils.hpp"
 
 namespace trajopt {
 using Eigen::MatrixX2d;

@@ -7,15 +7,15 @@ set(test_srcs
   solver-interface-unit.cpp
 )
 
-add_executable(ipi-sco-unit
+add_executable(sco-unit
   ${test_srcs}
 )    
 
-target_link_libraries(ipi-sco-unit
+target_link_libraries(sco-unit
   sco
   gtest gtest_main
 )
 
-add_test(ipi-sco-unit
-  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ipi-sco-unit
+add_test(sco-unit
+  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/sco-unit
 )

@@ -6,7 +6,6 @@
  * Numerical derivatives
  */
 
-namespace ipi {
 namespace sco {
 using boost::function;
 using Eigen::VectorXd;
@@ -65,4 +64,4 @@ MatrixOfVectorPtr forwardNumJac(VectorOfVectorPtr f, double epsilon);
 
 
 
-}}
+}

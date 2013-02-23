@@ -1,5 +1,5 @@
 #include "modeling.hpp"
-#include "ipi/logging.hpp"
+#include "utils/logging1.hpp"
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <cstdio>
@@ -7,7 +7,6 @@
 #include "sco_common.hpp"
 using namespace std;
 
-namespace ipi {
 namespace sco {
 
 void ConvexObjective::addAffExpr(const AffExpr& affexpr) {
@@ -194,7 +193,7 @@ vector<double> OptProb::getCentralFeasiblePoint(const vector<double>& x) {
   return getClosestFeasiblePoint(center);
 }
 vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
-  IPI_LOG_DEBUG("getClosestFeasiblePoint");
+  LOG_DEBUG("getClosestFeasiblePoint");
   assert(vars_.size() == x.size());
   QuadExpr obj;
   for (int i=0; i < x.size(); ++i) {
@@ -214,5 +213,4 @@ vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
 
 
 
-}
 }

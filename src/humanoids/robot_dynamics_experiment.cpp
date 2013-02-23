@@ -1,13 +1,13 @@
 #include <iostream>
-#include "ipi/sco/modeling_utils.hpp"
+#include "sco/modeling_utils.hpp"
 #include "trajopt/robot_and_dof.hpp"
 #include "utils/stl_to_string.hpp"
-#include "ipi/logging.hpp"
-#include "ipi/sco/expr_op_overloads.hpp"
+#include "utils/logging1.hpp"
+#include "sco/expr_op_overloads.hpp"
 #include <openrave-core.h>
-#include "ipi/sco/optimizers.hpp"
+#include "sco/optimizers.hpp"
 #include "trajopt/utils.hpp"
-using namespace ipi::sco;
+using namespace sco;
 using namespace trajopt;
 using namespace util;
 using namespace OpenRAVE;

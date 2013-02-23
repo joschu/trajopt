@@ -11,7 +11,6 @@ Gurobi backend
 struct _GRBmodel;
 typedef struct _GRBmodel GRBmodel;
 
-namespace ipi {
 namespace sco {
 
 class GurobiModel : public Model {
@@ -54,6 +53,5 @@ public:
 };
 
 
-}
 }
 

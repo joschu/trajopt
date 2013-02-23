@@ -1,8 +1,8 @@
 #include "trajopt/problem_description.hpp"
 #include "trajopt/common.hpp"
 #include <boost/foreach.hpp>
-#include "ipi/logging.hpp"
-#include "ipi/sco/expr_ops.hpp"
+#include "utils/logging1.hpp"
+#include "sco/expr_ops.hpp"
 #include "trajopt/kinematic_constraints.hpp"
 #include "trajopt/collision_avoidance.hpp"
 #include "trajopt/rave_utils.hpp"
@@ -136,7 +136,7 @@ void CostInfo::RegisterMaker(const std::string& type, MakerFunc f) {
 void fromJson(const Json::Value& v, CntInfoPtr& cnt) {
   string type;
   childFromJson(v, type, "type");
-  IPI_LOG_DEBUG("reading constraint: %s", type);
+  LOG_DEBUG("reading constraint: %s", type.c_str());
   cnt = CntInfo::fromName(type);
   if (!cnt) PRINT_AND_THROW( boost::format("failed to construct constraint named %s")%type );
   cnt->fromJson(v);

@@ -61,8 +61,8 @@ The output should look something like this::
   2/7 Test #2: arm_to_joint_target.py ...........   Passed    1.92 sec
       Start 3: position_base.py
   3/7 Test #3: position_base.py .................   Passed    2.59 sec
-      Start 4: ipi-sco-unit
-  4/7 Test #4: ipi-sco-unit .....................   Passed    0.04 sec
+      Start 4: sco-unit
+  4/7 Test #4: sco-unit .....................   Passed    0.04 sec
       Start 5: collision-checker-unit
   5/7 Test #5: collision-checker-unit ...........   Passed    0.05 sec
       Start 6: planning-unit

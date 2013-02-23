@@ -1,9 +1,9 @@
-#include "ipi/sco/optimizers.hpp"
-#include "ipi/sco/solver_interface.hpp"
-#include "ipi/sco/expr_op_overloads.hpp"
-#include "ipi/sco/modeling_utils.hpp"
-#include "ipi/sco/sco_common.hpp"
-#include "ipi/logging.hpp"
+#include "sco/optimizers.hpp"
+#include "sco/solver_interface.hpp"
+#include "sco/expr_op_overloads.hpp"
+#include "sco/modeling_utils.hpp"
+#include "sco/sco_common.hpp"
+#include "utils/logging1.hpp"
 #include <cmath>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
@@ -15,7 +15,7 @@
 using namespace util;
 using namespace std;
 using namespace boost::assign;
-using namespace ipi::sco;
+using namespace sco;
 using namespace Eigen;
 
 
@@ -33,7 +33,7 @@ void setupProblem(OptProbPtr& probptr, size_t nvars) {
 void expectAllNear(const DblVec& x, const DblVec& y, double abstol) {
   EXPECT_EQ(x.size(), y.size());
   stringstream ss;
-  IPI_LOG_INFO("checking %s ?= %s", Str(x), Str(y));
+  LOG_INFO("checking %s ?= %s", CSTR(x), CSTR(y));
   for (size_t i=0; i < x.size(); ++i) EXPECT_NEAR(x[i], y[i], abstol);
 }
 

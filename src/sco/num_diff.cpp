@@ -1,8 +1,7 @@
 #include "num_diff.hpp"
 using namespace Eigen;
-using namespace ipi::sco;
+using namespace sco;
 
-namespace ipi {
 namespace sco {
 
 ScalarOfVectorPtr ScalarOfVector::construct(const boost_func& f) {
@@ -106,7 +105,6 @@ MatrixOfVectorPtr forwardNumJac(VectorOfVectorPtr f, double epsilon) {
 }
 
 
-}
 }
 
 

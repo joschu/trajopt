@@ -8,7 +8,6 @@ using namespace std;
 using namespace util;
 
 
-namespace ipi {
 namespace sco {
 
 const double DEFAULT_EPSILON = 1e-5;
@@ -146,5 +145,4 @@ ConvexConstraintsPtr ConstraintFromNumDiff::convex(const vector<double>& xin, Mo
 
 
 
-}
 }

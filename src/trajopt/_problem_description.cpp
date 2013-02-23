@@ -1,9 +1,9 @@
 #include "problem_description.hpp"
-#include "ipi/logging.hpp"
+#include "utils/logging1.hpp"
 #include <cstdio>
 #include <set>
 #include "trajopt/kinematic_constraints.hpp"
-#include "ipi/sco/expr_ops.hpp"
+#include "sco/expr_ops.hpp"
 #include <boost/foreach.hpp>
 using namespace OpenRAVE;
 using namespace trajopt;
@@ -115,7 +115,7 @@ bool ProblemBuilder::ReadBasicInfo(const Value& v) {
   vector<RobotBasePtr> robots;
   m_env->GetRobots(robots);
   RobotBasePtr robot = robots[0];
-  IPI_LOG_WARNING("using first robot in environment");
+  LOG_WARN("using first robot in environment");
   RobotBase::ManipulatorPtr manip = GetManipulatorByName(*robot, v["manip"].asString());
   // todo: support various other dof collections that aren't manipulators
 
@@ -188,7 +188,7 @@ bool ProblemBuilder::AddCost(const Value& v) {
     cost.reset(new JointVelCost(m_prob, VectorXd::Ones(m_prob->GetNumDOF()) * params["coeff"].asDouble()));
   }
   else {
-    IPI_LOG_ERR("unrecognized cost type %s", v["type"].asCString());
+    LOG_ERROR("unrecognized cost type %s", v["type"].asCString());
     return false;
   }
   m_prob->addCost(cost);

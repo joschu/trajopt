@@ -1,5 +1,4 @@
 #include "expr_vec_ops.hpp"
-namespace ipi {
 namespace sco {
 
 AffExpr varDot(const VectorXd& x, const VarVector& v) {
@@ -11,4 +10,4 @@ AffExpr varDot(const VectorXd& x, const VarVector& v) {
   return out;
 }
 
-}}
+}

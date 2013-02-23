@@ -2,7 +2,7 @@
 #include "json_marshal.hpp"
 #include <boost/function.hpp>
 
-namespace ipi{namespace sco{struct OptResults;}}
+namespace sco{struct OptResults;}
 
 namespace trajopt {
 

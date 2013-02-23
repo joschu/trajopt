@@ -39,9 +39,9 @@ The most naive algorithm would repeatedly replace \f$f, g_i, h_i\f$ by convex/af
 \section api API overview
 
 To set up your optimization problem, you will likely need to interact with the following classes
-- \ref ipi::sco::Model: serves as the interface to a convex optimization program; each Model object stores a convex optimization problems with a set of variables and constraints.
-- \ref ipi::sco::OptProb: stores a \b non-convex optimization problem, which has a set of \ref ipi::sco::Cost and \ref ipi::sco::Constraint functions. In the current implementation, an OptProb internally has \ref ipi::sco::Model, and the variables actually belong to the model.
-- \ref ipi::sco::Optimizer solves an OptProb.
+- \ref sco::Model: serves as the interface to a convex optimization program; each Model object stores a convex optimization problems with a set of variables and constraints.
+- \ref sco::OptProb: stores a \b non-convex optimization problem, which has a set of \ref sco::Cost and \ref sco::Constraint functions. In the current implementation, an OptProb internally has \ref sco::Model, and the variables actually belong to the model.
+- \ref sco::Optimizer solves an OptProb.
 
 While the solver uses Cost and Constraint objects, which enable a user-defined problem convexification, it's usually most convenient to write functions (instead of classes). The file \ref modeling_utils.hpp contains some tools for constructing Cost and Constraint objects based on user-defined functions (and, optionally, gradients and hessians.)
 
