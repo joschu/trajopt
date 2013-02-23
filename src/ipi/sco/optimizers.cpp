@@ -9,6 +9,7 @@
 #include <cstdio>
 #include "sco_common.hpp"
 #include "utils/stl_to_string.hpp"
+#include "macros.h"
 using namespace std;
 using namespace util;
 
@@ -131,10 +132,18 @@ vector<ConvexObjectivePtr> cntsToCosts(const vector<ConvexConstraintsPtr>& cnts,
 void Optimizer::addCallback(const Callback& cb) {
   callbacks_.push_back(cb);
 }
-void Optimizer::callCallbacks(const DblVec& x) {
+void Optimizer::callCallbacks(DblVec& x) {
   for (int i=0; i < callbacks_.size(); ++i) {
-    callbacks_[i](x);
+    callbacks_[i](prob_.get(), x);
   }
+}
+
+void Optimizer::initialize(const vector<double>& x) {
+  if (!prob_) PRINT_AND_THROW("need to set the problem before initializing");
+  if (prob_->getVars().size() != x.size()) 
+    PRINT_AND_THROW(boost::format("initialization vector has wrong length. expected %i got %i")%prob_->getVars().size()%x.size());
+  results_.clear(); 
+  results_.x = x;
 }
 
 BasicTrustRegionSQP::BasicTrustRegionSQP() {
@@ -177,12 +186,17 @@ void BasicTrustRegionSQP::setTrustBoxConstraints(const DblVec& x) {
   vector<Var>& vars = prob_->getVars();
   assert(vars.size() == x.size());
   DblVec& lb=prob_->getLowerBounds(), ub=prob_->getUpperBounds();
+  DblVec lbtrust(x.size()), ubtrust(x.size());
+  vector<bool> incmask = prob_->getIncrementMask();
+  if (incmask.empty()) incmask = vector<bool>(x.size(), false);
   for (size_t i=0; i < x.size(); ++i) {
-    model_->setVarBounds(vars[i], fmax(x[i] - trust_box_size_, lb[i]),
-                                  fmin(x[i] + trust_box_size_, ub[i]));
+    lbtrust[i] = fmax((incmask[i] ? 0 : x[i]) - trust_box_size_, lb[i]);
+    ubtrust[i] = fmin((incmask[i] ? 0 : x[i]) + trust_box_size_, ub[i]);
   }
+  model_->setVarBounds(vars, lbtrust, ubtrust);
 }
 
+#if 0
 struct MultiCritFilter {
   /**
    * Checks if you're making an improvement on a multidimensional objective
@@ -202,6 +216,7 @@ struct MultiCritFilter {
   void insert(const DblVec& x) {errvecs.push_back(x);}
   bool empty() {return errvecs.size() > 0;}
 };
+#endif
 
 OptStatus BasicTrustRegionSQP::optimize() {
 
@@ -210,6 +225,9 @@ OptStatus BasicTrustRegionSQP::optimize() {
   vector<string> cnt_names = getCntNames(constraints);
 
   DblVec& x_ = results_.x; // just so I don't have to rewrite code
+  if (x_.size() == 0) PRINT_AND_THROW("you forgot to initialize!");
+  if (!prob_) PRINT_AND_THROW("you forgot to set the optimization problem");    
+  
   x_ = prob_->getClosestFeasiblePoint(x_);
 
   assert(x_.size() == prob_->getVars().size());
@@ -224,7 +242,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
       IPI_LOG_DEBUG("current iterate: %s", Str(x_));
       IPI_LOG_INFO("iteration %i", iter);
 
-      // speed optimization: if you just evaluated the cost when doing the line search, use that
+      // speedup: if you just evaluated the cost when doing the line search, use that
       if (results_.cost_vals.empty()) { //only happens on the first iteration
         results_.cnt_viols = evaluateConstraintViols(constraints, x_);
         results_.cost_vals = evaluateCosts(prob_->getCosts(), x_);
@@ -340,7 +358,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
 
     penaltyadjustment:
     if (results_.cnt_viols.empty() || vecMax(results_.cnt_viols) < cnt_tolerance_) {
-      IPI_LOG_INFO("woo-hoo! constraints are satisfied (to tolerance %.2e)", cnt_tolerance_);
+      if (results_.cnt_viols.size() > 0) IPI_LOG_INFO("woo-hoo! constraints are satisfied (to tolerance %.2e)", cnt_tolerance_);
       goto cleanup;
     }
     else {
@@ -359,6 +377,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
   cleanup:
   assert(retval != INVALID && "should never happen");
   results_.status = retval;
+  results_.total_cost = vecSum(results_.cost_vals);
   IPI_LOG_INFO("\n==================\n%s==================", Str(results_));
   callCallbacks(x_);
 

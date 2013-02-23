@@ -158,6 +158,13 @@ void GurobiModel::setVarBounds(const Var& var, double lower, double upper) {
   ENSURE_SUCCESS(GRBsetdblattrelement(model, GRB_DBL_ATTR_UB, var.var_rep->index, upper));
 }
 
+void GurobiModel::setVarBounds(const VarVector& vars, const vector<double>& lower, const vector<double>& upper) {
+  assert(vars.size() == lower.size() && vars.size() == upper.size());
+  ENSURE_SUCCESS(GRBsetdblattrarray(model, GRB_DBL_ATTR_LB, 0, vars.size(), const_cast<double*>(lower.data())));
+  ENSURE_SUCCESS(GRBsetdblattrarray(model, GRB_DBL_ATTR_UB, 0, vars.size(), const_cast<double*>(upper.data())));
+}
+
+
 double GurobiModel::getVarValue(const Var& var) const {
   assert(var.var_rep->creator == this);
   double out;
