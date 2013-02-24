@@ -1,7 +1,7 @@
 #include <string>
 #include <iostream>
 #include "logging1.hpp"
-
+#include <cstdlib>
 using namespace std;
 
 namespace util {
