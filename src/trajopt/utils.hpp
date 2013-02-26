@@ -4,6 +4,9 @@
 
 namespace trajopt {
 
+/**
+Extract trajectory array from solution vector x using indices in array vars
+*/
 TrajArray TRAJOPT_API getTraj(const vector<double>& x, const VarArray& vars);
 
 inline Vector3d toVector3d(const OR::Vector& v) {

@@ -44,17 +44,22 @@ public:
   virtual void PlotCollisionGeometry(vector<OpenRAVE::GraphHandlePtr>&) {throw std::runtime_error("not implemented");}
 
   virtual void ContinuousCheckTrajectory(const TrajArray& traj, RobotAndDOF& rad, vector<Collision>& collisions) {throw std::runtime_error("not implemented");}
+  
+  /** Find contacts between swept-out shapes of robot links and everything in the environment, as robot goes from startjoints to endjoints */ 
   virtual void CastVsAll(RobotAndDOF& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions) {throw std::runtime_error("not implemented");}
 
+  /** Finds all self collisions when all joints are set to zero, and ignore collisions between the colliding links */
   void IgnoreZeroStateSelfCollisions();
   void IgnoreZeroStateSelfCollisions(OpenRAVE::KinBodyPtr body);
 
+  /** Prevent this pair of links from colliding */
   virtual void ExcludeCollisionPair(const KinBody::Link& link0, const KinBody::Link& link1) = 0;
 
 
   OpenRAVE::EnvironmentBaseConstPtr GetEnv() {return m_env;}
 
   virtual ~CollisionChecker() {}
+  /** Get or create collision checker for this environment */
   static boost::shared_ptr<CollisionChecker> GetOrCreate(OR::EnvironmentBase& env);
 protected:
   CollisionChecker(OpenRAVE::EnvironmentBaseConstPtr env) : m_env(env) {}

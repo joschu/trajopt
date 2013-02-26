@@ -37,4 +37,4 @@ option(BUILD_HUMANOIDS "build humanoids stuff" OFF)
 add_subdirectory(ext)
 add_subdirectory(src)
 
-include(add_python_unit_tests.cmake)
+include("${CMAKE_SOURCE_DIR}/cmake/add_python_unit_tests.cmake")

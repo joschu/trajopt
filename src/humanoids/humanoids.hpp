@@ -6,7 +6,7 @@
 namespace trajopt {
 using Eigen::MatrixX2d;
 
-struct ZMPConstraint : public Constraint, public Plotter {
+struct ZMPConstraint : public IneqConstraint, public Plotter {
   RobotAndDOFPtr m_rad;
   VarVector m_vars;
   MatrixX2d m_ab, m_pts;
@@ -15,7 +15,6 @@ struct ZMPConstraint : public Constraint, public Plotter {
   DblVec value(const DblVec&);
   ConvexConstraintsPtr convex(const DblVec&, Model* model);
   void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
-  ConstraintType type() {return INEQ;}
 
 };
 

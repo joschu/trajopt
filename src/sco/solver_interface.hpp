@@ -38,7 +38,7 @@ typedef vector<Var> VarVector;
 typedef vector<AffExpr> AffExprVector;
 typedef vector<QuadExpr> QuadExprVector;
 
-/** @Brief Convex optimization problem
+/** @brief Convex optimization problem
  
 Gotchas:
 - after adding a variable, need to call update() before doing anything else with that variable

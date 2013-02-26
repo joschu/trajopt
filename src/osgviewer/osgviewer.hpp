@@ -7,6 +7,9 @@
 #include "macros.h"
 typedef OpenRAVE::RaveVector<float> RaveVectorf;
 
+/**
+Viewer class with some extras for rendering whole robots.
+*/
 class TRAJOPT_API OSGViewer : public OpenRAVE::ViewerBase {
 public:
 

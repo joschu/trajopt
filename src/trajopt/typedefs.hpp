@@ -32,7 +32,9 @@ using Eigen::Vector4d;
 using Eigen::VectorXd;
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> TrajArray;
 
-
+/**
+Interface for objects that know how to plot themselves given solution vector x
+*/
 class Plotter {
 public:
   virtual void Plot(const DblVec& x, OR::EnvironmentBase&, std::vector<OR::GraphHandlePtr>& handles) = 0;

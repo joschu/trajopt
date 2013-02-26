@@ -16,10 +16,12 @@ namespace sco {
 
 using std::vector;
 
+/**
+Stores convex terms in a objective
+For non-quadratic terms like hinge(x) and abs(x), it needs to add auxilliary variables and linear constraints to the model
+Note: When this object is deleted, the constraints and variables it added to the model are removed
+ */
 class ConvexObjective {
-  /**
-   * When this object is deleted, the constraints it added to the model are removed
-   */
 public:
   ConvexObjective(Model* model) : model_(model) {}
   void addAffExpr(const AffExpr&);
@@ -52,10 +54,16 @@ private:
   ConvexObjective(ConvexObjective&)  {}
 };
 
+/**
+Stores convex inequality constraints and affine equality constraints.
+Actually only affine inequality constraints are currently implemented.
+*/
 class ConvexConstraints {
 public:
   ConvexConstraints(Model* model) : model_(model) {}
+  /** Expression that should == 0 */
   void addEqCnt(const AffExpr&);
+  /** Expression that should <= 0 */
   void addIneqCnt(const AffExpr&);
   void setModel(Model* model) {
     assert(!inModel());
@@ -66,9 +74,6 @@ public:
   }
   void addConstraintsToModel();
   void removeFromModel();
-
-//  vector<double> violations();
-//  double violation();
 
   vector<double> violations(const vector<double>& x);
   double violation(const vector<double>& x);
@@ -83,9 +88,14 @@ private:
    ConvexConstraints(ConvexConstraints&) {}
 };
 
+/**
+Non-convex cost function, which knows how to calculate its convex approximation (convexify() method)
+*/
 class Cost {
 public:
+  /** Evaluate at solution vector x*/
   virtual double value(const vector<double>&) = 0;
+  /** Convexify at solution vector x*/
   virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model) = 0;
 
   string name() {return name_;}
@@ -97,14 +107,21 @@ protected:
   string name_;
 };
 
+/**
+Non-convex vector-valued constraint function, which knows how to calculate its convex approximation
+*/
 class Constraint {
 public:
 
+  /** inequality vs equality */
   virtual ConstraintType type() = 0;
+  /** Evaluate at solution vector x*/  
   virtual vector<double> value(const vector<double>& x) = 0;
+  /** Convexify at solution vector x*/  
   virtual ConvexConstraintsPtr convex(const vector<double>& x, Model* model) = 0;
-
+  /** Calculate constraint violations (positive part for inequality constraint, absolute value for inequality constraint)*/
   vector<double> violations(const vector<double>& x);
+  /** Sum of violations */
   double violation(const vector<double>& x);
 
   string name() {return name_;}
@@ -127,6 +144,9 @@ public:
   ConstraintType type() {return INEQ;}
 };
 
+/**
+Non-convex optimization problem
+*/
 class OptProb {
 public:
   OptProb();
@@ -148,10 +168,10 @@ public:
   void addEqConstr(ConstraintPtr);
   void addIneqConstr(ConstraintPtr);
   virtual ~OptProb() {}
+  /** Find closest point to solution vector x that satisfies linear inequality constraints */
   vector<double> getCentralFeasiblePoint(const vector<double>& x);
   vector<double> getClosestFeasiblePoint(const vector<double>& x);
-  /** Some variables are actually increments, meaning that the trust region should be around zero
-  */
+  /** Some variables are actually increments, meaning that the trust region should be around zero */
   vector<bool> getIncrementMask() {return incmask_;}
   void setIncrementMask(const vector<bool>& incmask) {incmask_ = incmask;}
 

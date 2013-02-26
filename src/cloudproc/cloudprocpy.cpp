@@ -185,27 +185,27 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
   py::def("maskFilter", &pyMaskFilter);
 
   py::class_<pcl::PolygonMesh, shared_ptr<pcl::PolygonMesh> >("PolygonMesh")
-      .def("getCloud", &PolygonMesh_getCloud)
-      .def("getVertices", &PolygonMesh_getVertices)
-      .def("getFaces", &PolygonMesh_getFaces)
-      .def("getTriangles", &PolygonMesh_getTriangles)
-      .def("save", &PolygonMesh_save)
+      .def("getCloud", &PolygonMesh_getCloud, "Return underlying point cloud")
+      .def("getVertices", &PolygonMesh_getVertices, "Returns V x 3 array of vertices")
+      .def("getFaces", &PolygonMesh_getFaces, "Returns a list of lists of indices")
+      .def("getTriangles", &PolygonMesh_getTriangles, "Only call on a triangle mesh. Returns F x 3 index array")
+      .def("save", &PolygonMesh_save, "Available formats: ply, obj, vtk")
       ;
 
-  py::def("meshGP3", &meshGP3);
-  py::def("meshOFM", &meshOFM);
-  py::def("mlsAddNormals", &mlsAddNormals);
-  py::def("loadMesh", &loadMesh);
-  py::def("quadricSimplifyVTK", &quadricSimplifyVTK);
+  py::def("meshGP3", &meshGP3, (py::arg("cloud"), py::arg("search_radius")));
+  py::def("meshOFM", &meshOFM, (py::arg("cloud"), py::arg("sigma_s")=15, py::arg("sigma_r") = .05));
+  py::def("mlsAddNormals", &mlsAddNormals, (py::arg("cloud"), py::arg("search_radius")));
+  py::def("loadMesh", &loadMesh, (py::arg("filename")));
+  py::def("quadricSimplifyVTK", &quadricSimplifyVTK, (py::arg("cloud"), py::arg("decimation_frac")));
 
   py::class_<CloudGrabber, shared_ptr<CloudGrabber> >("CloudGrabber")
-      .def("startXYZ", &CloudGrabber::startXYZ)
-      .def("getXYZ", &CloudGrabber::getXYZ)
-      .def("startXYZRGB", &CloudGrabber::startXYZRGB)
-      .def("getXYZRGB", &CloudGrabber::getXYZRGB)
-      .def("stop", &CloudGrabber::stop)
+      .def("startXYZ", &CloudGrabber::startXYZ, "Start streaming XYZ point clouds")
+      .def("getXYZ", &CloudGrabber::getXYZ, "Wait for new XYZ point cloud and return it. If not streaming, will start and stop. (and hang a couple seconds)")
+      .def("startXYZRGB", &CloudGrabber::startXYZRGB, "Start streaming XYZRGB")
+      .def("getXYZRGB", &CloudGrabber::getXYZRGB, "Wait for new XYZRGB point cloud and return it")
+      .def("stop", &CloudGrabber::stop, "Stop streaming")
       ;
 
-  py::def("convexDecompHACD", &pyConvexDecompHACD, (py::arg("concavity") = 100) );
+  py::def("convexDecompHACD", &pyConvexDecompHACD, (py::arg("concavityParam") = 100),  "input: mesh. output: list of meshes. concavityParam: see http://kmamou.blogspot.com/2011/10/hacd-hierarchical-approximate-convex.html");
 
 }

@@ -123,12 +123,67 @@ Numerical IK is very unreliable since the forward kinematics function is so nonl
 Walking with humanoid robot
 ----------------------------
 
-See :file:`python_examples/drc_walk.py` for a rather simple example of planning footsteps with the Atlas robot model (for DARPA robotics challenge).
+.. note:: To run the example script, you'll need to download the :ref:`test data <bigdata>` and build with the CMake option ``BUILD_HUMANOIDS=ON``.
+
+See :file:`python_examples/drc_walk.py` for a simple example of planning footsteps with the Atlas robot model (for DARPA robotics challenge).
+
+The walk cycle consists of the following four phases, each of which is motion-planned independently:
+
+1. Shift center of mass so it's over right foot
+2. While keeping center of mass over right foot, swing left foot forward
+3. Shift center of mass so it's over left foot
+4. While keeping center of mass over left foot, swing right foot forward
+
+These planning problems involve pose constraints, as well as a "ZMP" constraint, which constrains the robot's center of mass to lie above the convex hull of the one or two planted feet. This gait will provide a stable walk in the quasi-static regime that the robot moves very slowly (i.e., the forces and torques needed to accelerate the robot are negligible compared with the weight of the robot). 
+
+Obtaining collision geometry from sensor data
+----------------------------------------------
+
+.. note:: To run the example script, you'll need to download the :ref:`test data <bigdata>` and build with the CMake option ``BUILD_CLOUDPROC=ON``.
+
+We'll consider three different ways of representing the collision geometry of the environment:
+
+(1) as a collection of boxes or spheres
+
+  The advantage is that the preprocessing of the input point cloud or voxel data is very simple. The disadvantages are that (a) this representation is usually slow to collision check against, (b) for the purposes of trajectory optimization, the contact normals aren't very informative about how to get out of collision
 
 
-Using point cloud data
--------------------------
+(2) as a mesh
 
-This section will discuss how load various types of perception data into the collision world in a way that is favorable for speed, success rate, and safety.
+  There are a variety of algorithms for reconstructing surfaces from point clouds. The included script uses the simplest type of surface generation algorithm, which forms a mesh out of a single depth image by connecting neighboring points in the pixel array. After constructing the mesh, we decimate it, i.e., simplify it by iteratively merging vertices.
 
-(TODO)
+(3) convex decomposition
+
+  The idea of convex decomposition is to break down a 3D shape into a set of convex pieces. The resulting convex decomposition allows fast collision checking and good surface normals. We use Khaled Mammou's Hierarchical Approximate Convex Decomposition (`HACD <http://sourceforge.net/projects/hacd>`_) code.
+
+Here is a table summarizing the tradeoffs:
+
++-------------------+-------+------+---------------+
+|                   | boxes | mesh | convex decomp |
++-------------------+-------+------+---------------+
+| construction cost | low   | med  | high          |
++-------------------+-------+------+---------------+
+| coll. check speed | low   | med  | high          |
++-------------------+-------+------+---------------+
+| normal quality    | low   | med  | high          |
++-------------------+-------+------+---------------+
+
+**We highly recommend using meshes or convex decomposition with trajopt**, since these representations will perform far better than boxes with regard to speed and likelihood of finding a solution.
+
+A demonstration of using all three of these methods can be found in :file:`python_examples/kinect_drive_and_reach.py`. After driving a PR2 robot to several positions in an office, we acquired a single point cloud (xyz + rgb) from the robot's head-mounted Kinect and saved it, along with the joint state and camera transformation. For each scene, we have annotated a target pose for the right gripper (``pose_target.txt``). We then plan a trajectory which simultaneously moves the right arm, torso, and base (11 = 7 + 1 + 3 DOF) to reach this target.
+
+To use the mesh or convex decomposition for collision geometry, we first construct a mesh from the point cloud.
+
+.. literalinclude:: ../python_examples/kinect_drive_and_reach.py
+  :start-after: BEGIN generate_mesh
+  :end-before: END generate_mesh
+  
+Note that the module ``cloudprocpy`` is (mostly) a set of python bindings to the Point Cloud Library (PCL).
+
+For convex decomposition, we call a function to break the mesh into a set of convex pieces
+
+.. code-block:: python
+
+      convex_meshes = cloudprocpy.convexDecompHACD(big_mesh,30)
+
+The second parameter (30) relates to the allowed concavity of each almost-convex subset; see the docstring for more information.

@@ -8,6 +8,9 @@ namespace cloudproc {
 
 class CloudGrabberImpl;
 
+/**
+Simple wrapper around pcl's openni interface, allowing you to query for a point cloud (rather than using a callback)
+*/
 class TRAJOPT_API CloudGrabber {
 public:
   CloudGrabber();

@@ -26,3 +26,4 @@ Contents:
    install
    tutorial
    tips
+   misc

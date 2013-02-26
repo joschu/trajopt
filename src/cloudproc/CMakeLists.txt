@@ -40,6 +40,5 @@ target_link_libraries (cloudproc ${PCL_LIBRARIES})
 boost_python_module(cloudprocpy cloudprocpy.cpp)
 target_link_libraries(cloudprocpy cloudproc ${Boost_SYSTEM_LIBRARY} )
 
-add_executable(simplify_test simplify_test.cpp)
-message("pcl libs: ${PCL_LIBRARIES}")
-target_link_libraries(simplify_test ${PCL_LIBRARIES} cloudproc ${PCL_LIBRARIES})
+#add_executable(simplify_test simplify_test.cpp)
+#target_link_libraries(simplify_test ${PCL_LIBRARIES} cloudproc ${PCL_LIBRARIES})

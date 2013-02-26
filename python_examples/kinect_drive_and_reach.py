@@ -13,43 +13,48 @@ import trajoptpy.kin_utils as ku
 import trajoptpy.make_kinbodies as mk
 from trajoptpy.check_traj import traj_is_safe
 
-cloud_orig = cloudprocpy.readPCDXYZ(osp.join(trajoptpy.bigdata_dir,args.scene_name,"cloud.pcd"))
-dof_vals = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "dof_vals.txt"))
-T_w_k = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "kinect_frame.txt"))
-
 def remove_floor(cloud):
     notfloor = get_xyz_world_frame(cloud)[:,2] > .1
     cloud = cloudprocpy.maskFilter(cloud, notfloor, True)
     return cloud
 
+# BEGIN generate_mesh
 def generate_mesh(cloud):
-    cloud = cloudprocpy.fastBilateralFilter(cloud, 15, .05)
-    cloud = remove_floor(cloud)
-    big_mesh = cloudprocpy.meshOFM(cloud, 3, .1)
-    simple_mesh = cloudprocpy.quadricSimplifyVTK(big_mesh, .02)
+    cloud = cloudprocpy.fastBilateralFilter(cloud, 15, .05) # smooth out the depth image
+    cloud = remove_floor(cloud) # remove points with low height (in world frame)
+    big_mesh = cloudprocpy.meshOFM(cloud, 3, .1) # use pcl OrganizedFastMesh to make mesh
+    simple_mesh = cloudprocpy.quadricSimplifyVTK(big_mesh, .02) # decimate mesh with VTK function
     return simple_mesh
+# END generate_mesh
 
 def get_xyz_world_frame(cloud):
     xyz1 = cloud.to2dArray()
     xyz1[:,3] = 1
     return xyz1.dot(T_w_k.T)[:,:3]
 
+
+cloud_orig = cloudprocpy.readPCDXYZ(osp.join(trajoptpy.bigdata_dir,args.scene_name,"cloud.pcd"))
+dof_vals = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "dof_vals.txt"))
+T_w_k = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "kinect_frame.txt"))
+qw,qx,qy,qz,px,py,pz = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "pose_target.txt"))
+
 env = openravepy.Environment()
 env.StopSimulation()
 env.Load("robots/pr2-beta-static.zae")
 robot = env.GetRobots()[0]
-viewer = trajoptpy.GetViewer(env)
-handles = []
-
-
-if 1:
-    import IPython
-    IPython.lib.inputhook.set_inputhook(viewer.Step)
-    qw,qx,qy,qz,px,py,pz = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "pose_target.txt"))
-
-
 robot.SetDOFValues(dof_vals)
 
+viewer = trajoptpy.GetViewer(env)
+
+handles = []
+
+try:
+    import IPython
+    IPython.lib.inputhook.set_inputhook(viewer.Step)
+except Exception: 
+    pass
+
+# BEGIN addtoenv
 if args.geom_type == "mesh":
     mesh = generate_mesh(cloud_orig)
     mk.create_trimesh(env, get_xyz_world_frame(mesh.getCloud()), np.array(mesh.getFaces()), name="simple_mesh")
@@ -60,10 +65,12 @@ elif args.geom_type == "cd":
         name = "mesh%i"%i
         verts = get_xyz_world_frame(mesh.getCloud())
         mk.create_trimesh(env, verts, mesh.getTriangles(), name=name)
-        env.GetKinBody(name).GetLinks()[0].GetGeometries()[0].SetAmbientColor(np.random.rand(3))
-        env.GetKinBody(name).GetLinks()[0].GetGeometries()[0].SetDiffuseColor(np.random.rand(3))
+        randcolor = np.random.rand(3)
+        env.GetKinBody(name).GetLinks()[0].GetGeometries()[0].SetAmbientColor(randcolor)
+        env.GetKinBody(name).GetLinks()[0].GetGeometries()[0].SetDiffuseColor(randcolor)
+# END  addtoenv        
 elif args.geom_type == "spheres":
-    raise Exception("don't use spheres. inifromspheres is too slow")
+    raise Exception("don't use spheres--there's a performance issue")
     cloud_nofloor = remove_floor(cloud_orig)
     cloud_ds = cloudprocpy.downsampleCloud(cloud_nofloor, .04)
     mk.create_spheres(env, get_xyz_world_frame(cloud_ds), .02)
@@ -73,8 +80,7 @@ elif args.geom_type == "boxes":
     mk.create_boxes(env, get_xyz_world_frame(cloud_ds), .02)
     
 
-
-def position_base_request(robot, link_name, xyz_targ, quat_targ):
+def full_body_drive_and_reach(robot, link_name, xyz_targ, quat_targ):
         
     request = {        
         "basic_info" : {
@@ -130,7 +136,7 @@ robot.SetActiveDOFs(np.r_[robot.GetManipulator("rightarm").GetArmIndices(),
                           robot.GetJoint("torso_lift_joint").GetDOFIndex()], 
                     openravepy.DOFAffine.X + openravepy.DOFAffine.Y + openravepy.DOFAffine.RotationAxis, [0,0,1])
     
-request = position_base_request(robot, "r_gripper_tool_frame", (px,py,pz), (qw,qx,qy,qz))
+request = full_body_drive_and_reach(robot, "r_gripper_tool_frame", (px,py,pz), (qw,qx,qy,qz))
 s = json.dumps(request)
 trajoptpy.SetInteractive(args.interactive);
 prob = trajoptpy.ConstructProblem(s, env)
