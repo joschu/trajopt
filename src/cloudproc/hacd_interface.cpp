@@ -50,7 +50,7 @@ void CallBack(const char * msg, double progress, double concavity, size_t nVerti
     std::cout << msg;
 }
 
-vector<pcl::PolygonMesh::Ptr> ConvexDecompHACD(const pcl::PolygonMesh& mesh) {
+vector<pcl::PolygonMesh::Ptr> ConvexDecompHACD(const pcl::PolygonMesh& mesh, float concavity) {
 
 //  std::cout << "Usage: ./testHACD fileName.off minNClusters maxConcavity invertInputFaces addExtraDistPoints addFacesPoints ConnectedComponentsDist targetNTrianglesDecimatedMesh"<< std::endl;
 //  std::cout << "Recommended parameters: ./testHACD fileName.off 2 100 0 1 1 30 2000"<< std::endl;
@@ -64,7 +64,6 @@ vector<pcl::PolygonMesh::Ptr> ConvexDecompHACD(const pcl::PolygonMesh& mesh) {
 //  size_t targetNTrianglesDecimatedMesh = atoi(argv[8]);
 //
   int minClusters = 2;
-  float concavity = 100;
   bool invert = false;
   bool addExtraDistPoints = true;
   bool addFacesPoints = true;

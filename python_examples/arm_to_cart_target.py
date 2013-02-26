@@ -46,7 +46,7 @@ request = {
   },
   {
     "type" : "continuous_collision",
-    "name" :"cont_collision", # Filling in this optional argument so printed table will be prettier
+    "name" :"cont_coll", # shorten name so printed table will be prettier
     "params" : {
       "coeffs" : [20], # penalty coefficients. list of length one is automatically expanded to a list of length n_timesteps
       "dist_pen" : [0.025] # robot-obstacle distance that penalty kicks in. expands to length n_timesteps
@@ -90,9 +90,9 @@ robot.SetActiveDOFValues(result.GetTraj()[-1])
 posevec = openravepy.poseFromMatrix(robot.GetLink("r_gripper_tool_frame").GetTransform())
 quat, xyz = posevec[0:4], posevec[4:7]
 
-assert (xyz - xyz_target).max() < 1e-3
 quat *= np.sign(quat.dot(quat_target))
 if args.position_only:
     assert (quat - quat_target).max() > 1e-3
 else:
     assert (quat - quat_target).max() < 1e-3
+

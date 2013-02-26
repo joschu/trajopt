@@ -157,6 +157,8 @@ public:
 
   vector<ConstraintPtr> getConstraints() const;
   vector<CostPtr>& getCosts() {return costs_;}
+  vector<ConstraintPtr>& getIneqConstraints() {return ineqcnts_;}
+  vector<ConstraintPtr>& getEqConstraints() {return eqcnts_;}
   DblVec& getLowerBounds() {return lower_bounds_;}
   DblVec& getUpperBounds() {return upper_bounds_;}
   ModelPtr getModel() {return model_;}

@@ -70,7 +70,6 @@ struct PyCloud {
     return toNdarray3<float>((const float*)cloud->points.data(), cloud->height, cloud->width, sizeof(T)/sizeof(float));
   }
   static void from2dArray(PointCloudT* cloud, py::object arr) {
-    py::object np_mod = py::import("numpy");
     arr = np_mod.attr("array")(arr, "float32");
     int npoints = py::extract<int>(arr.attr("shape")[0]);
     int floatfields = py::extract<int>(arr.attr("shape")[1]);
@@ -80,7 +79,6 @@ struct PyCloud {
     memcpy(&cloud->points[0], p,  npoints*floatfields*sizeof(float));
   }
   static void from3dArray(PointCloudT* cloud, py::object arr) {
-    py::object np_mod = py::import("numpy");
     arr = np_mod.attr("array")(arr, "float32");
     int height = py::extract<int>(arr.attr("shape")[0]);
     int width = py::extract<int>(arr.attr("shape")[1]);
@@ -149,13 +147,22 @@ void boost_register_cloud_type(const string& pyname) {
   py::implicitly_convertible< boost::shared_ptr<CloudXYZ>, boost::shared_ptr<CloudXYZ const> >();
 }
 
-py::object pyConvexDecompHACD(const PolygonMesh& mesh) {
-  vector<PolygonMesh::Ptr> convexmeshes = ConvexDecompHACD(mesh);
+py::object pyConvexDecompHACD(const PolygonMesh& mesh, float concavity) {
+  vector<PolygonMesh::Ptr> convexmeshes = ConvexDecompHACD(mesh, concavity);
   py::list out;
   BOOST_FOREACH(const PolygonMesh::Ptr& convexmesh, convexmeshes) {
     out.append(convexmesh);
   }
   return out;
+}
+
+PointCloud<PointXYZ>::Ptr pyMaskFilter(PointCloud<PointXYZ>::Ptr cloud, py::object arr, bool keep_organized) {
+  arr = np_mod.attr("array")(arr, "bool");
+  int npoints = py::extract<int>(arr.attr("shape")[0]);
+  VectorXb mask(npoints);
+  bool* p = getPointer<bool>(arr);
+  memcpy(mask.data(), p,  npoints*sizeof(bool));
+  return maskFilter<PointXYZ>(cloud, mask, keep_organized);
 }
 
 
@@ -175,6 +182,7 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
   py::def("boxFilterNegative", &boxFilterNegative<PointXYZ>);
   py::def("medianFilter", &medianFilter<PointXYZ>);
   py::def("fastBilateralFilter", &fastBilateralFilter<PointXYZ>);
+  py::def("maskFilter", &pyMaskFilter);
 
   py::class_<pcl::PolygonMesh, shared_ptr<pcl::PolygonMesh> >("PolygonMesh")
       .def("getCloud", &PolygonMesh_getCloud)
@@ -198,6 +206,6 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
       .def("stop", &CloudGrabber::stop)
       ;
 
-  py::def("convexDecompHACD", &pyConvexDecompHACD);
+  py::def("convexDecompHACD", &pyConvexDecompHACD, (py::arg("concavity") = 100) );
 
 }

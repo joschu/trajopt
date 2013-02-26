@@ -4,6 +4,8 @@ include_directories(
 )
 
 
+add_definitions(-DEIGEN_DEFAULT_TO_ROW_MAJOR)
+
 find_package(GUROBI)
 if (NOT GUROBI_FOUND)
   message(FATAL_ERROR "Gurobi not found. Set GUROBI_HOME variabe")

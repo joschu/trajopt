@@ -95,10 +95,17 @@ def step_forward_request(robot, n_steps, stepping_foot, dx, dy):
                 }
             },
             {
-                "type":"zmp",
+                "type":"zmp","name":"zmp_%i"%i,
                 "params":{"planted_links":[planted_foot], "timestep":i}
             }
         ])
+        #if i < n_steps-1:
+            #request["constraints"].append({
+                #"type":"foot_height",
+                #"params":{
+                    #"height": .1,
+                    #"timestep": i,
+                    #"link":stepping_foot}})
         
     request["constraints"].append(
         {
@@ -154,7 +161,7 @@ def shift_weight_request(robot, n_steps, to_foot):
         if i < n_steps - 1:
             request["constraints"].append(
                 {
-                    "type":"zmp",
+                    "type":"zmp","name":"zmp%i"%i,
                     "params":{"planted_links":[from_foot, to_foot],"timestep":i}
                 })
         else:
@@ -181,7 +188,7 @@ def press_button_request(robot, hand_xyz, hand_link, foot_links, n_steps):
     request = request_skeleton(n_steps)
     from_foot_xyz, from_foot_quat = xyzQuatFromMatrix(robot.GetLink(from_foot).GetTransform())
     to_foot_xyz, to_foot_quat = xyzQuatFromMatrix(robot.GetLink(to_foot).GetTransform())
-        
+    
     for i in xrange(1, n_steps):
         request["constraints"].extend([
             {
@@ -207,7 +214,7 @@ def press_button_request(robot, hand_xyz, hand_link, foot_links, n_steps):
         ])    
         request["constraints"].append(
             {
-                "type":"zmp",
+                "type":"zmp",name:"zmp_%i"%i,
                 "params":{"planted_links":[from_foot, to_foot],"timestep":i}
             })
     request["constraints"].append(
@@ -275,7 +282,7 @@ if __name__ == "__main__":
     cc.ExcludeCollisionPair(robot.GetLink("l_foot"), env.GetKinBody("ProjectRoom").GetLink("Floor"))
     cc.ExcludeCollisionPair(robot.GetLink("r_foot"), env.GetKinBody("ProjectRoom").GetLink("Floor"))
     
-    n_steps = 6
+    n_steps = 5
 
 
     x_button_press = 2.55 # if robot is at this x-coordinate, he can reach the button
@@ -283,15 +290,24 @@ if __name__ == "__main__":
     xyz_button[2] += .15;
 
     totaltraj = []
-    
-    request = step_forward_request(robot, n_steps, "r_foot",.1, 0)
-    s = json.dumps(request)
-    prob = trajoptpy.ConstructProblem(s, env)
-    result = trajoptpy.OptimizeProblem(prob)
-    robot.SetActiveDOFValues(result.GetTraj()[-1])    
-    totaltraj.extend(result.GetTraj())
+
+    i=0
     
     while robot.GetTransform()[0,3] < x_button_press:
+
+        request = shift_weight_request(robot, n_steps, "l_foot")
+        s = json.dumps(request)
+        prob = trajoptpy.ConstructProblem(s, env)
+        result = trajoptpy.OptimizeProblem(prob)
+        robot.SetActiveDOFValues(result.GetTraj()[-1])
+        totaltraj.extend(result.GetTraj())
+
+        request = step_forward_request(robot, n_steps, "r_foot",.1 if i==0 else .2, 0)
+        s = json.dumps(request)
+        prob = trajoptpy.ConstructProblem(s, env)
+        result = trajoptpy.OptimizeProblem(prob)
+        robot.SetActiveDOFValues(result.GetTraj()[-1])
+        totaltraj.extend(result.GetTraj())
     
         request = shift_weight_request(robot, n_steps, "r_foot")
         s = json.dumps(request)
@@ -307,19 +323,7 @@ if __name__ == "__main__":
         robot.SetActiveDOFValues(result.GetTraj()[-1])
         totaltraj.extend(result.GetTraj())
     
-        request = shift_weight_request(robot, n_steps, "l_foot")
-        s = json.dumps(request)
-        prob = trajoptpy.ConstructProblem(s, env)
-        result = trajoptpy.OptimizeProblem(prob)
-        robot.SetActiveDOFValues(result.GetTraj()[-1])
-        totaltraj.extend(result.GetTraj())
-
-        request = step_forward_request(robot, n_steps, "r_foot",.2, 0)
-        s = json.dumps(request)
-        prob = trajoptpy.ConstructProblem(s, env)
-        result = trajoptpy.OptimizeProblem(prob)
-        robot.SetActiveDOFValues(result.GetTraj()[-1])
-        totaltraj.extend(result.GetTraj())
+        i += 1
     
     request = press_button_request(robot, xyz_button, "l_hand", ["l_foot","r_foot"],10)
     s = json.dumps(request)

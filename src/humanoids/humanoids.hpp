@@ -32,4 +32,8 @@ struct PECost : public CostFromNumDiffErr {
   PECost(RobotAndDOFPtr rad, const VarVector& vars, double coeff);
 };
 
+struct FootHeightConstraint : public ConstraintFromNumDiff {
+  FootHeightConstraint(RobotAndDOFPtr rad, OpenRAVE::KinBody::LinkPtr link, double height, const VarVector& vars);
+};
+
 }

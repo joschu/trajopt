@@ -202,9 +202,8 @@ VectorXb boxMask(typename pcl::PointCloud<T>::ConstPtr in, float xmin, float ymi
   return out;
 }
 
-
 template <class T>
-typename pcl::PointCloud<T>::Ptr maskFilter(typename pcl::PointCloud<T>::ConstPtr in, const VectorXb& mask) {
+typename pcl::PointCloud<T>::Ptr maskFilterDisorganized(typename pcl::PointCloud<T>::ConstPtr in, const VectorXb& mask) {
   int n = mask.sum();
   typename pcl::PointCloud<T>::Ptr out(new typename pcl::PointCloud<T>());
   out->points.reserve(n);
@@ -213,6 +212,26 @@ typename pcl::PointCloud<T>::Ptr maskFilter(typename pcl::PointCloud<T>::ConstPt
   }
   setWidthToSize(out);
   return out;
+}
+
+template <class T>
+typename pcl::PointCloud<T>::Ptr maskFilterOrganized(typename pcl::PointCloud<T>::ConstPtr in, const VectorXb& mask) {
+  typename pcl::PointCloud<T>::Ptr out(new typename pcl::PointCloud<T>(*in));
+  for (int i=0; i < mask.size(); ++i) {
+    if (!mask[i]) {
+      T& pt = out->points[i];
+      pt.x = NAN;
+      pt.y = NAN;
+      pt.z = NAN;
+    }
+  }
+  return out;
+}
+
+template <class T>
+typename pcl::PointCloud<T>::Ptr maskFilter(typename pcl::PointCloud<T>::ConstPtr in, const VectorXb& mask, bool keep_organized) {
+  if (keep_organized) return maskFilterOrganized<T>(in, mask);
+  else return maskFilterDisorganized<T>(in, mask);
 }
 
 template <class T>

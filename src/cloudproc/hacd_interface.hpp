@@ -3,4 +3,4 @@
 #include <vector>
 #include "macros.h"
 
-TRAJOPT_API std::vector<pcl::PolygonMesh::Ptr> ConvexDecompHACD(const pcl::PolygonMesh& mesh);
+TRAJOPT_API std::vector<pcl::PolygonMesh::Ptr> ConvexDecompHACD(const pcl::PolygonMesh& mesh, float concavity);

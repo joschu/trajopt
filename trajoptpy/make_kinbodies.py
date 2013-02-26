@@ -92,3 +92,35 @@ def create_mesh_box(env, center, half_extents, name="box"):
     env.Add(box)
     return box
 
+def create_spheres(env, points, radii = .01, name="spheres"):
+    points = np.asarray(points)
+    assert points.ndim == 2
+    if np.isscalar(radii):
+        radii = np.ones(len(points)) * radii
+    else:
+        assert len(radii) == len(points)
+    sphereinfo = np.empty((len(points), 4))
+    sphereinfo[:,:3] = points
+    sphereinfo[:,3] = radii
+    spheres = rave.RaveCreateKinBody(env, "")
+    spheres.InitFromSpheres(sphereinfo, True)
+    spheres.SetName(name)
+    env.Add(spheres)
+    return spheres
+    
+def create_boxes(env, points, radii = .01, name="boxes"):
+    points = np.asarray(points)
+    assert points.ndim == 2
+    
+    radii2d = np.empty((len(points),3))
+    radii2d = radii
+    
+    boxinfo = np.empty((len(points), 6))
+    boxinfo[:,:3] = points
+    boxinfo[:,3:6] = radii2d
+    boxes = rave.RaveCreateKinBody(env, "")
+    boxes.InitFromBoxes(boxinfo, True)
+    boxes.SetName(name)
+    env.Add(boxes)
+    return boxes
+

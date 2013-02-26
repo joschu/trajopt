@@ -284,26 +284,12 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
     }
   }
 
-  vector<string> cost_names;
   BOOST_FOREACH(const CostInfoPtr& ci, pci.cost_infos) {
-    int n_costs_before = prob->getNumCosts();
     ci->hatch(*prob);
-    int n_costs_after = prob->getNumCosts();
-    for (int i=0; i < n_costs_after - n_costs_before; ++i) cost_names.push_back(ci->name);
   }
-
-  vector<string> cnt_names;
   BOOST_FOREACH(const CntInfoPtr& ci, pci.cnt_infos) {
-    int n_cnts_before = prob->getNumConstraints();
     ci->hatch(*prob);
-    int n_cnts_after = prob->getNumConstraints();
-    for (int i=0; i < n_cnts_after - n_cnts_before; ++i) cnt_names.push_back(ci->name);
   }
-
-  int iCost=0, iCnt=0;
-  BOOST_FOREACH(const CostPtr& cost, prob->getCosts()) cost->setName(cost_names[iCost++]);
-  BOOST_FOREACH(const ConstraintPtr& cnt, prob->getConstraints()) cnt->setName(cnt_names[iCnt++]);
-
 
   prob->SetInitTraj(pci.init_info.data);
 
@@ -361,6 +347,7 @@ CostInfoPtr PoseCostInfo::create() {
 }
 void PoseCostInfo::hatch(TrajOptProb& prob) {
   prob.addCost(CostPtr(new CartPoseCost(prob.GetVarRow(timestep), toRaveTransform(wxyz, xyz), rot_coeffs, pos_coeffs, prob.GetRAD(), link)));
+  prob.getCosts().back()->setName(name);
 }
 
 void PoseCntInfo::fromJson(const Value& v) {
@@ -396,6 +383,7 @@ void JointPosCostInfo::fromJson(const Value& v) {
 }
 void JointPosCostInfo::hatch(TrajOptProb& prob) {
   prob.addCost(CostPtr(new JointPosCost(prob.GetVarRow(timestep), toVectorXd(vals), toVectorXd(coeffs))));
+  prob.getCosts().back()->setName(name);  
 }
 CostInfoPtr JointPosCostInfo::create() {
   return CostInfoPtr(new JointPosCostInfo());
@@ -408,6 +396,7 @@ CntInfoPtr PoseCntInfo::create() {
 void PoseCntInfo::hatch(TrajOptProb& prob) {
   VectorXd coeffs(6); coeffs << rot_coeffs, pos_coeffs;
   prob.addConstr(ConstraintPtr(new CartPoseConstraint(prob.GetVarRow(timestep), toRaveTransform(wxyz, xyz), prob.GetRAD(), link, coeffs)));
+  prob.getEqConstraints().back()->setName(name);
 }
 
 void CartVelCntInfo::fromJson(const Value& v) {
@@ -430,6 +419,7 @@ CntInfoPtr CartVelCntInfo::create() {
 void CartVelCntInfo::hatch(TrajOptProb& prob) {
   for (int iStep = first_step; iStep < last_step; ++iStep) {
     prob.addConstr(ConstraintPtr(new CartVelConstraint(prob.GetVarRow(iStep), prob.GetVarRow(iStep+1), prob.GetRAD(), link, distance_limit)));
+    prob.getIneqConstraints().back()->setName(name);
   }
 }
 
@@ -449,6 +439,7 @@ CostInfoPtr JointVelCostInfo::create() {
 }
 void JointVelCostInfo::hatch(TrajOptProb& prob) {
   prob.addCost(CostPtr(new JointVelCost(prob.GetVars(), toVectorXd(coeffs))));
+  prob.getCosts().back()->setName(name);
 }
 
 void CollisionCostInfo::fromJson(const Value& v) {
@@ -470,6 +461,7 @@ void CollisionCostInfo::fromJson(const Value& v) {
 void CollisionCostInfo::hatch(TrajOptProb& prob) {
   for (int i=0; i < prob.GetNumSteps(); ++i) {
     prob.addCost(CostPtr(new CollisionCost(dist_pen[i], coeffs[i], prob.GetRAD(), prob.GetVarRow(i))));
+    prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
   }
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
   cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .04);
@@ -501,6 +493,7 @@ void ContinuousCollisionCostInfo::fromJson(const Value& v) {
 void ContinuousCollisionCostInfo::hatch(TrajOptProb& prob) {
   for (int i=first_step; i < last_step; ++i) {
     prob.addCost(CostPtr(new CollisionCost(dist_pen[i], coeffs[i], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
+    prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
   }
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
   cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .04);
@@ -527,7 +520,7 @@ void JointConstraintInfo::hatch(TrajOptProb& prob) {
   VarVector vars = prob.GetVarRow(timestep);
   int n_dof = vars.size();
   for (int j=0; j < n_dof; ++j) {
-    prob.addLinearConstr(exprSub(AffExpr(vars[j]), vals[j]), EQ);
+    prob.addLinearConstr(exprSub(AffExpr(vars[j]), vals[j]), EQ);    
   }
 }
 CntInfoPtr JointConstraintInfo::create() {
