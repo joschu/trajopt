@@ -25,15 +25,24 @@ DblVec getDblVec(const vector<double>& x, const VarVector& vars) {
   return out;
 }
 
-CostFromNumDiff::CostFromNumDiff(ScalarOfVectorPtr f, const VarVector& vars, bool full_hessian) :
-    f_(f), vars_(vars), full_hessian_(full_hessian), epsilon_(DEFAULT_EPSILON) {}
+AffExpr affFromValGrad(double y, const VectorXd& x, const VectorXd& dydx, const VarVector& vars) {
+  AffExpr aff;
+  aff.constant = y - dydx.dot(x);
+  aff.coeffs = toDblVec(dydx);
+  aff.vars = vars;
+  aff = cleanupAff(aff);
+  return aff;
+}
 
-double CostFromNumDiff::value(const vector<double>& xin) {
+CostFromFunc::CostFromFunc(ScalarOfVectorPtr f, const VarVector& vars, const string& name, bool full_hessian) :
+  Cost(name), f_(f), vars_(vars), full_hessian_(full_hessian), epsilon_(DEFAULT_EPSILON) {}
+
+double CostFromFunc::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
   return f_->call(x);
 }
 
-ConvexObjectivePtr CostFromNumDiff::convex(const vector<double>& xin, Model* model) {
+ConvexObjectivePtr CostFromFunc::convex(const vector<double>& xin, Model* model) {
   VectorXd x = getVec(xin, vars_);
 
   ConvexObjectivePtr out(new ConvexObjective(model));
@@ -88,55 +97,61 @@ ConvexObjectivePtr CostFromNumDiff::convex(const vector<double>& xin, Model* mod
   return out;
 }
 
-CostFromNumDiffErr::CostFromNumDiffErr(VectorOfVectorPtr f, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const std::string& name) :
+CostFromErrFunc::CostFromErrFunc(VectorOfVectorPtr f, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const std::string& name) :
     Cost(name), f_(f), vars_(vars), coeffs_(coeffs), pen_type_(pen_type), epsilon_(DEFAULT_EPSILON) {}
-double CostFromNumDiffErr::value(const vector<double>& xin) {
+CostFromErrFunc::CostFromErrFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const std::string& name) :
+    Cost(name), f_(f), dfdx_(dfdx), vars_(vars), coeffs_(coeffs), pen_type_(pen_type), epsilon_(DEFAULT_EPSILON) {}
+double CostFromErrFunc::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
   VectorXd err = f_->call(x);
-  VectorXd positive_err = (pen_type_ == SQUARED) ? (VectorXd)err.cwiseProduct(err) : (VectorXd)err.cwiseAbs();
-  return positive_err.dot(coeffs_);
+  if (coeffs_.size()>0) err = err.cwiseProduct(coeffs_);
+  switch (pen_type_) {
+    case SQUARED: return err.array().square().sum();
+    case ABS: return err.array().abs().sum();
+    case HINGE: return err.cwiseMax(VectorXd::Zero(err.size())).sum();
+    default: assert(0 && "unreachable");
+  }
 }
-ConvexObjectivePtr CostFromNumDiffErr::convex(const vector<double>& xin, Model* model) {
+ConvexObjectivePtr CostFromErrFunc::convex(const vector<double>& xin, Model* model) {
   VectorXd x = getVec(xin, vars_);
-  MatrixXd jac = calcForwardNumJac(*f_, x, epsilon_);
+  MatrixXd jac = (dfdx_) ? dfdx_->call(x) : calcForwardNumJac(*f_, x, epsilon_);
   ConvexObjectivePtr out(new ConvexObjective(model));
   VectorXd y = f_->call(x);
   for (int i=0; i < jac.rows(); ++i) {
-    if (coeffs_[i] > 0) {
-      AffExpr aff;
-      aff.constant = y[i] - jac.row(i).dot(x);
-      aff.coeffs = toDblVec(jac.row(i));
-      aff.vars = vars_;
-      aff = cleanupAff(aff);
-      if (pen_type_ == SQUARED) {
-        out->addQuadExpr(exprMult(exprSquare(aff), coeffs_[i]));
-      }
-      else {
-        out->addAbs(aff, coeffs_[i]);
-      }
+    AffExpr aff = affFromValGrad(y[i], x, jac.row(i), vars_);
+    if (coeffs_.size()>0) {
+      exprScale(aff, coeffs_[i]);
+      if (coeffs_[i] == 0) continue;
+    }
+    switch (pen_type_) {
+      case SQUARED: out->addQuadExpr(exprSquare(aff)); break;
+      case ABS: out->addAbs(aff, 1); break;
+      case HINGE: out->addHinge(aff, 1); break;
+      default: assert(0 && "unreachable");        
     }
   }
   return out;
 }
 
 
-ConstraintFromNumDiff::ConstraintFromNumDiff(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name) :
+ConstraintFromFunc::ConstraintFromFunc(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name) :
     Constraint(name), f_(f), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON) {}
-vector<double> ConstraintFromNumDiff::value(const vector<double>& xin) {
+
+ConstraintFromFunc::ConstraintFromFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, ConstraintType type, const std::string& name) :
+    Constraint(name), f_(f), dfdx_(dfdx), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON) {}
+
+vector<double> ConstraintFromFunc::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
   return toDblVec(f_->call(x));
 }
-ConvexConstraintsPtr ConstraintFromNumDiff::convex(const vector<double>& xin, Model* model) {
+
+ConvexConstraintsPtr ConstraintFromFunc::convex(const vector<double>& xin, Model* model) {
   VectorXd x = getVec(xin, vars_);
-  MatrixXd jac = calcForwardNumJac(*f_, x, epsilon_);
+  MatrixXd jac = (dfdx_) ? dfdx_->call(x) : calcForwardNumJac(*f_, x, epsilon_);
   ConvexConstraintsPtr out(new ConvexConstraints(model));
   VectorXd y = f_->call(x);
   for (int i=0; i < jac.rows(); ++i) {
-    AffExpr aff;
-    aff.constant = y[i] - jac.row(i).dot(x);
-    aff.coeffs = toDblVec(jac.row(i));
-    aff.vars = vars_;
-    aff = cleanupAff(aff);
+    AffExpr aff = affFromValGrad(y[i], x, jac.row(i), vars_);
     if (type() == INEQ) out->addIneqCnt(aff);
     else out->addEqCnt(aff);
   }

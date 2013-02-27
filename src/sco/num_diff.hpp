@@ -44,6 +44,7 @@ public:
 class MatrixOfVector {
 public:
   virtual MatrixXd operator()(const VectorXd& x) const = 0;
+  MatrixXd call(const VectorXd& x) const {return operator()(x);}
   virtual ~MatrixOfVector() {}
 
   typedef function<MatrixXd(VectorXd)> boost_func;

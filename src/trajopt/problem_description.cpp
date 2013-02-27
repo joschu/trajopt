@@ -406,6 +406,9 @@ void CartVelCntInfo::fromJson(const Value& v) {
   childFromJson(params, last_step, "last_step");
   childFromJson(params, distance_limit,"distance_limit");
 
+  FAIL_IF_FALSE((first_step >= 0) && (first_step <= gPCI->basic_info.n_steps-1) && (first_step < last_step));
+  FAIL_IF_FALSE((last_step > 0) && (last_step <= gPCI->basic_info.n_steps-1));
+
   string linkstr;
   childFromJson(params, linkstr, "link");
   link = gPCI->rad->GetRobot()->GetLink(linkstr);

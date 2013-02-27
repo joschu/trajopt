@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
     for (int j=0; j < n_dof; ++j) vars.push_back(v(i,j));
     for (int j=0; j < n_dof; ++j) vars.push_back(a(i,j));
     for (int j=0; j < n_dof; ++j) vars.push_back(tq(i,j));
-    prob->addCost(CostPtr(new CostFromNumDiffErr(DynErrCalc(rad), vars, VectorXd::Ones(n_dof), ABS,
+    prob->addCost(CostPtr(new CostFromErrFunc(DynErrCalc(rad), vars, VectorXd::Ones(n_dof), ABS,
         (boost::format("dyn_err%i")%i).str())));
   }
 

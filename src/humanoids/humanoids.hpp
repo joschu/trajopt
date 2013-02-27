@@ -19,19 +19,19 @@ struct ZMPConstraint : public IneqConstraint, public Plotter {
 };
 
 
-struct StaticTorqueCost : public CostFromNumDiffErr {
+struct StaticTorqueCost : public CostFromErrFunc {
   RobotAndDOFPtr m_rad;
   VarVector m_vars;
   StaticTorqueCost(RobotAndDOFPtr rad, const VarVector& vars, double coeff);
 };
 
-struct PECost : public CostFromNumDiffErr {
+struct PECost : public CostFromErrFunc {
   RobotAndDOFPtr m_rad;
   VarVector m_vars;
   PECost(RobotAndDOFPtr rad, const VarVector& vars, double coeff);
 };
 
-struct FootHeightConstraint : public ConstraintFromNumDiff {
+struct FootHeightConstraint : public ConstraintFromFunc {
   FootHeightConstraint(RobotAndDOFPtr rad, OpenRAVE::KinBody::LinkPtr link, double height, const VarVector& vars);
 };
 

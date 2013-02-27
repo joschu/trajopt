@@ -44,7 +44,7 @@ TEST(SQP, QuadraticSeparable)  {
   // if the problem is exactly a QP, it should be solved in one iteration
   OptProbPtr prob;
   setupProblem(prob, 3);
-  prob->addCost(CostPtr(new CostFromNumDiff(ScalarOfVector::construct(&f_QuadraticSeparable), prob->getVars())));
+  prob->addCost(CostPtr(new CostFromFunc(ScalarOfVector::construct(&f_QuadraticSeparable), prob->getVars(), "f")));
   BasicTrustRegionSQP solver(prob);
   solver.trust_box_size_ = 100;
   vector<double> x = list_of(3)(4)(5);
@@ -60,7 +60,7 @@ double f_QuadraticNonseparable(const VectorXd& x) {
 TEST(SQP, QuadraticNonseparable)  {
   OptProbPtr prob;
   setupProblem(prob, 3);
-  prob->addCost(CostPtr(new CostFromNumDiff(ScalarOfVector::construct(&f_QuadraticNonseparable), prob->getVars(), true)));
+  prob->addCost(CostPtr(new CostFromFunc(ScalarOfVector::construct(&f_QuadraticNonseparable), prob->getVars(), "f",  true)));
   BasicTrustRegionSQP solver(prob);
   solver.trust_box_size_ = 100;
   solver.min_trust_box_size_ = 1e-5;
@@ -80,8 +80,8 @@ void testProblem(ScalarOfVectorPtr f, VectorOfVectorPtr g, ConstraintType cnt_ty
     size_t n = init.size();
     assert (sol.size() == n);
     setupProblem(prob, n);
-    prob->addCost(CostPtr(new CostFromNumDiff(f, prob->getVars(), true)));
-    prob->addConstr(ConstraintPtr(new ConstraintFromNumDiff(g, prob->getVars(), cnt_type,"g")));
+    prob->addCost(CostPtr(new CostFromFunc(f, prob->getVars(), "f", true)));
+    prob->addConstr(ConstraintPtr(new ConstraintFromFunc(g, prob->getVars(), cnt_type,"g")));
     BasicTrustRegionSQP solver(prob);
     solver.max_iter_ = 1000;
     solver.min_trust_box_size_ = 1e-5;

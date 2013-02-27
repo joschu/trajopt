@@ -29,7 +29,7 @@ Optimization is slow
 
   [INFO optimizers.cpp:348] not all constraints are satisfied. increasing penalties
 
-  If that happens you might need to rethink the formulation of your optimization problem.
+  If that happens you can try rescaling the cost or constraint functions so that this outer loop is not needed.
 
 General troubleshooting tips
 ----------------------------
@@ -55,7 +55,7 @@ General troubleshooting tips
   All the constraint violations should become very small. (note that the values in the "oldexact" column are constraint_violation * penalty_coeff).
   If all is going well, the ratio should be somewhere near 1. If it's far from 1, it could be for one of the following reasons:
   
-  1. if you created your own Cost or Constraint functions, then perhaps the convexification you defined is wrong
+  1. if you defined your own convexification or analytic derivative, perhaps there is a math error
   2. the convexification does not approximate the function well over the trust region.
   
-  You'll frequently ratios that are wildly different from 1, but the trust region will get shrunk down. When the optimization convergences, the trust region should be small and the ratios should be about 1. If not, something funny is going on.
+  Unforunately, the second case is common, and there's not much you can do about it except change your cost or constraint function to something better behaved.

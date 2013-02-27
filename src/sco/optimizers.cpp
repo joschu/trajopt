@@ -96,18 +96,20 @@ void printCostInfo(const vector<double>& old_cost_vals, const vector<double>& mo
     for (size_t i=0; i < old_cost_vals.size(); ++i) {
       double approx_improve = old_cost_vals[i] - model_cost_vals[i];
       double exact_improve = old_cost_vals[i] - new_cost_vals[i];
-      string fmtstr = fabs(approx_improve) < 1e-8 ? "%15s | %10.3e | %10.3e | %10.3e | (%8.3e)\n" : "%15s | %10.3e | %10.3e | %10.3e | %10.3e\n";
-      printf(fmtstr.c_str(), cost_names[i].c_str(),
-                   old_cost_vals[i], approx_improve, exact_improve, exact_improve/approx_improve);
+      if (fabs(approx_improve) > 1e-8) 
+        printf("%15s | %10.3e | %10.3e | %10.3e | %10.3e\n", cost_names[i].c_str(), old_cost_vals[i], approx_improve, exact_improve, exact_improve/approx_improve);
+      else
+        printf("%15s | %10.3e | %10.3e | %10.3e | %10s\n",cost_names[i].c_str(), old_cost_vals[i], approx_improve, exact_improve, "  ------  ");
     }
     if (cnt_names.size() == 0) return;
     printf("%15s | %10s---%10s---%10s---%10s\n", "CONSTRAINTS", "----------", "----------", "----------", "----------");
     for (size_t i=0; i < old_cnt_vals.size(); ++i) {
       double approx_improve = old_cnt_vals[i] - model_cnt_vals[i];
       double exact_improve = old_cnt_vals[i] - new_cnt_vals[i];
-      string fmtstr = fabs(approx_improve) < 1e-8 ? "%15s | %10.3e | %10.3e | %10.3e | (%8.3e)\n" : "%15s | %10.3e | %10.3e | %10.3e | %10.3e\n";
-      printf(fmtstr.c_str(), cnt_names[i].c_str(),
-                   merit_coeff*old_cnt_vals[i], merit_coeff*approx_improve, merit_coeff*exact_improve, exact_improve/approx_improve);
+      if (fabs(approx_improve > 1e-8)) 
+        printf("%15s | %10.3e | %10.3e | %10.3e | %10.3e\n", cnt_names[i].c_str(), merit_coeff*old_cnt_vals[i], merit_coeff*approx_improve, merit_coeff*exact_improve, exact_improve/approx_improve); 
+      else 
+        printf("%15s | %10.3e | %10.3e | %10.3e | %10s\n", cnt_names[i].c_str(), merit_coeff*old_cnt_vals[i], merit_coeff*approx_improve, merit_coeff*exact_improve, "  ------  "); 
     }
 
 }

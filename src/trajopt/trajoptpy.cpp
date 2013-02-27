@@ -4,6 +4,7 @@
 #include "osgviewer/osgviewer.hpp"
 #include <boost/foreach.hpp>
 #include "macros.h"
+#include "sco/modeling_utils.hpp"
 using namespace trajopt;
 using namespace Eigen;
 using namespace OpenRAVE;
@@ -11,13 +12,43 @@ using std::vector;
 
 namespace py = boost::python;
 
-namespace {
+
 bool gInteractive = true;
-py::object openravepy;
+py::object openravepy, np_mod;
 
 py::list toPyList(const IntVec& x) {
   py::list out;
   for (int i=0; i < x.size(); ++i) out.append(x[i]);
+  return out;
+}
+
+template<typename T>
+struct type_traits {
+  static const char* npname;
+};
+template<> const char* type_traits<float>::npname = "float32";
+template<> const char* type_traits<int>::npname = "int32";
+template<> const char* type_traits<double>::npname = "float64";
+
+template <typename T>
+T* getPointer(const py::object& arr) {
+  long int i = py::extract<long int>(arr.attr("ctypes").attr("data"));
+  T* p = (T*)i;
+  return p;
+}
+
+template<typename T>
+py::object toNdarray1(const T* data, size_t dim0) {
+  py::object out = np_mod.attr("empty")(py::make_tuple(dim0), type_traits<T>::npname);
+  T* p = getPointer<T>(out);
+  memcpy(p, data, dim0*sizeof(T));
+  return out;
+}
+template<typename T>
+py::object toNdarray2(const T* data, size_t dim0, size_t dim1) {
+  py::object out = np_mod.attr("empty")(py::make_tuple(dim0, dim1), type_traits<T>::npname);
+  float* pout = getPointer<float>(out);
+  memcpy(pout, data, dim0*dim1*sizeof(float));
   return out;
 }
 
@@ -38,8 +69,6 @@ KinBody::LinkPtr GetCppLink(py::object py_link, EnvironmentBasePtr env) {
 }
 
 
-}
-
 class PyTrajOptProb {
 public:
   TrajOptProbPtr m_prob;
@@ -51,7 +80,92 @@ public:
   void SetRobotActiveDOFs() {
     m_prob->GetRAD()->SetRobotActiveDOFs();
   }
+  void AddConstraint1(py::object f, py::list ijs, const string& typestr, const string& name);
+  void AddConstraint2(py::object f, py::object dfdx, py::list ijs, const string& typestr, const string& name);
+  void AddCost1(py::object f, py::list ijs, const string& name);
+  void AddErrCost1(py::object f, py::list ijs, const string& typestr, const string& name);
+  void AddErrCost2(py::object f, py::object dfdx, py::list ijs, const string& typestr, const string& name);
 };
+
+struct ScalarFuncFromPy : public ScalarOfVector {
+  py::object m_pyfunc;
+  ScalarFuncFromPy(py::object pyfunc) : m_pyfunc(pyfunc) {}
+  double operator()(const VectorXd& x) const {
+    return py::extract<double>(m_pyfunc(toNdarray1<double>(x.data(), x.size())));
+  }
+};
+struct VectorFuncFromPy : public VectorOfVector {
+  py::object m_pyfunc;
+  VectorFuncFromPy(py::object pyfunc) : m_pyfunc(pyfunc) {}
+  VectorXd operator()(const VectorXd& x) const {
+    py::object outarr = np_mod.attr("array")(m_pyfunc(toNdarray1<double>(x.data(), x.size())), "float64");
+    VectorXd out = Map<const VectorXd>(getPointer<double>(outarr), py::extract<int>(outarr.attr("size")));
+    return out;
+  }
+};
+struct MatrixFuncFromPy : public MatrixOfVector {
+  py::object m_pyfunc;
+  MatrixFuncFromPy(py::object pyfunc) : m_pyfunc(pyfunc) {}
+  MatrixXd operator()(const VectorXd& x) const {
+    py::object outarr = np_mod.attr("array")(m_pyfunc(toNdarray1<double>(x.data(), x.size())),"float64");
+    py::object shape = outarr.attr("shape");
+    MatrixXd out = Map<const MatrixXd>(getPointer<double>(outarr), py::extract<int>(shape[0]), py::extract<int>(shape[1]));
+    return out;
+  }
+};
+
+ConstraintType _GetConstraintType(const string& typestr) {
+  if (typestr == "EQ") return EQ;
+  else if (typestr == "INEQ") return INEQ;
+  else PRINT_AND_THROW("type must be \"EQ\" or \"INEQ\"");  
+}
+PenaltyType _GetPenaltyType(const string& typestr) {
+  if (typestr == "SQUARED") return SQUARED;
+  else if (typestr == "ABS") return ABS;
+  else if (typestr == "HINGE") return HINGE;
+  else PRINT_AND_THROW("type must be \"SQUARED\" or \"ABS\" or \"HINGE\"r");  
+}
+VarVector _GetVars(py::list ijs, const VarArray& vars) {
+  VarVector out;
+  int n = py::len(ijs);
+  for (int k=0; k < n; ++k) {
+    int i = py::extract<int>(ijs[k][0]);
+    int j = py::extract<int>(ijs[k][1]);
+    out.push_back(vars(i,j));
+  }  
+  return out;
+}
+
+void PyTrajOptProb::AddConstraint1(py::object f, py::list ijs, const string& typestr, const string& name) {  
+  ConstraintType type = _GetConstraintType(typestr);
+  VarVector vars = _GetVars(ijs, m_prob->GetVars());
+  ConstraintPtr c(new ConstraintFromFunc(VectorOfVectorPtr(new VectorFuncFromPy(f)), vars, type, name));
+  m_prob->addConstr(c);
+}
+void PyTrajOptProb::AddConstraint2(py::object f, py::object dfdx, py::list ijs, const string& typestr, const string& name) {
+  ConstraintType type = _GetConstraintType(typestr);
+  VarVector vars = _GetVars(ijs, m_prob->GetVars());
+  ConstraintPtr c(new ConstraintFromFunc(VectorOfVectorPtr(new VectorFuncFromPy(f)), MatrixOfVectorPtr(new MatrixFuncFromPy(dfdx)), vars, type, name));
+  m_prob->addConstr(c);
+}
+void PyTrajOptProb::AddCost1(py::object f, py::list ijs, const string& name) {
+  VarVector vars = _GetVars(ijs, m_prob->GetVars());
+  CostPtr c(new CostFromFunc(ScalarOfVectorPtr(new ScalarFuncFromPy(f)), vars, "f"));
+  m_prob->addCost(c);
+}
+void PyTrajOptProb::AddErrCost1(py::object f, py::list ijs, const string& typestr, const string& name) {
+  PenaltyType type = _GetPenaltyType(typestr);
+  VarVector vars = _GetVars(ijs, m_prob->GetVars());
+  CostPtr c(new CostFromErrFunc(VectorOfVectorPtr(new VectorFuncFromPy(f)), vars, VectorXd(), type, name));
+  m_prob->addCost(c);
+}
+void PyTrajOptProb::AddErrCost2(py::object f, py::object dfdx, py::list ijs, const string& typestr, const string& name) {
+  PenaltyType type = _GetPenaltyType(typestr);
+  VarVector vars = _GetVars(ijs, m_prob->GetVars());
+  CostPtr c(new CostFromErrFunc(VectorOfVectorPtr(new VectorFuncFromPy(f)), MatrixOfVectorPtr(new MatrixFuncFromPy(dfdx)), vars, VectorXd(), type, name));
+  m_prob->addCost(c);
+}
+
 
 Json::Value readJsonFile(const std::string& doc) {
   Json::Value root;
@@ -93,9 +207,8 @@ public:
     return out;
   }
   py::object GetTraj() {
-    py::object numpy = py::import("numpy");
     TrajArray &traj = m_result->traj;
-    py::object out = numpy.attr("empty")(py::make_tuple(traj.rows(), traj.cols()));
+    py::object out = np_mod.attr("empty")(py::make_tuple(traj.rows(), traj.cols()));
     for (int i = 0; i < traj.rows(); ++i) {
       for (int j = 0; j < traj.cols(); ++j) {
         out[i][j] = traj(i, j);
@@ -212,10 +325,16 @@ PyOSGViewer PyGetViewer(py::object py_env) {
 BOOST_PYTHON_MODULE(ctrajoptpy) {
 
   openravepy = py::import("openravepy");
+  np_mod = py::import("numpy");
 
   py::class_<PyTrajOptProb>("TrajOptProb", py::no_init)
       .def("GetDOFIndices", &PyTrajOptProb::GetDOFIndices)
       .def("SetRobotActiveDOFs", &PyTrajOptProb::SetRobotActiveDOFs, "Sets the active DOFs of the robot to the DOFs in the optimization problem")
+      .def("AddConstraint", &PyTrajOptProb::AddConstraint1, "Add constraint from python function (using numerical differentiation)")
+      .def("AddConstraint", &PyTrajOptProb::AddConstraint2, "Add constraint from python error function and analytic derivative")
+      .def("AddCost", &PyTrajOptProb::AddCost1, "Add cost from python scalar-valued function (using numerical differentiation)")
+      .def("AddErrorCost", &PyTrajOptProb::AddErrCost1, "Add error cost from python vector-valued error function (using numerical differentiation)")
+      .def("AddErrorCost", &PyTrajOptProb::AddErrCost2, "Add error cost from python vector-valued error function and analytic derivative")
   ;
   py::def("SetInteractive", &SetInteractive, "if True, pause and plot every iteration");
   py::def("ConstructProblem", &PyConstructProblem, "create problem from JSON string");

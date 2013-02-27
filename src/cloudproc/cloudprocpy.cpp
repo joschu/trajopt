@@ -42,7 +42,7 @@ T* getPointer(const py::object& arr) {
 template<typename T>
 py::object toNdarray1(const T* data, size_t dim0) {
   py::object out = np_mod.attr("empty")(py::make_tuple(dim0), type_traits<T>::npname);
-  int* p = getPointer<T>(out);
+  T* p = getPointer<T>(out);
   memcpy(p, data, dim0*sizeof(T));
   return out;
 }

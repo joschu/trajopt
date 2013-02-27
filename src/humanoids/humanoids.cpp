@@ -169,7 +169,7 @@ struct StaticTorqueCostCalc : public VectorOfVector {
 };
 
 StaticTorqueCost::StaticTorqueCost(RobotAndDOFPtr rad, const VarVector& vars, double coeff) :
-  CostFromNumDiffErr(VectorOfVectorPtr(new StaticTorqueCostCalc(rad)), vars, VectorXd::Ones(vars.size())*coeff,
+  CostFromErrFunc(VectorOfVectorPtr(new StaticTorqueCostCalc(rad)), vars, VectorXd::Ones(vars.size())*coeff,
     SQUARED,  "static_torque") {
 }
 
@@ -190,7 +190,7 @@ struct PECalc : public VectorOfVector {
 };
 
 PECost::PECost(RobotAndDOFPtr rad, const VarVector& vars, double coeff) :
-  CostFromNumDiffErr(VectorOfVectorPtr(new PECalc(rad)), vars, VectorXd::Ones(1)*coeff,
+  CostFromErrFunc(VectorOfVectorPtr(new PECalc(rad)), vars, VectorXd::Ones(1)*coeff,
     SQUARED,  "PE") {
 }
 
@@ -218,7 +218,7 @@ struct FootHeightCalc : public VectorOfVector {
 };
 
 FootHeightConstraint::FootHeightConstraint(RobotAndDOFPtr rad, KinBody::LinkPtr link, double height, const VarVector& vars) :
-  ConstraintFromNumDiff(VectorOfVectorPtr(new FootHeightCalc(rad, link, height)), vars, INEQ,  "FootHeight") {
+  ConstraintFromFunc(VectorOfVectorPtr(new FootHeightCalc(rad, link, height)), vars, INEQ,  "FootHeight") {
 }
 
 

@@ -12,19 +12,19 @@ typedef BasicArray<Var> VarArray;
 
 void makeTrajVariablesAndBounds(int n_steps, const RobotAndDOF& manip, OptProb& prob_out, VarArray& vars_out);
 
-class CartPoseCost : public CostFromNumDiffErr, public Plotter {
+class CartPoseCost : public CostFromErrFunc, public Plotter {
 public:
   CartPoseCost(const VarVector& vars, const OR::Transform& pose, const Vector3d& rot_coeffs, const Vector3d& pos_coeffs, RobotAndDOFPtr manip, KinBody::LinkPtr link);
   void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
 };
 
-class CartPoseConstraint : public ConstraintFromNumDiff, public Plotter {
+class CartPoseConstraint : public ConstraintFromFunc, public Plotter {
 public:
   CartPoseConstraint(const VarVector& vars, const OR::Transform& pose, RobotAndDOFPtr manip, KinBody::LinkPtr link, const VectorXd& coeffs);
   void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
 };
 
-class CartVelConstraint : public ConstraintFromNumDiff {
+class CartVelConstraint : public ConstraintFromFunc {
 public:
   CartVelConstraint(const VarVector& step0vars, const VarVector& step1vars, RobotAndDOFPtr manip, KinBody::LinkPtr link, double distlimit);
 };

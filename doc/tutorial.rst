@@ -136,12 +136,12 @@ The walk cycle consists of the following four phases, each of which is motion-pl
 
 These planning problems involve pose constraints, as well as a "ZMP" constraint, which constrains the robot's center of mass to lie above the convex hull of the one or two planted feet. This gait will provide a stable walk in the quasi-static regime that the robot moves very slowly (i.e., the forces and torques needed to accelerate the robot are negligible compared with the weight of the robot). 
 
-Obtaining collision geometry from sensor data
+Obstacle geometry from sensor data
 ----------------------------------------------
 
 .. note:: To run the example script, you'll need to download the :ref:`test data <bigdata>` and build with the CMake option ``BUILD_CLOUDPROC=ON``.
 
-We'll consider three different ways of representing the collision geometry of the environment:
+We'll consider three different ways of representing the geometry of the environment:
 
 (1) as a collection of boxes or spheres
 
@@ -178,7 +178,7 @@ To use the mesh or convex decomposition for collision geometry, we first constru
   :start-after: BEGIN generate_mesh
   :end-before: END generate_mesh
   
-Note that the module ``cloudprocpy`` is (mostly) a set of python bindings to the Point Cloud Library (PCL).
+Note that the module ``cloudprocpy`` is a set of python bindings to the Point Cloud Library (PCL), plus a few functions from other libraries.
 
 For convex decomposition, we call a function to break the mesh into a set of convex pieces
 
