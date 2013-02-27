@@ -131,7 +131,6 @@ int main(int argc, char** argv)
 {
   ::testing::InitGoogleTest(&argc, argv);
   RaveInitialize(false);
-  RaveSetDebugLevel(Level_Debug);
-
+  
   return RUN_ALL_TESTS();
 }

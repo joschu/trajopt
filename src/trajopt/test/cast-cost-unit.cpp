@@ -91,7 +91,7 @@ int main(int argc, char** argv)
 
   ::testing::InitGoogleTest(&argc, argv);
   RaveInitialize(false);
-  RaveSetDebugLevel(Level_Debug);
+  if (verbose) RaveSetDebugLevel(Level_Debug);
   int result = RUN_ALL_TESTS();
   RaveDestroy();
   return result;

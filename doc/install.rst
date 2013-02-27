@@ -47,9 +47,9 @@ You can check if the build worked by typing
 
 ::
 
-  make test
+  ctest
   
-The output should look something like this::
+in the build directory. The output should look something like this::
 
   Running tests...
   Test project /Users/joschu/build/trajopt-relwdeb
@@ -72,7 +72,7 @@ The output should look something like this::
 
   Total Test time (real) =   8.09 sec
 
-If one of the unit tests fails, you can get more diagnostic information by running the executable separately. The python executables are in ``SOURCE_DIR/python_examples`` and the compiled c++ executables are in ``BUILD_DIR/bin``. 
+If one of the unit tests fails, you can get more diagnostic information by running with ``ctest -V``, or running the test scripts individual. The python executables are in ``SOURCE_DIR/python_examples`` and the compiled c++ executables are in ``BUILD_DIR/bin``. 
 
 
 Common installation problems
