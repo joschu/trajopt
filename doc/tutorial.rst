@@ -90,14 +90,48 @@ Now you'll notice an extra couple lines of the optimizer output::
 
 As you can see, the pose constraint is satisfied at convergence
 
-Exploring other costs and constraints
------------------------------------------
+Rolling your own costs and constraints in python
+---------------------------------------------------
+Full source code:  :file:`python_examples/this_side_up.py`
 
-The best way to learn about the other costs and constraints that are available is to look at the Doxygen documentation for the subclasses of `CostInfo <http://rll.berkeley.edu/trajopt/doc/dox_build/structtrajopt_1_1_cost_info.html>`_ and `CntInfo <http://rll.berkeley.edu/trajopt/doc/dox_build/structtrajopt_1_1_cnt_info.html>`_ because each item under "costs" or "constraints" is first converted to one of these structs when the JSON file is read.
+This next script shows how you can easily implement your own costs and constraints. The constraint we consider here says that a certain vector defined in the robot gripper frame must point up (in the world coordinates). For example, one might imagine that the robot is holding a glass of water, and we don't want it to spill.
 
-More examples coming soon
+The basic setup of the problem is similar to the previous examples.
+We set a pose constraint at the end of the trajectory. This time, we ignore the rotation (by setting :code:`rot_coefs = [0,0,0]`).
 
-.. TODO
+.. literalinclude:: ../python_examples/this_side_up.py
+  :start-after: BEGIN pose_target
+  :end-before: END pose_target
+
+We also add a constraint on the end-effector displacement at each step:
+
+.. literalinclude:: ../python_examples/this_side_up.py
+  :start-after: BEGIN vel
+  :end-before: END vel
+
+The parameter :code:`"distance_limit : .05"` means the position of the link (r_gripper_tool_frame) moves by less than .05 in each timestep, for each component (x,y,z).
+
+Now, let's look at the user-defined costs and constraints. We define an vector-valued error function :code:`f(x)`, and the Jacobian of this function :code:`dfdx(x)`. f(x) returns the x and y components of the transformed vector (which both equal zero if the vector points up).
+
+.. literalinclude:: ../python_examples/this_side_up.py
+  :start-after: BEGIN python_funcs
+  :end-before: END python_funcs
+
+We add these error functions to the problem as constraints (i.e., that error = 0) with the following lines:
+
+.. literalinclude:: ../python_examples/this_side_up.py
+  :start-after: BEGIN add_constraints
+  :end-before: END add_constraints
+  
+As you can see, we can provide only the function f (which will be numerically differentiated internally), or we can also provide the function and its analytic derivative. 
+Note that in both calls to :code:`AddConstraint`, we pass in the following parameter: :code:`[(t,j) for j in xrange(7)]`. This argument is telling the optimizer which variables the provided function should be applied to. This parameter must be a list of ordered pairs (timestep, dof). These ordered pairs specify which trajectory variables make up the input vector for your provided functions. For example, we add a "up" cost at timestep :code:`t=3` by providing the indices :code:`[(3,0), (3,1), (3,2), (3,3), (3,4), (3,5), (3,6)]`. Then the optimizer knows that this constraint function should be applied to the vector :math:`(\theta_{3,0},\theta_{3,1},\theta_{3,2},\theta_{3,3},\theta_{3,4},\theta_{3,5},\theta_{3,6})`
+
+Similarly to the way we added those constraints, we can also add the error functions as costs, as a hinge, abs, or squared loss, using the function :code:`TrajOptProb.AddErrCost`.
+Or, we can provide a single scalar-valued cost function by using the function :code:`TrajOptProb.AddCost`.
+
+More constraints have been implemented but are not currently documented here.
+One way to find out about which ones have been implemented and what parameters are available is to look at the Doxygen documentation for the subclasses of `CostInfo <../../dox_build/structtrajopt_1_1_cost_info.html>`_ and `CntInfo <../../dox_build/structtrajopt_1_1_cnt_info.html>`_ because each item under "costs" or "constraints" in the JSON document is first converted to one of these structs when the JSON file is read.
+
 
 Optimizing the base position and torso height
 -----------------------------------------------

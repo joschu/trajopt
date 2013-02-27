@@ -6,12 +6,10 @@ Critical
 
 setcontactdistance screws you up if you have multiple collision cost groups
 
-boost python arguments
-
-
 Eventually
 ===========
 
+boost python arguments
 
 optimization shouldn't say converged when it got worse
 

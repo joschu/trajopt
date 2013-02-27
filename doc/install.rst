@@ -19,9 +19,7 @@ Dependencies
 Instructions
 -------------
 
-- install OpenRAVE using `instructions on openrave.org <http://openrave.org/docs/latest_stable>`_
-
-.. warning:: If you are solving problems involving base motion as degrees of freedom, you should install at least version 0.9, due to a recently-fixed bug in the Jacobian calculation.
+- install OpenRAVE 0.9 or above (currently, that means getting the latest sources) using `instructions on openrave.org <http://openrave.org/docs/latest_stable>`_
 
 - install OpenSceneGraph, CMake, boost, and Eigen using your package manager. In Ubuntu, that's::
 
@@ -91,3 +89,5 @@ Common installation problems
   One crude solution: ``rm /path/to/libbulletrave.so``. OpenRAVE uses ODE rather than Bullet by default, so there's no harm in removing the bullet plugin.
 
 * *All the python tests fail*. You probably need to set your ``PYTHONPATH``
+
+* *Almost all the tests fail, where OpenRAVE symbols aren't found*. Set ``LD_LIBRARY_PATH=/usr/local/lib`` or whereever libopenrave.so is. (Note: if you know how to fix this problem through RPATH settings or linker flags, please enlighten me.)

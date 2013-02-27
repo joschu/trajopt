@@ -57,7 +57,8 @@ except Exception:
 # BEGIN addtoenv
 if args.geom_type == "mesh":
     mesh = generate_mesh(cloud_orig)
-    mk.create_trimesh(env, get_xyz_world_frame(mesh.getCloud()), np.array(mesh.getFaces()), name="simple_mesh")
+    mesh_body = mk.create_trimesh(env, get_xyz_world_frame(mesh.getCloud()), np.array(mesh.getFaces()), name="simple_mesh")
+    mesh_body.SetUserData("bt_use_trimesh", True) # Tell collision checker to use the trimesh rather than the convex hull of it
 elif args.geom_type == "cd":
     big_mesh = generate_mesh(cloud_orig)
     convex_meshes = cloudprocpy.convexDecompHACD(big_mesh,30)

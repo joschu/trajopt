@@ -7,6 +7,7 @@ def create_trimesh(env, verts, faces, name="mesh"):
   body.InitFromTrimesh(trimesh=rave.TriMesh(verts, faces),draw=True) 
   body.SetName(name) 
   env.Add(body)   
+  return body
 
 def create_box_from_bounds(env, bounds, name="box"):
   xmin, xmax, ymin, ymax, zmin, zmax = bounds
