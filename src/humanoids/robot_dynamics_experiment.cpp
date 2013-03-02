@@ -2,7 +2,7 @@
 #include "sco/modeling_utils.hpp"
 #include "trajopt/robot_and_dof.hpp"
 #include "utils/stl_to_string.hpp"
-#include "utils/logging1.hpp"
+#include "utils/logging.hpp"
 #include "sco/expr_op_overloads.hpp"
 #include <openrave-core.h>
 #include "sco/optimizers.hpp"

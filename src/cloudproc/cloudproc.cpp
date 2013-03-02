@@ -15,7 +15,9 @@
 #include <pcl/surface/convex_hull.h>
 #include "pcl/impl/instantiate.hpp"
 #include <boost/filesystem.hpp>
+#if 0
 #include <pcl/filters/median_filter.h>
+#endif
 #include <pcl/filters/fast_bilateral.h>
 
 using namespace std;
@@ -236,6 +238,7 @@ typename pcl::PointCloud<T>::Ptr maskFilter(typename pcl::PointCloud<T>::ConstPt
 
 template <class T>
 typename pcl::PointCloud<T>::Ptr medianFilter(typename pcl::PointCloud<T>::ConstPtr in, int windowSize, float maxAllowedMovement) {
+#if 0
   pcl::MedianFilter<T> mf;
   mf.setWindowSize(windowSize);
   mf.setMaxAllowedMovement(maxAllowedMovement);
@@ -243,6 +246,8 @@ typename pcl::PointCloud<T>::Ptr medianFilter(typename pcl::PointCloud<T>::Const
   mf.setInputCloud(in);
   mf.filter(*out);
   return out;
+#else PRINT_AND_THROW("not implemented");
+#endif
 }
 
 template <class T>

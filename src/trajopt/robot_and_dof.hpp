@@ -33,6 +33,6 @@ private:
   int affinedofs;
   OR::Vector rotationaxis;
 };
-typedef shared_ptr<RobotAndDOF> RobotAndDOFPtr;
+typedef boost::shared_ptr<RobotAndDOF> RobotAndDOFPtr;
 
 }

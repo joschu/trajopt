@@ -21,7 +21,7 @@ add_library(osgviewer
   osgviewer.cpp 
   robot_ui.cpp
 )
-target_link_libraries(osgviewer ${OSG_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY})
+target_link_libraries(osgviewer ${OSG_LIBRARIES} ${OpenRAVE_BOTH_LIBRARIES} ${Boost_SYSTEM_LIBRARY} utils)
 
 
 #add_subdirectory(test)

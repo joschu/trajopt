@@ -1,6 +1,6 @@
 <Robot name="boxbot">
 <KinBody>
-  <Body name="box" type="dynamic">
+  <Body name="boxlink" type="dynamic">
     <Translation>0 0 0</Translation>
     <!--rotation of the body specified as a rotation axis. First three numbers are the axis.-->
     <Mass type="mimicgeom">

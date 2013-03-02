@@ -16,7 +16,6 @@
 namespace sco{
 
 using std::string;
-using boost::shared_ptr;
 using std::vector;
 using std::ostream;
 

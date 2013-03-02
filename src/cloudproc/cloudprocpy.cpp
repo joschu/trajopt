@@ -18,7 +18,6 @@ using namespace cloudproc;
 using namespace std;
 using namespace util;
 namespace py = boost::python;
-using boost::shared_ptr;
 typedef PointCloud<PointXYZ> CloudXYZ;
 typedef PointCloud<PointNormal> CloudXYZN;
 
@@ -133,8 +132,7 @@ template<typename T>
 void boost_register_cloud_type(const string& pyname) {
   typedef PyCloud<T> PyCloudT;
   typedef PointCloud<T> PointCloudT;
-  py::class_<PointCloudT, shared_ptr<PointCloudT> >(pyname.c_str())
-//    .def(py::init< shared_ptr<PointCloudT> >() )
+  py::class_<PointCloudT, boost::shared_ptr<PointCloudT> >(pyname.c_str())
     .def("width", &PyCloudT::width)
     .def("height", &PyCloudT::height)
     .def("size", &PyCloudT::size)
@@ -184,7 +182,7 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
   py::def("fastBilateralFilter", &fastBilateralFilter<PointXYZ>);
   py::def("maskFilter", &pyMaskFilter);
 
-  py::class_<pcl::PolygonMesh, shared_ptr<pcl::PolygonMesh> >("PolygonMesh")
+  py::class_<pcl::PolygonMesh, boost::shared_ptr<pcl::PolygonMesh> >("PolygonMesh")
       .def("getCloud", &PolygonMesh_getCloud, "Return underlying point cloud")
       .def("getVertices", &PolygonMesh_getVertices, "Returns V x 3 array of vertices")
       .def("getFaces", &PolygonMesh_getFaces, "Returns a list of lists of indices")
@@ -198,7 +196,7 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
   py::def("loadMesh", &loadMesh, (py::arg("filename")));
   py::def("quadricSimplifyVTK", &quadricSimplifyVTK, (py::arg("cloud"), py::arg("decimation_frac")));
 
-  py::class_<CloudGrabber, shared_ptr<CloudGrabber> >("CloudGrabber")
+  py::class_<CloudGrabber, boost::shared_ptr<CloudGrabber> >("CloudGrabber")
       .def("startXYZ", &CloudGrabber::startXYZ, "Start streaming XYZ point clouds")
       .def("getXYZ", &CloudGrabber::getXYZ, "Wait for new XYZ point cloud and return it. If not streaming, will start and stop. (and hang a couple seconds)")
       .def("startXYZRGB", &CloudGrabber::startXYZRGB, "Start streaming XYZRGB")
