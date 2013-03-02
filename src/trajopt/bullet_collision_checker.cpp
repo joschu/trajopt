@@ -9,6 +9,7 @@
 #include <iostream>
 #include <LinearMath/btConvexHull.h>
 #include <utils/stl_to_string.hpp>
+#include "utils/logging.hpp"
 using namespace util;
 using namespace std;
 using namespace trajopt;
@@ -39,7 +40,7 @@ public:
     m_data.push_back(boost::shared_ptr<T>(t));
   }
   template<class T>
-  void manage(shared_ptr<T> t) {
+  void manage(boost::shared_ptr<T> t) {
     m_data.push_back(t);
   }
 };
@@ -127,7 +128,7 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
       btShapeHull shapeHull(&convexTrimesh);
       if (mesh.vertices.size() >= 50) {
         bool success = shapeHull.buildHull(-666); // note: margin argument not used
-        if (!success) RAVELOG_WARN("shapehull convex hull failed! falling back to original vertices\n");
+        if (!success) LOG_WARN("shapehull convex hull failed! falling back to original vertices");
         useShapeHull = success;
       }
       else {
@@ -158,7 +159,7 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
 
 
 COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link, bool useTrimesh) {
-  RAVELOG_DEBUG("creating bt collision object from from %s\n",link->GetName().c_str());
+  LOG_DEBUG("creating bt collision object from from %s",link->GetName().c_str());
 
   const std::vector<boost::shared_ptr<OpenRAVE::KinBody::Link::GEOMPROPERTIES> > & geometries=link->GetGeometries();
 
@@ -233,7 +234,7 @@ void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
       HullLibrary hl;
 
       if (hl.CreateConvexHull(hd, hr) == QE_FAIL) {
-        RAVELOG_ERROR("convex hull computation failed on shape with %i vertices\n", convex->getNumPoints());
+        LOG_ERROR("convex hull computation failed on shape with %i vertices", convex->getNumPoints());
         hr.mNumFaces = 0;
       }
       else {
@@ -255,7 +256,7 @@ void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
   }
 
   default:
-    RAVELOG_INFO("not rendering shape of type %i\n", shape->getShapeType());
+    LOG_INFO("not rendering shape of type %i", shape->getShapeType());
     break;
   }
 }
@@ -330,8 +331,8 @@ struct CollisionCollector : public btCollisionWorld::ContactResultCallback {
     const KinBody::Link* linkB = getLink(colObj1Wrap->getCollisionObject());
     m_collisions.push_back(Collision(linkA, linkB, toOR(cp.m_positionWorldOnA), toOR(cp.m_positionWorldOnB),
         toOR(cp.m_normalWorldOnB), cp.m_distance1));
-    RAVELOG_DEBUG("collide %s-%s\n", linkA->GetName().c_str(), linkB->GetName().c_str());
-    return 0;
+    LOG_DEBUG("collide %s-%s", linkA->GetName().c_str(), linkB->GetName().c_str());
+    return 1;
   }
   bool needsCollision(btBroadphaseProxy* proxy0) const {
     bool maskcollides = (proxy0->m_collisionFilterGroup & m_collisionFilterMask) != 0;
@@ -374,7 +375,7 @@ BulletCollisionChecker::~BulletCollisionChecker() {
 
 
 void BulletCollisionChecker::SetContactDistance(float dist) {
-  RAVELOG_DEBUG("setting contact distance to %.2f\n", dist);
+  LOG_DEBUG("setting contact distance to %.2f", dist);
   m_contactDistance = dist;
   SHAPE_EXPANSION = btVector3(1,1,1)*dist;
   gContactBreakingThreshold = 2.001*dist; // wtf. when I set it to 2.0 there are no contacts with distance > 0
@@ -389,20 +390,20 @@ void BulletCollisionChecker::SetContactDistance(float dist) {
 
 void BulletCollisionChecker::AllVsAll(vector<Collision>& collisions) {
   UpdateBulletFromRave();
-  RAVELOG_DEBUG("AllVsAll\n");
+  LOG_DEBUG("AllVsAll");
   m_world->performDiscreteCollisionDetection();
   int numManifolds = m_dispatcher->getNumManifolds();
-  RAVELOG_DEBUG("number of manifolds: %i\n", numManifolds);
+  LOG_DEBUG("number of manifolds: %i", numManifolds);
   for (int i = 0; i < numManifolds; ++i) {
     btPersistentManifold* contactManifold = m_dispatcher->getManifoldByIndexInternal(i);
     int numContacts = contactManifold->getNumContacts();
-    RAVELOG_DEBUG("number of contacts in manifold %i: %i\n", i, numContacts);
+    LOG_DEBUG("number of contacts in manifold %i: %i", i, numContacts);
     const CollisionObjectWrapper* objA = static_cast<const CollisionObjectWrapper*>(contactManifold->getBody0());
     const CollisionObjectWrapper* objB = static_cast<const CollisionObjectWrapper*>(contactManifold->getBody1());
     for (int j = 0; j < numContacts; ++j) {
       btManifoldPoint& pt = contactManifold->getContactPoint(j);
 //      stringstream ss; ss << pt.m_localPointA << " | " << pt.m_localPointB;
-//      RAVELOG_DEBUG("local pts: %s\n",ss.str().c_str());
+//      LOG_DEBUG("local pts: %s\n",ss.str().c_str());
       // adjustContactPoint(pt, objA, objB);
 
       const KinBody::Link* bodyA = objA->m_link;
@@ -413,10 +414,10 @@ void BulletCollisionChecker::AllVsAll(vector<Collision>& collisions) {
             toOR(pt.m_normalWorldOnB), pt.m_distance1, 1./numContacts));
       }
       else {
-        RAVELOG_DEBUG("ignoring collision between %s and %s\n", bodyA->GetName().c_str(), bodyB->GetName().c_str());
+        LOG_DEBUG("ignoring collision between %s and %s", bodyA->GetName().c_str(), bodyB->GetName().c_str());
         assert(0 && "this shouldn't happen because we're filtering at narrowphase");
       }
-      RAVELOG_DEBUG("%s - %s collided\n", bodyA->GetName().c_str(), bodyB->GetName().c_str());
+      LOG_DEBUG("%s - %s collided", bodyA->GetName().c_str(), bodyB->GetName().c_str());
     }
     // caching helps performance, but for optimization the cost should not be history-dependent
     contactManifold->clearManifold();
@@ -473,19 +474,19 @@ void BulletCollisionChecker::AddKinBody(const OR::KinBodyPtr& body) {
         SetCow(link.get(), new_cow.get());
         m_world->addCollisionObject(new_cow.get(), filterGroup);
         new_cow->setContactProcessingThreshold(m_contactDistance);
-        RAVELOG_DEBUG("added collision object for  link %s\n", link->GetName().c_str());
+        LOG_DEBUG("added collision object for  link %s", link->GetName().c_str());
         cd->links.push_back(link.get());
         cd->cows.push_back(new_cow);
       }
       else {
-        RAVELOG_WARN("ignoring link %s\n", link->GetName().c_str());
+        LOG_WARN("ignoring link %s", link->GetName().c_str());
       }
     }
   }
 
 }
 void BulletCollisionChecker::RemoveKinBody(const OR::KinBodyPtr& body) {
-  RAVELOG_DEBUG("removing %s\n", body->GetName().c_str());
+  LOG_DEBUG("removing %s", body->GetName().c_str());
   BOOST_FOREACH(const OR::KinBody::LinkPtr& link, body->GetLinks()) {
     CollisionObjectWrapper* cow = GetCow(link.get());
     if (cow) {
@@ -552,7 +553,7 @@ void BulletCollisionChecker::UpdateBulletFromRave() {
   vector<OR::KinBodyPtr> bodies, addedBodies;
   m_env->GetBodies(bodies);
   if (bodies.size() != m_prevbodies.size() || !std::equal(bodies.begin(), bodies.end(), m_prevbodies.begin())) {
-    RAVELOG_DEBUG("need to add and remove stuff\n");
+    LOG_DEBUG("need to add and remove stuff");
     AddAndRemoveBodies(bodies, m_prevbodies, addedBodies);
     m_prevbodies=bodies;
     BOOST_FOREACH(const KinBodyPtr& body, addedBodies) {
@@ -560,11 +561,11 @@ void BulletCollisionChecker::UpdateBulletFromRave() {
     }
   }
   else {
-    RAVELOG_DEBUG("don't need to add or remove stuff\n");
+    LOG_DEBUG("don't need to add or remove stuff");
   }
 
   btCollisionObjectArray& objs = m_world->getCollisionObjectArray();
-  RAVELOG_DEBUG("%i objects in bullet world\n", objs.size());
+  LOG_DEBUG("%i objects in bullet world", objs.size());
   for (int i=0; i < objs.size(); ++i) {
     CollisionObjectWrapper* cow = static_cast<CollisionObjectWrapper*>(objs[i]);
     cow->setWorldTransform(toBt(cow->m_link->GetTransform()));
@@ -576,7 +577,7 @@ void BulletCollisionChecker::UpdateBulletFromRave() {
 void BulletCollisionChecker::PlotCollisionGeometry(vector<OpenRAVE::GraphHandlePtr>& handles) {
   UpdateBulletFromRave();
   btCollisionObjectArray& objs = m_world->getCollisionObjectArray();
-  RAVELOG_DEBUG("%i objects in bullet world\n", objs.size());
+  LOG_DEBUG("%i objects in bullet world", objs.size());
   for (int i=0; i < objs.size(); ++i) {
     RenderCollisionShape(objs[i]->getCollisionShape(), objs[i]->getWorldTransform(), *boost::const_pointer_cast<OpenRAVE::EnvironmentBase>(m_env), handles);
   }
@@ -731,7 +732,7 @@ class CompoundHullShape : public btConvexShape {
 #endif
 
 
-class CastHullShape : public btConvexShape {
+struct CastHullShape : public btConvexShape {
 public:
   btConvexShape* m_shape;
   btTransform m_t01, m_t10; // T_0_1 = T_w_0^-1 * T_w_1
@@ -793,10 +794,61 @@ public:
   virtual const char* getName() const {return "CastHull";}
   virtual btVector3 localGetSupportingVertexWithoutMargin(const btVector3& v) const {return localGetSupportingVertex(v);}
 
+  void calculateContactTime(Collision& col) {    
+    // float support0 = localGetSupportingVertex(col.)
+  }
 
 };
 
 
+struct CastCollisionCollector : public CollisionCollector {
+  CastCollisionCollector(vector<Collision>& collisions, CollisionObjectWrapper* cow, BulletCollisionChecker* cc) :
+    CollisionCollector(collisions, cow, cc) {}  
+  virtual btScalar addSingleResult(btManifoldPoint& cp,
+      const btCollisionObjectWrapper* colObj0Wrap,int partId0,int index0,
+      const btCollisionObjectWrapper* colObj1Wrap,int partId1,int index1);
+};
+
+
+btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
+    const btCollisionObjectWrapper* colObj0Wrap,int partId0,int index0,
+    const btCollisionObjectWrapper* colObj1Wrap,int partId1,int index1) {
+      float retval = CollisionCollector::addSingleResult(cp, colObj0Wrap,partId0,index0, colObj1Wrap,partId1,index1); // call base class func
+      if (retval == 1) { // if contact was added
+        bool castShapeIsFirst =  (colObj0Wrap->getCollisionObject() == m_cow);
+        btVector3 normalWorldFromCast = -(castShapeIsFirst ? 1 : -1) * cp.m_normalWorldOnB;          
+        const CastHullShape* shape = dynamic_cast<const CastHullShape*>((castShapeIsFirst ? colObj0Wrap : colObj1Wrap)->getCollisionObject()->getCollisionShape());
+        assert(!!shape);
+        btTransform tfWorld0 = m_cow->getWorldTransform();
+        btTransform tfWorld1 = m_cow->getWorldTransform() * shape->m_t01;
+        btVector3 normalLocal0 = normalWorldFromCast * tfWorld0.getBasis();
+        btVector3 normalLocal1 = normalWorldFromCast * tfWorld1.getBasis();
+        btVector3 ptWorld0 = tfWorld0*shape->localGetSupportingVertex(normalLocal0);
+        btVector3 ptWorld1 = tfWorld1*shape->localGetSupportingVertex(normalLocal1);
+        float sup0 = normalWorldFromCast.dot(ptWorld0);
+        float sup1 = normalWorldFromCast.dot(ptWorld1);
+        const float SUPPORT_FUNC_TOLERANCE = 1e-5;
+        LOG_DEBUG("sup0: %.2f. sup1: %.2f", sup0, sup1);
+        if (sup0 - sup1 > SUPPORT_FUNC_TOLERANCE) {
+          m_collisions.back().time = 0;
+        }
+        else if (sup1 - sup0 > SUPPORT_FUNC_TOLERANCE) {
+          m_collisions.back().time = 1;
+        }
+        else {
+          const btVector3& ptOnCast = castShapeIsFirst ? cp.m_positionWorldOnA : cp.m_positionWorldOnB;
+          float l0c = (ptOnCast - ptWorld0).length(), 
+                l1c = (ptOnCast - ptWorld1).length(), 
+                l01 = (ptWorld1 - ptWorld0).length();
+          const float COLLINEARITY_TOLERANCE = 1e-5;
+          // cout << ptWorld0 << " / " << ptWorld1 << " / " << ptOnCast << endl;
+          // if ( l0c + l1c - l01 > COLLINEARITY_TOLERANCE ) LOG_DEBUG("points aren't collinear?!");
+          m_collisions.back().time = l01 > 0  ?  fmin(l0c/l01, 1) : .5;            
+        }
+          
+      }
+      return retval;          
+}
 
 void BulletCollisionChecker::CheckShapeCast(btCollisionShape* shape, const btTransform& tf0, const btTransform& tf1,
     CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions) {
@@ -806,7 +858,7 @@ void BulletCollisionChecker::CheckShapeCast(btCollisionShape* shape, const btTra
     obj->setCollisionShape(shape);
     obj->setWorldTransform(tf0);
     obj->m_index = cow->m_index;
-    CollisionCollector cc(collisions, obj, this);
+    CastCollisionCollector cc(collisions, obj, this);
     cc.m_collisionFilterMask = KinBodyFilter;
     cc.m_collisionFilterGroup = RobotFilter;
     world->contactTest(obj, cc);
@@ -846,7 +898,7 @@ void BulletCollisionChecker::CastVsAll(RobotAndDOF& rad, const vector<KinBody::L
     CollisionObjectWrapper* cow = m_link2cow[links[i].get()];
     CheckShapeCast(cow->getCollisionShape(), tbefore[i], tafter[i], cow, m_world, collisions);
   }
-  RAVELOG_DEBUG("CastVsAll checked %i links and found %i collisions\n", links.size(), collisions.size());
+  LOG_DEBUG("CastVsAll checked %i links and found %i collisions", links.size(), collisions.size());
 }
 
 }

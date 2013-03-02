@@ -20,8 +20,10 @@ void CollisionsToDistances(const vector<Collision>& collisions, const Link2Int& 
     DblVec& dists, DblVec& weights) {
   // Note: this checking (that the links are in the list we care about) is probably unnecessary
   // since we're using LinksVsAll
-  dists.reserve(dists.size() + collisions.size());
-  weights.reserve(weights.size() + collisions.size());
+  dists.clear();
+  weights.clear();
+  dists.reserve(collisions.size());
+  weights.reserve(collisions.size());
   BOOST_FOREACH(const Collision& col, collisions) {
     Link2Int::const_iterator itA = m_link2ind.find(col.linkA);
     Link2Int::const_iterator itB = m_link2ind.find(col.linkB);
@@ -33,26 +35,28 @@ void CollisionsToDistances(const vector<Collision>& collisions, const Link2Int& 
 }
 
 void CollisionsToDistanceExpressions(const vector<Collision>& collisions, RobotAndDOF& rad,
-    const Link2Int& m_link2ind, const VarVector& m_vars, const DblVec& dofvals, vector<AffExpr>& exprs, DblVec& weights) {
+    const Link2Int& link2ind, const VarVector& vars, const DblVec& dofvals, vector<AffExpr>& exprs, DblVec& weights) {
 
-  exprs.reserve(exprs.size() + collisions.size());
-  weights.reserve(weights.size() + collisions.size());
+  exprs.clear();
+  weights.clear();
+  exprs.reserve(collisions.size());
+  weights.reserve(collisions.size());
   rad.SetDOFValues(dofvals); // since we'll be calculating jacobians
   BOOST_FOREACH(const Collision& col, collisions) {
     AffExpr dist(col.distance);
-    Link2Int::const_iterator itA = m_link2ind.find(col.linkA);
-    if (itA != m_link2ind.end()) {
+    Link2Int::const_iterator itA = link2ind.find(col.linkA);
+    if (itA != link2ind.end()) {
       VectorXd dist_grad = toVector3d(col.normalB2A).transpose()*rad.PositionJacobian(itA->second, col.ptA);
-      exprInc(dist, varDot(dist_grad, m_vars));
+      exprInc(dist, varDot(dist_grad, vars));
       exprInc(dist, -dist_grad.dot(toVectorXd(dofvals)));
     }
-    Link2Int::const_iterator itB = m_link2ind.find(col.linkB);
-    if (itB != m_link2ind.end()) {
+    Link2Int::const_iterator itB = link2ind.find(col.linkB);
+    if (itB != link2ind.end()) {
       VectorXd dist_grad = -toVector3d(col.normalB2A).transpose()*rad.PositionJacobian(itB->second, col.ptB);
-      exprInc(dist, varDot(dist_grad, m_vars));
+      exprInc(dist, varDot(dist_grad, vars));
       exprInc(dist, -dist_grad.dot(toVectorXd(dofvals)));
     }
-    if (itA != m_link2ind.end() || itB != m_link2ind.end()) {
+    if (itA != link2ind.end() || itB != link2ind.end()) {
       exprs.push_back(dist);
       weights.push_back(col.weight);
     }
@@ -60,6 +64,26 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, RobotA
   RAVELOG_DEBUG("%i distance expressions\n", exprs.size());
 }
 
+void CollisionsToDistanceExpressions(const vector<Collision>& collisions, RobotAndDOF& rad, const Link2Int& link2ind,
+    const VarVector& vars0, const VarVector& vars1, const DblVec& vals0, const DblVec& vals1,
+    vector<AffExpr>& exprs, DblVec& weights) {
+  vector<AffExpr> exprs0, exprs1;
+  DblVec weights0, weights1;
+  CollisionsToDistanceExpressions(collisions, rad, link2ind, vars0, vals0, exprs0, weights0);
+  CollisionsToDistanceExpressions(collisions, rad, link2ind, vars1, vals1, exprs1, weights1);
+
+  exprs.resize(exprs0.size());
+  weights.resize(exprs0.size());
+
+  for (int i=0; i < exprs0.size(); ++i) {
+    exprScale(exprs0[i], (1-collisions[i].time));
+    exprScale(exprs1[i], collisions[i].time);
+    exprs[i] = AffExpr(0);
+    exprInc(exprs[i], exprs0[i]);
+    exprInc(exprs[i], exprs1[i]);
+    weights[i] = (weights0[i] + weights1[i])/2;
+  }
+}
 
 void CollisionEvaluator::GetCollisionsCached(const DblVec& x, vector<Collision>& collisions) {
   double key = vecSum(x);
@@ -142,18 +166,14 @@ void CastCollisionEvaluator::CalcCollisions(const DblVec& x, vector<Collision>& 
 void CastCollisionEvaluator::CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights) {
   vector<Collision> collisions;
   GetCollisionsCached(x, collisions);
-  DblVec dofvals = getDblVec(x, m_vars0);
-  CollisionsToDistanceExpressions(collisions, *m_rad, m_link2ind, m_vars0, dofvals, exprs, weights);
-  dofvals = getDblVec(x, m_vars1);
-  CollisionsToDistanceExpressions(collisions, *m_rad, m_link2ind, m_vars1, dofvals, exprs, weights);
+  DblVec dofvals0 = getDblVec(x, m_vars0);
+  DblVec dofvals1 = getDblVec(x, m_vars1);
+  CollisionsToDistanceExpressions(collisions, *m_rad, m_link2ind, m_vars0, m_vars1, dofvals0, dofvals1, exprs, weights);
 }
-void CastCollisionEvaluator::CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights) {
+void CastCollisionEvaluator::CalcDists(const DblVec& x, DblVec& dists, DblVec& weights) {
   vector<Collision> collisions;
   GetCollisionsCached(x, collisions);
-  DblVec dofvals = getDblVec(x, m_vars0);
-  CollisionsToDistances(collisions, m_link2ind, exprs, weights);
-  dofvals = getDblVec(x, m_vars1);
-  CollisionsToDistances(collisions, m_link2ind, exprs, weights);
+  CollisionsToDistances(collisions, m_link2ind, dists, weights);
 }
 
 

@@ -90,6 +90,15 @@ TEST(collision_checker, box_distance) {
 
 }
 
+#define EXPECT_VECTOR_NEAR(vec0, vec1, abstol)\
+if (fabs(vec0.x  - vec1.x) > abstol || \
+    fabs(vec0.x  - vec1.x) > abstol ||\
+    fabs(vec0.x  - vec1.x) > abstol) {\
+    char msg[1000];\
+    sprintf(msg, "%s != %s    (tol %.2e) at %s:%i\n", CSTR(vec0), CSTR(vec1), abstol, __FILE__, __LINE__);\
+    GTEST_NONFATAL_FAILURE_(msg);\
+}
+
 TEST(continuous_collisions, boxes) {
   EnvironmentBasePtr env = RaveCreateEnvironment();
   ASSERT_TRUE(env->Load(data_dir() + "/box.xml"));
@@ -106,22 +115,38 @@ TEST(continuous_collisions, boxes) {
     checker->ContinuousCheckTrajectory(traj, *rad, collisions);
     ASSERT_EQ(collisions.size(), 1);
     Collision col = collisions[0];
-    EXPECT_NEAR(col.normalB2A.x, -1, 1e-4);
-    EXPECT_NEAR(col.normalB2A.y, 0, 1e-4);
-    EXPECT_NEAR(col.normalB2A.z, 0, 1e-4);
+    Vector robot_normal = (float)(col.linkA == boxbot->GetLinks()[0].get() ? 1. : -1.) * col.normalB2A;
+    EXPECT_VECTOR_NEAR(robot_normal, Vector(-1, 0, 0), 1e-4);
   }
+  
+  #define TRAJ_TEST_BOILERPLATE\
+  RobotAndDOFPtr rad(new RobotAndDOF(boxbot, IntVec(), DOF_X | DOF_Y, Vector()));\
+  vector<Collision> collisions;\
+  checker->CastVsAll(*rad, rad->GetRobot()->GetLinks(), toDblVec(traj.row(0)), toDblVec(traj.row(1)), collisions);\
+  ASSERT_EQ(collisions.size(), 1);\
+  Collision col = collisions[0];\
+  Vector robot_normal = (float)(col.linkA == boxbot->GetLinks()[0].get() ? 1. : -1.) * col.normalB2A;
+  
   {
-    RobotAndDOFPtr rad(new RobotAndDOF(boxbot, IntVec(), DOF_X | DOF_Y, Vector()));
     TrajArray traj(2,2);
     traj << -1.9,0,  0,1.9;
-    vector<Collision> collisions;
-    checker->CastVsAll(*rad, rad->GetRobot()->GetLinks(), toDblVec(traj.row(0)), toDblVec(traj.row(1)), collisions);
-    ASSERT_EQ(collisions.size(), 1);
-    Collision col = collisions[0];
-    cout << col << endl;
-//    EXPECT_NEAR(col.normalB2A.x, , 1e-4);
-//    EXPECT_NEAR(col.normalB2A.y, 0, 1e-4);
-//    EXPECT_NEAR(col.normalB2A.z, 0, 1e-4);
+    TRAJ_TEST_BOILERPLATE
+    EXPECT_VECTOR_NEAR(robot_normal, Vector(-1/sqrtf(2), 1/sqrtf(2), 0), 1e-4);
+    EXPECT_NEAR(col.time, .5, 1e-1);
+  }
+  {
+    TrajArray traj(2,2);
+    traj << 0, .9,  0,2;
+    TRAJ_TEST_BOILERPLATE    
+    EXPECT_VECTOR_NEAR(robot_normal, Vector(0,1,0), 1e-4);
+    EXPECT_NEAR(col.time, 0, 1e-6);
+  }
+  {
+    TrajArray traj(2,2);
+    traj << 0,2,  0,.9;
+    TRAJ_TEST_BOILERPLATE    
+    EXPECT_VECTOR_NEAR(robot_normal, Vector(0,1,0), 1e-4);
+    EXPECT_NEAR(col.time, 1, 1e-6);
   }
 
 
