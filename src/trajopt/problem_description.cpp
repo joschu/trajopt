@@ -63,11 +63,6 @@ RobotAndDOFPtr RADFromName(const string& name, RobotBasePtr robot) {
   return RobotAndDOFPtr(new RobotAndDOF(robot, dof_inds, affinedofs, rotationaxis));
 }
 
-BoolVec toMask(const VectorXd& x) {
-  BoolVec out(x.size());
-  for (int i=0; i < x.size(); ++i) out[i] = (x[i] > 0);
-  return out;
-}
 
 bool allClose(const VectorXd& a, const VectorXd& b) {
   return (a-b).array().abs().maxCoeff() < 1e-4;
@@ -210,11 +205,11 @@ void ProblemConstructionInfo::fromJson(const Value& v) {
   if (v.isMember("constraints")) fromJsonArray(v["constraints"], cnt_infos);
 
   if (v.isMember("scene_states")) {
-    fromJsonArray(v["scene_states"], scene_state_infos);
+    fromJsonArray(v["scene_states"], scene_states);
     // if the user specifies scene states, we must have one for each timestep
     vector<bool> timestep_satisfied(basic_info.n_steps, false);
     int num_timesteps_satisfied = 0;
-    BOOST_FOREACH(const SceneStateInfoPtr& state_info, scene_state_infos) {
+    BOOST_FOREACH(const SceneStatePtr& state_info, scene_states) {
       FAIL_IF_FALSE(!timestep_satisfied[state_info->timestep]);
       timestep_satisfied[state_info->timestep] = true;
       ++num_timesteps_satisfied;
@@ -307,6 +302,7 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
     ci->hatch(*prob);
   }
 
+  prob->SetSceneStates(pci.scene_states);
   prob->SetInitTraj(pci.init_info.data);
 
   return prob;
@@ -466,7 +462,6 @@ void JointVelCostInfo::hatch(TrajOptProb& prob) {
   prob.getCosts().back()->setName(name);
 }
 
-
 void CollisionCostInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));
   const Value& params = v["params"];
@@ -491,13 +486,13 @@ void CollisionCostInfo::fromJson(const Value& v) {
 void CollisionCostInfo::hatch(TrajOptProb& prob) {
   if (continuous) {
     for (int i=first_step; i < last_step; ++i) {
-      prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
+      prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1), prob.GetSceneState(i))));
       prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
     }
   }
   else {
     for (int i=first_step; i <= last_step; ++i) {
-      prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i))));
+      prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetSceneState(i))));
       prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
     }
   }
@@ -536,20 +531,31 @@ CntInfoPtr JointConstraintInfo::create() {
   return CntInfoPtr(new JointConstraintInfo());
 }
 
-void ObjectStateInfo::fromJson(const Json::Value& v) {
+void fromJson(ObjectState& o, const Json::Value& v) {
+  string name;
   childFromJson(v, name, "name");
-  FAIL_IF_FALSE(gPCI->env->GetKinBody(name));
-  childFromJson(v, xyz, "xyz");
-  childFromJson(v, wxyz, "wxyz");
+  FAIL_IF_FALSE(o.body = gPCI->env->GetKinBody(name));
+  childFromJson(v, o.xyz, "xyz", Vector3d(0,0,0));
+  childFromJson(v, o.wxyz, "wxyz", Vector4d(1,0,0,0));
+  childFromJson(v, o.dof_vals, "dof_vals", DblVec());
+  childFromJson(v, o.dof_inds, "dof_inds", IntVec());
+}
+void fromJson(const Json::Value& v, ObjectStatePtr& p) {
+  p.reset(new ObjectState);
+  fromJson(*p, v);
 }
 
-void SceneStateInfo::fromJson(const Json::Value& v) {
-  childFromJson(v, timestep, "timestep");
-  if (timestep < 0 || timestep >= gPCI->basic_info.n_steps) {
-    PRINT_AND_THROW(boost::format("timestep %d outside of range 0~%d") % timestep % gPCI->basic_info.n_steps);
+void fromJson(SceneState& ss, const Json::Value& v) {
+  childFromJson(v, ss.timestep, "timestep");
+  if (ss.timestep < 0 || ss.timestep >= gPCI->basic_info.n_steps) {
+    PRINT_AND_THROW(boost::format("timestep %d outside of range 0~%d") % ss.timestep % gPCI->basic_info.n_steps);
   }
   FAIL_IF_FALSE(v.isMember("obj_states"));
-  fromJsonArray(v["obj_states"], obj_state_infos);
+  fromJsonArray(v["obj_states"], ss.obj_states);
+}
+void fromJson(const Json::Value& v, SceneStatePtr& p) {
+  p.reset(new SceneState);
+  fromJson(*p, v);
 }
 
 

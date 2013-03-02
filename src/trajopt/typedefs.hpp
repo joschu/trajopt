@@ -41,4 +41,21 @@ public:
   virtual ~Plotter() {}
 };
 
+struct ObjectState {
+  OpenRAVE::KinBodyPtr body;
+  Vector3d xyz;
+  Vector4d wxyz;
+  DblVec dof_vals;
+  IntVec dof_inds;
+};
+typedef boost::shared_ptr<ObjectState> ObjectStatePtr;
+struct SceneState {
+  int timestep;
+  vector<ObjectStatePtr> obj_states;
+};
+typedef boost::shared_ptr<SceneState> SceneStatePtr;
+
+
+
+
 }

@@ -21,6 +21,11 @@ typedef boost::shared_ptr<TrajOptProb> TrajOptProbPtr;
 class ProblemConstructionInfo;
 class TrajOptResult;
 typedef boost::shared_ptr<TrajOptResult> TrajOptResultPtr;
+class ObjectState;
+typedef boost::shared_ptr<ObjectState> ObjectStatePtr;
+class SceneState;
+typedef boost::shared_ptr<SceneState> SceneStatePtr;
+
 
 TrajOptProbPtr TRAJOPT_API ConstructProblem(const ProblemConstructionInfo&);
 TrajOptProbPtr TRAJOPT_API ConstructProblem(const Json::Value&, OpenRAVE::EnvironmentBasePtr env);
@@ -50,11 +55,16 @@ public:
   void SetInitTraj(const TrajArray& x) {m_init_traj = x;}
   TrajArray GetInitTraj() {return m_init_traj;}
 
+  void SetSceneStates(const vector<SceneStatePtr>& s){assert(s.size() == 0 || s.size() == GetNumSteps()); m_scene_states = s;}
+  vector<SceneStatePtr>& GetSceneStates() {return m_scene_states;}
+  SceneStatePtr GetSceneState(int i) {return m_scene_states.size() == 0 ? SceneStatePtr() : m_scene_states[i];}
+
   friend TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo&);
 private:
   VarArray m_traj_vars;
   RobotAndDOFPtr m_rad;
   TrajArray m_init_traj;
+  vector<SceneStatePtr> m_scene_states;
   typedef std::pair<string,string> StringPair;
 };
 
@@ -87,23 +97,6 @@ struct InitInfo {
   void fromJson(const Json::Value& v);
 };
 
-
-struct ObjectStateInfo {
-  string name;
-  Vector3d xyz;
-  Vector4d wxyz;
-  void fromJson(const Json::Value& v);
-};
-
-/**
- * JSON description of the state of the scene at a particular timestep.
- */
-struct SceneStateInfo {
-  int timestep;
-  vector<ObjectStateInfoPtr> obj_state_infos;
-
-  void fromJson(const Json::Value& v);
-};
 
 /**
 When cost element of JSON doc is read, one of these guys gets constructed to hold the parameters.
@@ -158,7 +151,7 @@ public:
   BasicInfo basic_info;
   vector<CostInfoPtr> cost_infos;
   vector<CntInfoPtr> cnt_infos;
-  vector<SceneStateInfoPtr> scene_state_infos;
+  vector<SceneStatePtr> scene_states;
 
   InitInfo init_info;
 
