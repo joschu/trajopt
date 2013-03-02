@@ -87,6 +87,24 @@ struct InitInfo {
   void fromJson(const Json::Value& v);
 };
 
+
+struct ObjectStateInfo {
+  string name;
+  Vector3d xyz;
+  Vector4d wxyz;
+  void fromJson(const Json::Value& v);
+};
+
+/**
+ * JSON description of the state of the scene at a particular timestep.
+ */
+struct SceneStateInfo {
+  int timestep;
+  vector<ObjectStateInfoPtr> obj_state_infos;
+
+  void fromJson(const Json::Value& v);
+};
+
 /**
 When cost element of JSON doc is read, one of these guys gets constructed to hold the parameters.
 Then it later gets converted to a Cost object by the hatch method
@@ -140,6 +158,8 @@ public:
   BasicInfo basic_info;
   vector<CostInfoPtr> cost_infos;
   vector<CntInfoPtr> cnt_infos;
+  vector<SceneStateInfoPtr> scene_state_infos;
+
   InitInfo init_info;
 
   OR::EnvironmentBasePtr env;

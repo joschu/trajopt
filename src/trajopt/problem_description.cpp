@@ -209,6 +209,21 @@ void ProblemConstructionInfo::fromJson(const Value& v) {
   if (v.isMember("costs")) fromJsonArray(v["costs"], cost_infos);
   if (v.isMember("constraints")) fromJsonArray(v["constraints"], cnt_infos);
 
+  if (v.isMember("scene_states")) {
+    fromJsonArray(v["scene_states"], scene_state_infos);
+    // if the user specifies scene states, we must have one for each timestep
+    vector<bool> timestep_satisfied(basic_info.n_steps, false);
+    int num_timesteps_satisfied = 0;
+    BOOST_FOREACH(const SceneStateInfoPtr& state_info, scene_state_infos) {
+      FAIL_IF_FALSE(!timestep_satisfied[state_info->timestep]);
+      timestep_satisfied[state_info->timestep] = true;
+      ++num_timesteps_satisfied;
+    }
+    if (num_timesteps_satisfied != basic_info.n_steps) {
+      PRINT_AND_THROW(boost::format("%d scene states specified, but there are %d steps in the problem") % num_timesteps_satisfied % basic_info.n_steps);
+    }
+  }
+
   childFromJson(v, init_info, "init_info");
   gPCI = NULL;
 
@@ -519,6 +534,22 @@ void JointConstraintInfo::hatch(TrajOptProb& prob) {
 }
 CntInfoPtr JointConstraintInfo::create() {
   return CntInfoPtr(new JointConstraintInfo());
+}
+
+void ObjectStateInfo::fromJson(const Json::Value& v) {
+  childFromJson(v, name, "name");
+  FAIL_IF_FALSE(gPCI->env->GetKinBody(name));
+  childFromJson(v, xyz, "xyz");
+  childFromJson(v, wxyz, "wxyz");
+}
+
+void SceneStateInfo::fromJson(const Json::Value& v) {
+  childFromJson(v, timestep, "timestep");
+  if (timestep < 0 || timestep >= gPCI->basic_info.n_steps) {
+    PRINT_AND_THROW(boost::format("timestep %d outside of range 0~%d") % timestep % gPCI->basic_info.n_steps);
+  }
+  FAIL_IF_FALSE(v.isMember("obj_states"));
+  fromJsonArray(v["obj_states"], obj_state_infos);
 }
 
 
