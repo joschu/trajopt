@@ -1,6 +1,6 @@
 #include "solver_interface.hpp"
 #include "gurobi_interface.hpp"
-#include "utils/logging1.hpp"
+#include "utils/logging.hpp"
 extern "C" {
 #include "gurobi_c.h"
 }

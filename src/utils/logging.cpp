@@ -1,6 +1,6 @@
 #include <string>
 #include <iostream>
-#include "logging1.hpp"
+#include "logging.hpp"
 #include <cstdlib>
 using namespace std;
 
@@ -28,8 +28,7 @@ int LoggingInit() {
   }
   return 1;  
 }
-int rhs_executes_before_main = LoggingInit();
+int this_is_a_hack_but_rhs_executes_on_library_load = LoggingInit();
 
-LogLevel GetLogLevel() {return gLogLevel;}
 }
 

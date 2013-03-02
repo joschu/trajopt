@@ -2,7 +2,7 @@
 #include "trajopt/kinematic_constraints.hpp"
 #include "trajopt/utils.hpp"
 #include "trajopt/rave_utils.hpp"
-#include "utils/logging1.hpp"
+#include "utils/logging.hpp"
 #include "sco/expr_ops.hpp"
 #include "sco/modeling_utils.hpp"
 #include <boost/format.hpp>

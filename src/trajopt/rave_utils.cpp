@@ -1,7 +1,7 @@
 #include "rave_utils.hpp"
 using namespace OpenRAVE;
 #include <boost/foreach.hpp>
-#include "utils/logging1.hpp"
+#include "utils/logging.hpp"
 #include <Eigen/Core>
 #include "typedefs.hpp"
 using namespace std;

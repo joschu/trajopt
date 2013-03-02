@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "sco/solver_interface.hpp"
-#include "utils/logging1.hpp"
+#include "utils/logging.hpp"
 #include "sco/expr_ops.hpp"
 #include <cstdio>
 #include <boost/foreach.hpp>

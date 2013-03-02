@@ -1,5 +1,5 @@
 #include "modeling.hpp"
-#include "utils/logging1.hpp"
+#include "utils/logging.hpp"
 #include <boost/format.hpp>
 #include <boost/foreach.hpp>
 #include <cstdio>

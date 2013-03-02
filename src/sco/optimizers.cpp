@@ -1,6 +1,6 @@
 #include "optimizers.hpp"
 #include "modeling.hpp"
-#include "utils/logging1.hpp"
+#include "utils/logging.hpp"
 #include <boost/foreach.hpp>
 #include "solver_interface.hpp"
 #include "expr_ops.hpp"

@@ -3,7 +3,7 @@
 #include "sco/expr_op_overloads.hpp"
 #include "sco/modeling_utils.hpp"
 #include "sco/sco_common.hpp"
-#include "utils/logging1.hpp"
+#include "utils/logging.hpp"
 #include <cmath>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>

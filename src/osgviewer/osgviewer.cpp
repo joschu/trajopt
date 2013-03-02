@@ -14,6 +14,7 @@
 #include <osg/BlendFunc>
 #include <osg/io_utils>
 #include <iostream>
+#include "utils/logging.hpp"
 
 using namespace osg;
 using namespace OpenRAVE;
@@ -106,7 +107,7 @@ Node* osgNodeFromGeom(const KinBody::Link::Geometry& geom) {
     break;
   }
   default:
-    RAVELOG_ERROR("don't know how to make an osg node for geometry of type %i", geom.GetType());
+    LOG_ERROR("don't know how to make an osg node for geometry of type %i", geom.GetType());
     break;
   }
 
@@ -362,12 +363,12 @@ bool OSGViewer::EventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GU
 boost::shared_ptr<OSGViewer> OSGViewer::GetOrCreate(OpenRAVE::EnvironmentBasePtr env) {
   ViewerBasePtr viewer = env->GetViewer("osg");
   if (!viewer) {
-    RAVELOG_INFO("creating viewer\n");
+    LOG_INFO("creating viewer");
     viewer = ViewerBasePtr(new OSGViewer(env));
     env->AddViewer(viewer);
   }
   else {
-    RAVELOG_INFO("already have a viewer for this environment\n");
+    LOG_INFO("already have a viewer for this environment");
   }
   return boost::dynamic_pointer_cast<OSGViewer>(viewer);
 }
@@ -411,7 +412,7 @@ void OSGViewer::Idle() {
   else { // start idling
     m_idling = true;
     m_request_stop_idling=false;
-    RAVELOG_INFO("press p to stop idling\n");
+    LOG_INFO("press p to stop idling");
     while (!m_viewer.done() && !m_request_stop_idling) {
       m_viewer.frame();
       sleep(.025);
@@ -438,7 +439,7 @@ KinBodyGroup* GetOsgGroup(KinBody& body) {
 }
 KinBodyGroup* CreateOsgGroup(KinBody& body) {
   assert(!body.GetUserData("osg"));
-  RAVELOG_DEBUG("creating graphics for kinbody %s\n", body.GetName().c_str());
+  LOG_DEBUG("creating graphics for kinbody %s", body.GetName().c_str());
   osg::Node* node = osgNodeFromKinBody(body);
   UserDataPtr rph = UserDataPtr(new RefPtrHolder(node));
   body.SetUserData("osg", rph);
@@ -474,7 +475,7 @@ void OSGViewer::AddKeyCallback(int key, const KeyCallback& cb, const std::string
     m_handler->key_cbs[key] = cb;
     m_handler->descs[key] = help;
   }
-  else RAVELOG_ERROR("error: key %c was already bound!\n", key);
+  else LOG_ERROR("error: key %c was already bound!", key);
 
 }
 
@@ -491,7 +492,7 @@ void OSGViewer::PrintHelp() {
   for (EventHandler::Key2Desc::iterator it = m_handler->descs.begin(); it != m_handler->descs.end(); ++it) {
     ss << boost::format("%c:       %s\n")%((char)it->first)%(it->second);
   }
-  RAVELOG_INFO(ss.str().c_str());
+  LOG_INFO(ss.str().c_str());
 }
 
 
@@ -590,7 +591,7 @@ GraphHandlePtr OSGViewer::PlotLink(KinBody::LinkPtr link) {
 
   vector<KinBody::LinkPtr>::iterator it = std::find(orig->links.begin(), orig->links.end(), link);
   if (it == orig->links.end()) {
-    RAVELOG_ERROR("want to plot link %s, can't find it\n", link->GetName().c_str());
+    LOG_ERROR("want to plot link %s, can't find it", link->GetName().c_str());
     return GraphHandlePtr();
   }
 

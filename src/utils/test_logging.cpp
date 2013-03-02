@@ -1,4 +1,4 @@
-#include "logging1.hpp"
+#include "logging.hpp"
 
 int main() {
   LOG_FATAL("fatal");

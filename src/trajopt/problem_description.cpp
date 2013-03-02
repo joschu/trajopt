@@ -1,7 +1,7 @@
 #include "trajopt/problem_description.hpp"
 #include "trajopt/common.hpp"
 #include <boost/foreach.hpp>
-#include "utils/logging1.hpp"
+#include "utils/logging.hpp"
 #include "sco/expr_ops.hpp"
 #include "trajopt/kinematic_constraints.hpp"
 #include "trajopt/collision_avoidance.hpp"
