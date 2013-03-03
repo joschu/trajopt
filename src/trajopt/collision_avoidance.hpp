@@ -10,9 +10,6 @@ namespace trajopt {
 
 typedef std::map<const OR::KinBody::Link*, int> Link2Int;
 
-class SceneState;
-typedef boost::shared_ptr<SceneState> SceneStatePtr;
-
 
 struct CollisionEvaluator {
   virtual void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights) = 0;

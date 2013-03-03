@@ -19,24 +19,27 @@ namespace trajopt {
 
 class SceneStateSetter {
 public:
-  SceneStateSetter(OR::EnvironmentBasePtr env, SceneStatePtr new_state) {
-    if (new_state) {
-      BOOST_FOREACH(ObjectStatePtr& o, new_state->obj_states) {
-        m_savers.push_back(new KinBody::KinBodyStateSaver(o->body));
-        o->body->SetTransform(toRaveTransform(o->wxyz, o->xyz));
-        o->body->SetDOFValues(o->dof_vals, true, o->dof_inds);
-      }      
-    }
-  }
-  ~SceneStateSetter() {
-    BOOST_FOREACH(KinBody::KinBodyStateSaver* s, m_savers) {
-      delete s;
-    }
-  }
+  SceneStateSetter(OR::EnvironmentBasePtr env, SceneStatePtr new_state);
+  ~SceneStateSetter();
 private:
   vector<KinBody::KinBodyStateSaver*> m_savers;
+  typedef boost::shared_ptr<SceneStateSetter> SceneStateSetterPtr;
 };
-typedef boost::shared_ptr<SceneStateSetter> SceneStateSetterPtr;
+SceneStateSetter::SceneStateSetter(OR::EnvironmentBasePtr env, SceneStatePtr new_state) {
+  if (new_state) {
+    BOOST_FOREACH(ObjectStatePtr& o, new_state->obj_states) {
+      m_savers.push_back(new KinBody::KinBodyStateSaver(o->body));
+      o->body->SetTransform(toRaveTransform(o->wxyz, o->xyz));
+      o->body->SetDOFValues(o->dof_vals, true, o->dof_inds);
+    }      
+  }
+}
+SceneStateSetter::~SceneStateSetter() {
+  BOOST_FOREACH(KinBody::KinBodyStateSaver* s, m_savers) {
+    delete s;
+  }
+}
+
 
 void CollisionsToDistances(const vector<Collision>& collisions, const Link2Int& m_link2ind,
     DblVec& dists, DblVec& weights) {
