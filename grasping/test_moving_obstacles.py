@@ -4,16 +4,32 @@ parser.add_argument("--interactive", action="store_true")
 parser.add_argument("--position_only", action="store_true")
 args = parser.parse_args()
 
-import openravepy
+import openravepy as rave
 import trajoptpy
+import trajoptpy.kin_utils as ku
+import trajoptpy.make_kinbodies as mk
+import bulletsimpy
 import json
 import numpy as np
-import trajoptpy.kin_utils as ku
 
-env = openravepy.Environment()
+env = rave.Environment()
 env.StopSimulation()
 env.Load("robots/pr2-beta-static.zae")
 env.Load("../data/table.xml")
+
+bullet_env = bulletsimpy.LoadFromRave(env, 'table')
+bullet_env.SetGravity([0, 0, -9.8])
+
+dyn_obj_names = []
+dyn_objs = [bullet_env.GetObjectByName(name) for name in dyn_obj_names]
+
+# simulate for a few steps first to stabilize
+for i in range(20):
+  bullet_env.Step(0.01, 100, 0.01)
+for o in dyn_objs:
+  env.GetKinBody(o.GetName()).SetTransform(o.GetTransform())
+env.UpdatePublishedBodies()
+
 
 trajoptpy.SetInteractive(args.interactive) # pause every iteration, until you press 'p'. Press escape to disable further plotting
 
@@ -23,14 +39,13 @@ robot.SetDOFValues(joint_start, robot.GetManipulator('rightarm').GetArmIndices()
 
 quat_target = [0.98555024,  0.12101977,  0.10129305, -0.06151951] # wxyz
 xyz_target = [0.65540048, -0.34836676,  0.44726639]
-hmat_target = openravepy.matrixFromPose( np.r_[quat_target, xyz_target] )
+hmat_target = rave.matrixFromPose( np.r_[quat_target, xyz_target] )
 
 # BEGIN ik
 manip = robot.GetManipulator("rightarm")
 init_joint_target = ku.ik_for_link(hmat_target, manip, "r_gripper_tool_frame",
-    filter_options = openravepy.IkFilterOptions.CheckEnvCollisions)
+    filter_options = rave.IkFilterOptions.CheckEnvCollisions)
 # END ik
-
 
 request = {
   "basic_info" : {
@@ -99,7 +114,7 @@ assert traj_is_safe(result.GetTraj(), robot) # Check that trajectory is collisio
 
 # Now we'll check to see that the final constraint was satisfied
 robot.SetActiveDOFValues(result.GetTraj()[-1])
-posevec = openravepy.poseFromMatrix(robot.GetLink("r_gripper_tool_frame").GetTransform())
+posevec = rave.poseFromMatrix(robot.GetLink("r_gripper_tool_frame").GetTransform())
 quat, xyz = posevec[0:4], posevec[4:7]
 
 quat *= np.sign(quat.dot(quat_target))

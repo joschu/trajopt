@@ -18,6 +18,7 @@ public:
   DblVec GetDOFValues();
   int GetDOF() const;
   IntVec GetJointIndices() const {return joint_inds;}
+  int GetAffineDOFs() const {return affinedofs;}
   DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const;
   DblMatrix RotationJacobian(int link_ind) const;
   OR::RobotBasePtr GetRobot() const {return robot;}

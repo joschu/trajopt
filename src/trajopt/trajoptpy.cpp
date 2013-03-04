@@ -77,6 +77,9 @@ public:
     vector<int> inds = m_prob->GetRAD()->GetJointIndices();
     return toPyList(inds);
   }
+  int GetAffineDOFs() {
+    return m_prob->GetRAD()->GetAffineDOFs();
+  }
   void SetRobotActiveDOFs() {
     m_prob->GetRAD()->SetRobotActiveDOFs();
   }
@@ -329,6 +332,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
 
   py::class_<PyTrajOptProb>("TrajOptProb", py::no_init)
       .def("GetDOFIndices", &PyTrajOptProb::GetDOFIndices)
+      .def("GetAffineDOFs", &PyTrajOptProb::GetAffineDOFs)
       .def("SetRobotActiveDOFs", &PyTrajOptProb::SetRobotActiveDOFs, "Sets the active DOFs of the robot to the DOFs in the optimization problem")
       .def("AddConstraint", &PyTrajOptProb::AddConstraint1, "Add constraint from python function (using numerical differentiation)", (py::arg("f"),"var_ijs","constraint_type","name"))
       .def("AddConstraint", &PyTrajOptProb::AddConstraint2, "Add constraint from python error function and analytic derivative", (py::arg("f"),"dfdx","var_ijs","constraint_type","name"))
