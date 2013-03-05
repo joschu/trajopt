@@ -28,3 +28,10 @@ bigdata/*
 !bigdata/*.py
 sphinx_build
 dox_build
+.hg
+ext/rbdl/addons
+ext/rbdl/src/Eigen
+ext/rbdl/vendor
+ext/rbdl/doc
+*.vcproj
+*.sln
