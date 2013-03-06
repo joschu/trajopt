@@ -9,21 +9,24 @@ namespace util {
 LogLevel gLogLevel;
 
 int LoggingInit() {
+  const char* VALID_THRESH_VALUES = "FATAL ERROR WARN INFO DEBUG TRACE";
+
   char* lvlc = getenv("TRAJOPT_LOG_THRESH");
   string lvlstr;
   if (lvlc == NULL) {
-    printf("you can set logging level with TRAJOPT_LOG_THRESH. defaulting to INFO\n");
+    printf("You can set logging level with TRAJOPT_LOG_THRESH. Valid values: %s. Defaulting to INFO\n", VALID_THRESH_VALUES);
     lvlstr = "INFO";
   }
   else lvlstr = string(lvlc);
   if (lvlstr == "FATAL") gLogLevel = LevelFatal;
   else if (lvlstr == "ERROR") gLogLevel =  LevelError;
+  else if (lvlstr == "WARN") gLogLevel = LevelWarn;
   else if (lvlstr == "INFO") gLogLevel = LevelInfo;
   else if (lvlstr == "DEBUG") gLogLevel = LevelDebug;
   else if (lvlstr == "TRACE") gLogLevel = LevelTrace;
   else {
     printf("Invalid value for environment variable TRAJOPT_LOG_THRESH: %s\n", lvlstr.c_str());
-    printf("Valid values: FATAL ERROR INFO DEBUG TRACE\n");
+    printf("Valid values: %s\n", VALID_THRESH_VALUES);
     abort();
   }
   return 1;  

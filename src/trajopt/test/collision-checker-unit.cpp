@@ -90,14 +90,15 @@ TEST(collision_checker, box_distance) {
 
 }
 
-#define EXPECT_VECTOR_NEAR(vec0, vec1, abstol)\
-if (fabs(vec0.x  - vec1.x) > abstol || \
-    fabs(vec0.x  - vec1.x) > abstol ||\
-    fabs(vec0.x  - vec1.x) > abstol) {\
-    char msg[1000];\
-    sprintf(msg, "%s != %s    (tol %.2e) at %s:%i\n", CSTR(vec0), CSTR(vec1), abstol, __FILE__, __LINE__);\
-    GTEST_NONFATAL_FAILURE_(msg);\
-}
+#define EXPECT_VECTOR_NEAR(_vec0, _vec1, abstol)\
+    OpenRAVE::Vector vec0=_vec0, vec1=_vec1;\
+    if (fabs(vec0.x  - vec1.x) > abstol || \
+        fabs(vec0.x  - vec1.x) > abstol ||\
+        fabs(vec0.x  - vec1.x) > abstol) {\
+      char msg[1000];\
+      sprintf(msg, "%s != %s    (tol %.2e) at %s:%i\n", CSTR(vec0), CSTR(vec1), abstol, __FILE__, __LINE__);\
+      GTEST_NONFATAL_FAILURE_(msg);\
+    }
 
 TEST(continuous_collisions, boxes) {
   EnvironmentBasePtr env = RaveCreateEnvironment();
@@ -120,13 +121,13 @@ TEST(continuous_collisions, boxes) {
   }
   
   #define TRAJ_TEST_BOILERPLATE\
-  RobotAndDOFPtr rad(new RobotAndDOF(boxbot, IntVec(), DOF_X | DOF_Y, Vector()));\
-  vector<Collision> collisions;\
-  checker->CastVsAll(*rad, rad->GetRobot()->GetLinks(), toDblVec(traj.row(0)), toDblVec(traj.row(1)), collisions);\
-  ASSERT_EQ(collisions.size(), 1);\
-  Collision col = collisions[0];\
-  Vector robot_normal = (float)(col.linkA == boxbot->GetLinks()[0].get() ? 1. : -1.) * col.normalB2A;
-  
+    RobotAndDOFPtr rad(new RobotAndDOF(boxbot, IntVec(), DOF_X | DOF_Y, Vector()));\
+    vector<Collision> collisions;\
+    checker->CastVsAll(*rad, rad->GetRobot()->GetLinks(), toDblVec(traj.row(0)), toDblVec(traj.row(1)), collisions);\
+    ASSERT_EQ(collisions.size(), 1);\
+    Collision col = collisions[0];\
+    Vector robot_normal = (float)(col.linkA == boxbot->GetLinks()[0].get() ? 1. : -1.) * col.normalB2A;
+
   {
     TrajArray traj(2,2);
     traj << -1.9,0,  0,1.9;
