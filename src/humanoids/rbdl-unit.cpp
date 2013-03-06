@@ -257,6 +257,27 @@ TEST(floating_base, dynamics) {
 
 }
 
+TEST(fixed_base, invdynamics) {
+
+  EnvironmentBasePtr env = RaveCreateEnvironment();
+  env->StopSimulation();
+  env->Load("robots/puma.robot.xml");
+  RobotBasePtr robot = GetRobot(*env);
+
+  std::map<KinBody::LinkPtr, unsigned> link2id;
+  boost::shared_ptr<rbd::Model> model = MakeRBDLModel(robot, false, link2id);
+
+  VectorXd Q = VectorXd::Zero(robot->GetDOF());
+  VectorXd QDot = VectorXd::Zero(robot->GetDOF());
+  VectorXd QDDot = VectorXd::Zero(robot->GetDOF());
+  VectorXd Tau = VectorXd::Zero(robot->GetDOF());
+  rbd::InverseDynamics(*model, Q, QDot, QDDot, Tau, NULL);
+  DblVec tau_rave;
+  robot->SetDOFVelocities(toDblVec(QDot));
+  robot->ComputeInverseDynamics(tau_rave, toDblVec(QDDot));
+  EXPECT_MATRIX_NEAR(toVectorXd(tau_rave), Tau, 1e-4);
+}
+
 
 int main(int argc, char** argv)
 {
