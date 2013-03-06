@@ -21,8 +21,8 @@ robot = env.GetRobots()[0]
 joint_start = [-1.832, -0.332, -1.011, -1.437, -1.1  , -2.106,  3.074]
 robot.SetDOFValues(joint_start, robot.GetManipulator('rightarm').GetArmIndices())
 
-quat_target = [0.98555024,  0.12101977,  0.10129305, -0.06151951] # wxyz
-xyz_target = [0.65540048, -0.34836676,  0.44726639]
+quat_target = [1,0,0,0] # wxyz
+xyz_target = [6.51073449e-01,  -1.87673551e-01, 4.91061915e-01]
 hmat_target = openravepy.matrixFromPose( np.r_[quat_target, xyz_target] )
 
 # BEGIN ik

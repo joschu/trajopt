@@ -307,6 +307,11 @@ TrajOptProb::TrajOptProb(int n_steps, RobotAndDOFPtr rad) : m_rad(rad) {
   DblVec lower, upper;
   m_rad->GetDOFLimits(lower, upper);
   int n_dof = m_rad->GetDOF();
+  // put optimization joint limits a little inside robot joint limits
+  // so numerical derivs work
+  for (int i=0; i < n_dof; ++i) lower[i] += 1e-4;
+  for (int i=0; i < n_dof; ++i) upper[i] -= 1e-4;
+
   vector<double> vlower, vupper;
   vector<string> names;
   for (int i=0; i < n_steps; ++i) {
