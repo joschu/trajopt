@@ -3,7 +3,7 @@
 #include <boost/foreach.hpp>
 #include "trajopt/utils.hpp"
 #include "trajopt/rave_utils.hpp"
-
+#include <rbdl_utils.h>
 using namespace OpenRAVE;
 using namespace Eigen;
 using namespace trajopt;
@@ -32,22 +32,23 @@ OpenRAVE::Transform toRave(const rbdmath::SpatialTransform& T) {
 }
 
 
-boost::shared_ptr<rbd::Model> MakeRBDLModel(OpenRAVE::RobotBasePtr robot, Link2ID& link2id) {
+boost::shared_ptr<rbd::Model> MakeRBDLModel(OpenRAVE::RobotBasePtr robot, bool floating_base, Link2ID& link2id) {
   boost::shared_ptr<rbd::Model> model(new rbd::Model());
   model->Init();
   model->gravity = Vector3d (0., 0, -9.81);
 
-  KinBody::LinkPtr base_link = robot->GetJoints().empty() ? robot->GetLinks()[0] : robot->GetJoints()[0]->GetHierarchyParentLink();
 
+  KinBody::LinkPtr base_link = robot->GetJoints().empty() ? robot->GetLinks()[0] : robot->GetJoints()[0]->GetHierarchyParentLink();
+  unsigned base_id = 0;
+  if (floating_base) base_id = model->SetFloatingBaseBody(rbd::Body(base_link->GetMass(), toVector3d(base_link->GetLocalCOM()), toMatrix3d(base_link->GetLocalInertia())));
+
+  printf("base id: %i\n",base_id);
   map<KinBody::LinkPtr, OpenRAVE::Transform> link2Tjl;
 
-  link2id[base_link] = 0;
+  link2id[base_link] = base_id;
   link2Tjl[base_link] = robot->GetTransform().inverse() * base_link->GetTransform(); // T_robot_base
 
   BOOST_FOREACH(const KinBody::JointPtr& joint, robot->GetJoints()) {
-
-    link2id[robot->GetLinks()[0]] = 0;
-    link2Tjl[robot->GetLinks()[0]] = OpenRAVE::Transform(); // identity
 
 
 
@@ -71,7 +72,9 @@ boost::shared_ptr<rbd::Model> MakeRBDLModel(OpenRAVE::RobotBasePtr robot, Link2I
 
   }
 
-
+//  cout << rbd::Utils::GetModelHierarchy (*model) << endl;
+//  cout << rbd::Utils::GetModelDOFOverview (*model) << endl;
+//  cout << rbd::Utils::GetNamedBodyOriginsOverview(*model) << endl;
   return model;
 
 

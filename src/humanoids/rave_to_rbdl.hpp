@@ -20,6 +20,6 @@ namespace trajopt {
   TRAJOPT_API OpenRAVE::Transform toRave(const rbdmath::SpatialTransform& T);
 
   typedef std::map<OpenRAVE::KinBody::LinkPtr, unsigned> Link2ID;
-  TRAJOPT_API boost::shared_ptr<rbd::Model> MakeRBDLModel(OpenRAVE::RobotBasePtr robot, Link2ID& link2id);
+  TRAJOPT_API boost::shared_ptr<rbd::Model> MakeRBDLModel(OpenRAVE::RobotBasePtr robot, bool floating_base, Link2ID& link2id);
 
 }

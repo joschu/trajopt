@@ -21,6 +21,7 @@ add_library(humanoids humanoids.cpp
 target_link_libraries(humanoids sco trajopt ${OpenRAVE_BOTH_LIBRARIES} rbdl)
 
 add_definitions(-DDATA_DIR="${CMAKE_SOURCE_DIR}/data")
+add_definitions(-DBIGDATA_DIR="${CMAKE_SOURCE_DIR}/bigdata")
 
 include_directories(${PYTHON_NUMPY_INCLUDE_DIR})
 boost_python_module(humanoidspy humanoidspy.cpp)
