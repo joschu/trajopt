@@ -14,13 +14,15 @@ using std::vector;
 
 enum OptStatus {
   OPT_CONVERGED,
-  OPT_ITERATION_LIMIT, // hit iteration limit before convergence
+  OPT_SCO_ITERATION_LIMIT, // hit iteration limit before convergence
+  OPT_PENALTY_ITERATION_LIMIT,
   OPT_FAILED,
   INVALID
 };
 static const char* OptStatus_strings[]  = {
   "CONVERGED",
-  "ITERATION_LIMIT",
+  "SCO_ITERATION_LIMIT",
+  "PENALTY_ITERATION_LIMIT",
   "FAILED",
   "INVALID"
 };
