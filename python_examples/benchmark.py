@@ -1,6 +1,6 @@
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("scenefile",choices=["tabletop", "bookshelves_modified", "kitchen_counter"] )
+parser.add_argument("scenefile",choices=["tabletop", "bookshelves", "kitchen_counter"] )
 parser.add_argument("--multi_init",type=bool, default=True)
 parser.add_argument("--pose_goal", action="store_true")
 parser.add_argument("--interactive", action="store_true")
@@ -43,7 +43,7 @@ if args.scenefile == "tabletop":
         0.   ,  0.   ,  0.   , -0.658,  0.889, -1.431, -1.073, -0.705,
        -1.107,  2.807,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ]
     manip = "leftarm"   
-elif args.scenefile == "bookshelves_modified": 
+elif args.scenefile == "bookshelves": 
     dof_vals = \
         [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.849,
