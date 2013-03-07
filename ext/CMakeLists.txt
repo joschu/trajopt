@@ -1,4 +1,6 @@
 #add_subdirectory(bullet)
 add_subdirectory(gtest)
 add_subdirectory(json)
-add_subdirectory(rbdl)
+if (BUILD_HUMANOIDS)
+  add_subdirectory(rbdl)
+endif()
