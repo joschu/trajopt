@@ -395,6 +395,7 @@ OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false) 
   AddKeyCallback('p', boost::bind(&OSGViewer::Idle, this), "Toggle idle");
   AddKeyCallback(osgGA::GUIEventAdapter::KEY_Escape, &throw_runtime_error, "Quit (raise exception)");
   PrintHelp();
+  m_viewer.setRunFrameScheme(osgViewer::ViewerBase::ON_DEMAND);
 }
 
 int OSGViewer::main(bool bShow) {
@@ -414,8 +415,8 @@ void OSGViewer::Idle() {
     m_request_stop_idling=false;
     LOG_INFO("press p to stop idling");
     while (!m_viewer.done() && !m_request_stop_idling) {
-      m_viewer.frame();
-      sleep(.025);
+      if (m_viewer.checkNeedToDoFrame()) m_viewer.frame();
+      usleep(.03*1e6);
     }
     m_idling=false;
   }
