@@ -310,6 +310,7 @@ public:
     return m_allowedCollisionMatrix(cow0->m_index, cow1->m_index);
   }
   void SetLinkIndices();
+  void UpdateAllowedCollisionMatrix();
   void CheckShapeCast(btCollisionShape* shape, const btTransform& tf0, const btTransform& tf1,
       CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions);
 
@@ -331,7 +332,7 @@ struct CollisionCollector : public btCollisionWorld::ContactResultCallback {
     const KinBody::Link* linkB = getLink(colObj1Wrap->getCollisionObject());
     m_collisions.push_back(Collision(linkA, linkB, toOR(cp.m_positionWorldOnA), toOR(cp.m_positionWorldOnB),
         toOR(cp.m_normalWorldOnB), cp.m_distance1));
-    LOG_DEBUG("collide %s-%s", linkA->GetName().c_str(), linkB->GetName().c_str());
+    LOG_DEBUG("CollisionCollector: adding collision %s-%s", linkA->GetName().c_str(), linkB->GetName().c_str());
     return 1;
   }
   bool needsCollision(btBroadphaseProxy* proxy0) const {
@@ -537,16 +538,19 @@ void BulletCollisionChecker::SetLinkIndices() {
   }
   m_allowedCollisionMatrix.resize(objs.size(), objs.size());
   m_allowedCollisionMatrix.setOnes();
+}
+
+void BulletCollisionChecker::UpdateAllowedCollisionMatrix() {
   BOOST_FOREACH(const LinkPair& pair, m_excludedPairs) {
     const KinBody::Link* linkA = pair.first;
     const KinBody::Link* linkB = pair.second;
     const CollisionObjectWrapper* cowA = GetCow(linkA);
-    const CollisionObjectWrapper* cowB = GetCow(linkA);
+    const CollisionObjectWrapper* cowB = GetCow(linkB);
     assert(cowA != NULL && cowB != NULL);
     m_allowedCollisionMatrix(cowA->m_index, cowB->m_index) = 0;
     m_allowedCollisionMatrix(cowB->m_index, cowA->m_index) = 0;
+    LOG_WARN("%s:%i %s:%i", linkA->GetName().c_str(), cowA->m_index, linkB->GetName().c_str(), cowB->m_index);
   }
-
 }
 
 void BulletCollisionChecker::UpdateBulletFromRave() {
@@ -556,9 +560,13 @@ void BulletCollisionChecker::UpdateBulletFromRave() {
     LOG_DEBUG("need to add and remove stuff");
     AddAndRemoveBodies(bodies, m_prevbodies, addedBodies);
     m_prevbodies=bodies;
+    float contactDistanceOld = GetContactDistance();
+    SetContactDistance(.1);
     BOOST_FOREACH(const KinBodyPtr& body, addedBodies) {
       IgnoreZeroStateSelfCollisions(body);
     }
+    SetContactDistance(contactDistanceOld);
+    UpdateAllowedCollisionMatrix();
   }
   else {
     LOG_DEBUG("don't need to add or remove stuff");
