@@ -46,7 +46,7 @@ def move_arm_straight_request(manip, n_steps, link_name, xyz_start, xyz_end, qua
     hmats = [rave.matrixFromPose(np.r_[quat,xyz]) for (xyz,quat) in zip(xyzs, quats)]
     def ikfunc(hmat):
         return ku.ik_for_link(hmat, manip, link_name, return_all_solns=True)
-    def nodecost(joints):
+    def nodecost(joints, _):
         robot = manip.GetRobot()
         saver = rave.Robot.RobotStateSaver(robot)
         robot.SetDOFValues(joints, manip.GetArmJoints())
@@ -63,18 +63,18 @@ def move_arm_straight_request(manip, n_steps, link_name, xyz_start, xyz_end, qua
         path_init = paths[i_best]
     for i in xrange(1, n_steps-1):
         print "waypoint xyz", xyzs[i]
-        waypoint_cnt = {
+        waypoint_term = {
             "type" : "pose",
             "name" : "waypoint_pose",
             "params" : {
                 "xyz" : list(xyzs[i]),
                 "wxyz" : list(quats[i]),
                 "link" : link_name,
-                #"pos_coeffs" : [10,10,10],
-                #"rot_coeffs" : [10,10,10],
+                "pos_coeffs" : [10,10,10],
+                "rot_coeffs" : [10,10,10],
                 "timestep" : i
             }}
-        request["constraints"].append(waypoint_cnt)
+        request["costs"].append(waypoint_term)
     request["init_info"]["type"] = "given_traj"
     request["init_info"]["data"] = [x.tolist() for x in path_init]
 
@@ -89,7 +89,7 @@ def main():
     MANIP_NAME = "leftarm"
     N_STEPS = 15
     LINK_NAME = "l_gripper_tool_frame"
-    XYZ_TARGET = [.5,0,.9]
+    XYZ_TARGET = [.5,0,1]
     QUAT_TARGET = [1,0,0,0]
     INTERACTIVE = True
     ##################
