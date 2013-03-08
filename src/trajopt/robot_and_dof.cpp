@@ -30,6 +30,11 @@ DblVec RobotAndDOF::GetDOFValues() {
   return out;
 }
 
+void RobotAndDOF::SetRobotActiveDOFs()  {
+  vector<int> current_active = robot->GetActiveDOFIndices();
+  if (!std::equal(current_active.begin(), current_active.end(), joint_inds.begin()))
+    robot->SetActiveDOFs(joint_inds, affinedofs);
+}
 
 void RobotAndDOF::GetDOFLimits(DblVec& lower, DblVec& upper) const {
   robot->GetDOFLimits(lower, upper, joint_inds);

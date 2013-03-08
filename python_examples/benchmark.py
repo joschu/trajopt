@@ -133,7 +133,6 @@ def plan(robot, manip, end_joints, end_pose = None):
         return PlanResult(True, time()-t_start)
         
         
-print args.interactive
 trajoptpy.SetInteractive(args.interactive)
 env = openravepy.Environment()
 env.StopSimulation()
