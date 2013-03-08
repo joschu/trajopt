@@ -13,13 +13,15 @@ Full source code:  :file:`python_examples/arm_to_joint_target.py`
 The following script will plan to get the right arm to a joint-space target.
 It is assumed that the robot's current state is the start state, so make sure you set the robots DOFs appropriately.
 
-The optimization will pause at every iteration and plot the current trajectory. Press 'p' to un-pause. To disable plotting and pausing, change the statement to :code:`trajoptpy.SetInteractive(False)`.
+The optimization will go very fast (the main waiting time is from loading the robot files). 
+To see the optimization in action, run the script with the option ``--interactive=True``. 
+The optimization will pause at every iteration and plot the current trajectory and contacts. Press 'p' to unpause and continue.
 
 .. literalinclude:: ../python_examples/arm_to_joint_target.py
 
-Every problem description contains four sections: basic_info, costs, constraints, and init_info. (TODO: describe the syntax).
+Every problem description contains four sections: basic_info, costs, constraints, and init_info (i.e., initialization info).
 
-Here, there are two cost components: joint-space velocity, and the collision penalty. There is one constraint: the final joint state. (TODO: explain the parameters)
+Here, there are two cost components: joint-space velocity, and the collision penalty. There is one constraint: the final joint state. 
 
 Let's inspect the terminal output after running the script. The following lines should appear at the end of the output.
 
@@ -90,8 +92,23 @@ Now you'll notice an extra couple lines of the optimizer output::
 
 As you can see, the pose constraint is satisfied at convergence
 
+
+.. _benchmark:
+
+Increasing reliability with multiple initializations
+-----------------------------------------------------
+
+
+Whether you use a straight-line initialization, stationary initialization, or something else, there's a decent chance that the local optimization will converge to a local minimum which is not collision-free. The solution to this problem is to use multiple initializations. The simplest alternative initialization is of the form Start-Waypoint-Goal, i.e., you linearly interpolate between the start state and a waypoint, and then you linearly interpolate between the waypoint and the goal.
+You can see this strategy in ``benchmark.py``, which uses four waypoints. Using this strategy, the algorithm solves 100% of 204 planning problems in the three provided scenes (tabletop, bookshelves, and kitchen_counter).
+
+
+.. _rollingyourown:
+
 Rolling your own costs and constraints in python
 ---------------------------------------------------
+
+
 Full source code:  :file:`python_examples/this_side_up.py`
 
 This next script shows how you can easily implement your own costs and constraints. The constraint we consider here says that a certain vector defined in the robot gripper frame must point up (in the world coordinates). For example, one might imagine that the robot is holding a glass of water, and we don't want it to spill.
@@ -117,7 +134,7 @@ Now, let's look at the user-defined costs and constraints. We define an vector-v
   :start-after: BEGIN python_funcs
   :end-before: END python_funcs
 
-We add these error functions to the problem as constraints (i.e., that error = 0) with the following lines:
+We add these error functions to the problem as constraints (i.e., that error should equal 0) with the following lines:
 
 .. literalinclude:: ../python_examples/this_side_up.py
   :start-after: BEGIN add_constraints
@@ -129,9 +146,9 @@ Note that in both calls to :code:`AddConstraint`, we pass in the following param
 Similarly to the way we added those constraints, we can also add the error functions as costs, as a hinge, abs, or squared loss, using the function :code:`TrajOptProb.AddErrCost`.
 Or, we can provide a single scalar-valued cost function by using the function :code:`TrajOptProb.AddCost`.
 
-More constraints have been implemented but are not currently documented here.
-One way to find out about which ones have been implemented and what parameters are available is to look at the Doxygen documentation for the subclasses of `CostInfo <../../dox_build/structtrajopt_1_1_cost_info.html>`_ and `CntInfo <../../dox_build/structtrajopt_1_1_cnt_info.html>`_ because each item under "costs" or "constraints" in the JSON document is first converted to one of these structs when the JSON file is read.
 
+
+.. _baseik:
 
 Optimizing the base position and torso height
 -----------------------------------------------
@@ -154,6 +171,11 @@ Numerical IK is very unreliable since the forward kinematics function is so nonl
   :start-after: BEGIN random_init
   :end-before: END random_init
 
+Note that you can also optimize over whole trajectories involving the base and torso. For example, see the section on :ref:`sensor data <sensordata>`.
+
+
+.. _humanoid:
+
 Walking with humanoid robot
 ----------------------------
 
@@ -172,6 +194,8 @@ These planning problems involve pose constraints, as well as a "ZMP" constraint,
 
 Obstacle geometry from sensor data
 ----------------------------------------------
+
+.. _sensordata:
 
 .. note:: To run the example script, you'll need to download the :ref:`test data <bigdata>` and build with the CMake option ``BUILD_CLOUDPROC=ON``.
 

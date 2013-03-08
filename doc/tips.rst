@@ -7,7 +7,7 @@ Optimization gets stuck in a local minimum
 ---------------------------------------------
 
 1. Do a better initialization, preferably one that reaches the goal. Use IK if possible.
-2. Do a random initialization.
+2. Do multiple initializations, e.g. using random waypoints. See :ref:`benchmark` and :ref:`baseik` for examples.
 
 Stationary initialization often doesn't cut it.
 Here's how to initialize in several common types of problem:
@@ -58,4 +58,4 @@ General troubleshooting tips
   1. if you defined your own convexification or analytic derivative, perhaps there is a math error
   2. the convexification does not approximate the function well over the trust region.
   
-  Unforunately, the second case is common, and there's not much you can do about it except change your cost or constraint function to something better behaved.
+  Unforunately, the second case is fairly common, and there's not much you can do about it except change your cost or constraint function to something better behaved.

@@ -25,7 +25,7 @@ Discrete-time collision:
         {
             "type" : "collision",
             "params" : {"coeffs" : [10],"dist_pen" : [0.025], "first_step":0, "last_step":19}
-        },
+        }
 
 Continuous-time collision:
 
@@ -34,4 +34,12 @@ Continuous-time collision:
         {
             "type" : "continuous_collision",
             "params" : {"coeffs" : [10],"dist_pen" : [0.025], "first_step":0, "last_step":19}
-        },
+        }
+        
+Finding out about available costs and constraints
+----------------------------------------------------------------
+
+Some costs and constraints have been implemented but are not currently documented here.
+One way to find out about which ones have been implemented and what parameters are available is to look at the Doxygen documentation for the subclasses of `CostInfo <../../dox_build/structtrajopt_1_1_cost_info.html>`_ and `CntInfo <../../dox_build/structtrajopt_1_1_cnt_info.html>`_ because each item under "costs" or "constraints" in the JSON document is first converted to one of these structs when the JSON file is read.
+
+
