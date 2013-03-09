@@ -373,7 +373,8 @@ boost::shared_ptr<OSGViewer> OSGViewer::GetOrCreate(OpenRAVE::EnvironmentBasePtr
 }
 
 
-OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false) {
+OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false),
+                                               m_plotDecimation(1) {
   m_name = "osg";
   m_root = new Group;
 //  m_viewer = new osgViewer::Viewer();

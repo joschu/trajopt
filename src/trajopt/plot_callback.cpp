@@ -10,7 +10,7 @@ namespace trajopt {
 
 void PlotTraj(OSGViewer& viewer, RobotAndDOF& rad, const TrajArray& x, vector<GraphHandlePtr>& handles) {
   RobotBase::RobotStateSaver saver = rad.Save();
-  for (int i=0; i < x.rows(); ++i) {
+  for (int i=0; i < x.rows(); i+=viewer.m_plotDecimation) {
     rad.SetDOFValues(toDblVec(x.row(i)));
     handles.push_back(viewer.PlotKinBody(rad.GetRobot()));
     SetTransparency(handles.back(), .35);
