@@ -14,7 +14,9 @@ Dependencies
 - CMake
 - boost
 - Eigen
-- Gurobi (though in the future we plan to support other solvers and provide a custom solver)
+- Gurobi [#gurobi]_
+
+.. [#gurobi] We plan to eventually support a solver with a more permissive license.
 
 Instructions
 -------------
@@ -86,7 +88,7 @@ Common installation problems
     [plugindatabase.h:929] /usr/local/share/openrave-0.9/plugins/libbulletrave.so: /usr/local/share/openrave-0.9/plugins/libbulletrave.so: undefined symbol: _ZNK16btCollisionShape17getBoundingSphereER9btVector3Rf
     Segmentation fault (core dumped)
 
-  One crude solution: ``rm /path/to/libbulletrave.so``. OpenRAVE uses ODE rather than Bullet by default, so there's no harm in removing the bullet plugin.
+  This is due to a name collision between a system installation of bullet and the local version in trajopt. One crude solution: ``rm /path/to/libbulletrave.so``. OpenRAVE uses ODE rather than Bullet by default, so there's no harm in removing the bullet plugin.
 
 * *All the python tests fail*. You probably need to set your ``PYTHONPATH``
 

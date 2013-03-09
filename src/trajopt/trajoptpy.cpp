@@ -13,7 +13,7 @@ using std::vector;
 namespace py = boost::python;
 
 
-bool gInteractive = true;
+bool gInteractive = false;
 py::object openravepy, np_mod;
 
 py::list toPyList(const IntVec& x) {

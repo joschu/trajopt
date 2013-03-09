@@ -464,6 +464,7 @@ void OSGViewer::UpdateSceneData() {
     }
     group->update();
   }
+  m_viewer.requestRedraw();
 }
 
 void OSGViewer::AddMouseCallback(const MouseCallback& cb) {
