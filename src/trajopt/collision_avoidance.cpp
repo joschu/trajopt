@@ -31,7 +31,7 @@ SceneStateSetter::SceneStateSetter(OR::EnvironmentBasePtr env, SceneStatePtr new
       m_savers.push_back(new KinBody::KinBodyStateSaver(o->body));
       o->body->SetTransform(toRaveTransform(o->wxyz, o->xyz));
       o->body->SetDOFValues(o->dof_vals, true, o->dof_inds);
-    }      
+    }
   }
 }
 SceneStateSetter::~SceneStateSetter() {

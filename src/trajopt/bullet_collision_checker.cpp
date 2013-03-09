@@ -549,7 +549,6 @@ void BulletCollisionChecker::UpdateAllowedCollisionMatrix() {
     assert(cowA != NULL && cowB != NULL);
     m_allowedCollisionMatrix(cowA->m_index, cowB->m_index) = 0;
     m_allowedCollisionMatrix(cowB->m_index, cowA->m_index) = 0;
-    LOG_WARN("%s:%i %s:%i", linkA->GetName().c_str(), cowA->m_index, linkB->GetName().c_str(), cowB->m_index);
   }
 }
 

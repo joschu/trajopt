@@ -201,23 +201,11 @@ void ProblemConstructionInfo::fromJson(const Value& v) {
   }
 
   gPCI = this;
+
+
   if (v.isMember("costs")) fromJsonArray(v["costs"], cost_infos);
   if (v.isMember("constraints")) fromJsonArray(v["constraints"], cnt_infos);
-
-  if (v.isMember("scene_states")) {
-    fromJsonArray(v["scene_states"], scene_states);
-    // if the user specifies scene states, we must have one for each timestep
-    vector<bool> timestep_satisfied(basic_info.n_steps, false);
-    int num_timesteps_satisfied = 0;
-    BOOST_FOREACH(const SceneStatePtr& state_info, scene_states) {
-      FAIL_IF_FALSE(!timestep_satisfied[state_info->timestep]);
-      timestep_satisfied[state_info->timestep] = true;
-      ++num_timesteps_satisfied;
-    }
-    if (num_timesteps_satisfied != basic_info.n_steps) {
-      PRINT_AND_THROW(boost::format("%d scene states specified, but there are %d steps in the problem") % num_timesteps_satisfied % basic_info.n_steps);
-    }
-  }
+  if (v.isMember("scene_states")) fromJsonArray(v["scene_states"], scene_states, basic_info.n_steps);
 
   childFromJson(v, init_info, "init_info");
   gPCI = NULL;
@@ -295,6 +283,8 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
     }
   }
 
+  prob->SetSceneStates(pci.scene_states);
+
   BOOST_FOREACH(const CostInfoPtr& ci, pci.cost_infos) {
     ci->hatch(*prob);
   }
@@ -302,7 +292,6 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
     ci->hatch(*prob);
   }
 
-  prob->SetSceneStates(pci.scene_states);
   prob->SetInitTraj(pci.init_info.data);
 
   return prob;
@@ -551,7 +540,7 @@ void fromJson(SceneState& ss, const Json::Value& v) {
     PRINT_AND_THROW(boost::format("timestep %d outside of range 0~%d") % ss.timestep % gPCI->basic_info.n_steps);
   }
   FAIL_IF_FALSE(v.isMember("obj_states"));
-  fromJsonArray(v["obj_states"], ss.obj_states);
+  fromJsonArray(v["obj_states"], ss.obj_states);  
 }
 void fromJson(const Json::Value& v, SceneStatePtr& p) {
   p.reset(new SceneState);
