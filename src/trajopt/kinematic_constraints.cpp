@@ -176,9 +176,9 @@ void CartPoseCost::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<O
   DblVec dof_vals = getDblVec(x, vars_);
   calc->manip_->SetDOFValues(dof_vals);
   OR::Transform target = calc->pose_inv_.inverse(), cur = calc->link_->GetTransform();
-  PlotAxes(env, cur, .1,  handles);
-  PlotAxes(env, target, .1,  handles);
-  handles.push_back(env.drawarrow(cur.trans, target.trans, .01, OR::Vector(1,0,1,1)));
+  PlotAxes(env, cur, .05,  handles);
+  PlotAxes(env, target, .05,  handles);
+  handles.push_back(env.drawarrow(cur.trans, target.trans, .005, OR::Vector(1,0,1,1)));
 }
 
 

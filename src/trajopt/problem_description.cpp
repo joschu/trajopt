@@ -343,7 +343,7 @@ void PoseCostInfo::fromJson(const Value& v) {
 
   string linkstr;
   childFromJson(params, linkstr, "link");
-  link = gPCI->rad->GetRobot()->GetLink(linkstr);
+  link = GetLinkMaybeAttached(gPCI->rad->GetRobot(), linkstr);
   if (!link) {
     PRINT_AND_THROW(boost::format("invalid link name: %s")%linkstr);
   }

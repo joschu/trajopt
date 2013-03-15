@@ -9,6 +9,20 @@ def create_trimesh(env, verts, faces, name="mesh"):
   env.Add(body)   
   return body
 
+def create_dummy_body(env, name="dummy"):
+  xml_str = """
+<Environment>
+  <KinBody name="%s">
+    <Body type="static" name="%s">
+    </Body>
+  </KinBody>
+</Environment>
+"""%( name,name)
+  loadsuccess = env.LoadData(xml_str)
+  assert loadsuccess
+  return env.GetKinBody(name)
+  
+
 def create_box_from_bounds(env, bounds, name="box"):
   xmin, xmax, ymin, ymax, zmin, zmax = bounds
   xml_str = """

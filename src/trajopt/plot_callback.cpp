@@ -4,15 +4,22 @@
 #include "utils/eigen_conversions.hpp"
 #include <boost/foreach.hpp>
 #include "trajopt/problem_description.hpp"
+#include <set>
 using namespace OpenRAVE;
 using namespace util;
 namespace trajopt {
 
+
+
 void PlotTraj(OSGViewer& viewer, RobotAndDOF& rad, const TrajArray& x, vector<GraphHandlePtr>& handles) {
+  std::set<KinBodyPtr> bodies;
+  rad.GetRobot()->GetAttached(bodies);
   for (int i=0; i < x.rows(); ++i) {
     rad.SetDOFValues(toDblVec(x.row(i)));
-    handles.push_back(viewer.PlotKinBody(rad.GetRobot()));
-    SetTransparency(handles.back(), .35);
+    BOOST_FOREACH(const KinBodyPtr& body, bodies) {
+      handles.push_back(viewer.PlotKinBody(body));
+      SetTransparency(handles.back(), .35);
+    }
   }
 }
 
