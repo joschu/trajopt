@@ -3,6 +3,10 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--interactive", action="store_true")
 args = parser.parse_args()
 
+if openravepy.__version__ < "0.9":
+    raise Exception("this example only works with openrave >= 0.9 due to recent jacobian bugfix")
+
+
 import trajoptpy
 import openravepy as rave
 import numpy as np

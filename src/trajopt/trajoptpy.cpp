@@ -327,6 +327,11 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
   openravepy = py::import("openravepy");
   np_mod = py::import("numpy");
 
+  string pyversion = py::extract<string>(openravepy.attr("__version__"));
+  if (OPENRAVE_VERSION_STRING != pyversion) {
+    PRINT_AND_THROW("the openrave on your pythonpath is different from the openrave version that trajopt links to!");
+  }
+
   py::class_<PyTrajOptProb>("TrajOptProb", py::no_init)
       .def("GetDOFIndices", &PyTrajOptProb::GetDOFIndices)
       .def("SetRobotActiveDOFs", &PyTrajOptProb::SetRobotActiveDOFs, "Sets the active DOFs of the robot to the DOFs in the optimization problem")

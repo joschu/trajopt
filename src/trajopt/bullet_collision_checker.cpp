@@ -10,6 +10,7 @@
 #include <LinearMath/btConvexHull.h>
 #include <utils/stl_to_string.hpp>
 #include "utils/logging.hpp"
+#include "openrave_userdata_utils.hpp"
 using namespace util;
 using namespace std;
 using namespace trajopt;
@@ -465,9 +466,9 @@ void BulletCollisionChecker::AddKinBody(const OR::KinBodyPtr& body) {
   int filterGroup = body->IsRobot() ? RobotFilter : KinBodyFilter;
   const vector<OR::KinBody::LinkPtr> links = body->GetLinks();
 
-  body->SetUserData("bt", cd);
+  SetUserData(*body, "bt", cd);
   
-  bool useTrimesh = body->GetUserData("bt_use_trimesh");
+  bool useTrimesh = GetUserData(*body, "bt_use_trimesh");
   BOOST_FOREACH(const OR::KinBody::LinkPtr& link, links) {
     if (link->GetGeometries().size() > 0) {
       COWPtr new_cow = CollisionObjectFromLink(link, useTrimesh); 
@@ -495,7 +496,7 @@ void BulletCollisionChecker::RemoveKinBody(const OR::KinBodyPtr& body) {
       m_link2cow.erase(link.get());      
     }
   }
-  body->RemoveUserData("bt");
+  RemoveUserData(*body, "bt");
 }
 
 template <typename T>
@@ -521,7 +522,7 @@ void BulletCollisionChecker::AddAndRemoveBodies(const vector<KinBodyPtr>& curVec
   vector<KinBodyPtr> toRemove;
   SetDifferences(curVec, prevVec, toAdd, toRemove);
   BOOST_FOREACH(const KinBodyPtr& body, toAdd) {
-    assert(!body->GetUserData("bt"));
+    assert(!GetUserData(*body, "bt"));
     AddKinBody(body);
   }
   BOOST_FOREACH(const KinBodyPtr& body, toRemove) {
@@ -549,7 +550,6 @@ void BulletCollisionChecker::UpdateAllowedCollisionMatrix() {
     assert(cowA != NULL && cowB != NULL);
     m_allowedCollisionMatrix(cowA->m_index, cowB->m_index) = 0;
     m_allowedCollisionMatrix(cowB->m_index, cowA->m_index) = 0;
-    LOG_WARN("%s:%i %s:%i", linkA->GetName().c_str(), cowA->m_index, linkB->GetName().c_str(), cowB->m_index);
   }
 }
 
