@@ -21,7 +21,10 @@ Dependencies
 Instructions
 -------------
 
-- install OpenRAVE 0.9 or above (currently, that means getting the latest sources) using `instructions on openrave.org <http://openrave.org/docs/latest_stable>`_
+- install OpenRAVE 0.8 or above
+
+.. note:: For best results, install a new version of OpenRAVE (version 0.9) from source. Due to a recent bugfix, optimization over affine DOFs won't work with 0.8. Also, performance benchmarks are noticeably improved for 0.9 (for some unknown reason.)
+
 
 - install OpenSceneGraph, CMake, boost, and Eigen using your package manager. In Ubuntu, that's::
 
