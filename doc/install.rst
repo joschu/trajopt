@@ -23,7 +23,7 @@ Instructions
 
 - install OpenRAVE 0.8 or above
 
-.. note:: For best results, install a new version of OpenRAVE (version 0.9) from source. Due to a recent bugfix, optimization over affine DOFs won't work with 0.8. Also, performance benchmarks are noticeably improved for 0.9 (for some unknown reason.)
+.. note:: For best results, install a new version of OpenRAVE (version 0.9).  Due to a recent bugfix, optimization over affine DOFs won't work with 0.8. You can install from source or use the `openrave testing <https://launchpad.net/~openrave/+archive/testing>`_ PPA.
 
 
 - install OpenSceneGraph, CMake, boost, and Eigen using your package manager. In Ubuntu, that's::

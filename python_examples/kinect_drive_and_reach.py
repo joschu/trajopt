@@ -13,8 +13,7 @@ import trajoptpy.kin_utils as ku
 import trajoptpy.make_kinbodies as mk
 from trajoptpy.check_traj import traj_is_safe
 
-if openravepy.__version__ < "0.9":
-    raise Exception("this example only works with openrave >= 0.9 due to changes in userdata api")
+raise Exception("this example was recently made non-functional by a recent code change for openrave 0.8 compatibility. you can check out revision fc7f9d8a839ceb627fae53847627a961c48ad08c")
 
 def remove_floor(cloud):
     notfloor = get_xyz_world_frame(cloud)[:,2] > .1

@@ -1,6 +1,6 @@
 
 .. |paper| replace:: paper
-.. _paper: ../../coming-soon.pdf
+.. _paper: ../../trajopt-paper.pdf
 
 trajopt: Trajectory Optimization for Motion Planning
 ==================================================================
