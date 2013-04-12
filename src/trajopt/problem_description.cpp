@@ -229,7 +229,7 @@ TrajOptResult::TrajOptResult(OptResults& opt, TrajOptProb& prob) :
 }
 
 TrajOptResultPtr OptimizeProblem(TrajOptProbPtr prob, bool plot) {
-  RobotBase::RobotStateSaver saver = prob->GetRAD()->Save();
+  Configuration::SaverPtr saver = prob->GetRAD()->Save();
   BasicTrustRegionSQP opt(prob);
   opt.max_iter_ = 30;
   opt.min_approx_improve_frac_ = .001;

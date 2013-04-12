@@ -291,8 +291,8 @@ public:
   virtual void AllVsAll(vector<Collision>& collisions);
   virtual void LinksVsAll(const vector<KinBody::LinkPtr>& links, vector<Collision>& collisions);
   virtual void LinkVsAll(const KinBody::Link& link, vector<Collision>& collisions);
-  virtual void ContinuousCheckTrajectory(const TrajArray& traj, RobotAndDOF& rad, vector<Collision>&);
-  virtual void CastVsAll(RobotAndDOF& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions);
+  virtual void ContinuousCheckTrajectory(const TrajArray& traj, Configuration& rad, vector<Collision>&);
+  virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions);
   ////
   ///////
 
@@ -624,7 +624,7 @@ void ContinuousCheckShape(btCollisionShape* shape, const vector<btTransform>& tr
 }
 
 
-void BulletCollisionChecker::ContinuousCheckTrajectory(const TrajArray& traj, RobotAndDOF& rad, vector<Collision>& collisions) {
+void BulletCollisionChecker::ContinuousCheckTrajectory(const TrajArray& traj, Configuration& rad, vector<Collision>& collisions) {
   UpdateBulletFromRave();
   m_world->updateAabbs();
 
@@ -650,7 +650,7 @@ void BulletCollisionChecker::ContinuousCheckTrajectory(const TrajArray& traj, Ro
 
   typedef vector<btTransform> TransformVec;
   vector<TransformVec> link2transforms(links.size(), TransformVec(traj.rows()));
-  RobotBase::RobotStateSaver save = rad.Save();
+  Configuration::SaverPtr save = rad.Save();
 
   for (int iStep=0; iStep < traj.rows(); ++iStep) {
     rad.SetDOFValues(toDblVec(traj.row(iStep)));
@@ -876,9 +876,9 @@ void BulletCollisionChecker::CheckShapeCast(btCollisionShape* shape, const btTra
 
 }
 
-void BulletCollisionChecker::CastVsAll(RobotAndDOF& rad, const vector<KinBody::LinkPtr>& links,
+void BulletCollisionChecker::CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links,
     const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions) {
-  OR::RobotBase::RobotStateSaver saver = rad.Save();
+  Configuration::SaverPtr saver = rad.Save();
   rad.SetDOFValues(startjoints);
   int nlinks = links.size();
   vector<btTransform> tbefore(nlinks), tafter(nlinks);

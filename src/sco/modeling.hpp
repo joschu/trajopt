@@ -174,6 +174,9 @@ public:
   /** Some variables are actually increments, meaning that the trust region should be around zero */
   vector<bool> getIncrementMask() {return incmask_;}
   void setIncrementMask(const vector<bool>& incmask) {incmask_ = incmask;}
+  void setIncremental(const VarVector& vars) {
+    for (int i=0; i < vars.size(); ++i) incmask_[vars[i].var_rep->index] = true;
+  }
 
   vector<ConstraintPtr> getConstraints() const;
   vector<CostPtr>& getCosts() {return costs_;}

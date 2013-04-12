@@ -34,7 +34,7 @@ void CollisionsToDistances(const vector<Collision>& collisions, const Link2Int& 
   }
 }
 
-void CollisionsToDistanceExpressions(const vector<Collision>& collisions, RobotAndDOF& rad,
+void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Configuration& rad,
     const Link2Int& link2ind, const VarVector& vars, const DblVec& dofvals, vector<AffExpr>& exprs, DblVec& weights) {
 
   exprs.clear();
@@ -64,7 +64,7 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, RobotA
   RAVELOG_DEBUG("%i distance expressions\n", exprs.size());
 }
 
-void CollisionsToDistanceExpressions(const vector<Collision>& collisions, RobotAndDOF& rad, const Link2Int& link2ind,
+void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Configuration& rad, const Link2Int& link2ind,
     const VarVector& vars0, const VarVector& vars1, const DblVec& vals0, const DblVec& vals1,
     vector<AffExpr>& exprs, DblVec& weights) {
   vector<AffExpr> exprs0, exprs1;
@@ -99,15 +99,13 @@ void CollisionEvaluator::GetCollisionsCached(const DblVec& x, vector<Collision>&
   }
 }
 
-SingleTimestepCollisionEvaluator::SingleTimestepCollisionEvaluator(RobotAndDOFPtr rad, const VarVector& vars) :
-  m_env(rad->GetRobot()->GetEnv()),
+SingleTimestepCollisionEvaluator::SingleTimestepCollisionEvaluator(ConfigurationPtr rad, const VarVector& vars) :
+  m_env(rad->GetEnv()),
   m_cc(CollisionChecker::GetOrCreate(*m_env)),
   m_rad(rad),
   m_vars(vars),
   m_link2ind(),
   m_links() {
-  RobotBasePtr robot = rad->GetRobot();
-  const vector<KinBody::LinkPtr>& robot_links = robot->GetLinks();
   vector<KinBody::LinkPtr> links;
   vector<int> inds;
   rad->GetAffectedLinks(m_links, true, inds);
@@ -139,16 +137,14 @@ void SingleTimestepCollisionEvaluator::CalcDistExpressions(const DblVec& x, vect
 
 ////////////////////////////////////////
 
-CastCollisionEvaluator::CastCollisionEvaluator(RobotAndDOFPtr rad, const VarVector& vars0, const VarVector& vars1) :
-  m_env(rad->GetRobot()->GetEnv()),
+CastCollisionEvaluator::CastCollisionEvaluator(ConfigurationPtr rad, const VarVector& vars0, const VarVector& vars1) :
+  m_env(rad->GetEnv()),
   m_cc(CollisionChecker::GetOrCreate(*m_env)),
   m_rad(rad),
   m_vars0(vars0),
   m_vars1(vars1),
   m_link2ind(),
   m_links() {
-  RobotBasePtr robot = rad->GetRobot();
-  const vector<KinBody::LinkPtr>& robot_links = robot->GetLinks();
   vector<KinBody::LinkPtr> links;
   vector<int> inds;
   rad->GetAffectedLinks(m_links, true, inds);
@@ -193,12 +189,12 @@ void PlotCollisions(const std::vector<Collision>& collisions, OR::EnvironmentBas
   }
 }
 
-CollisionCost::CollisionCost(double dist_pen, double coeff, RobotAndDOFPtr rad, const VarVector& vars) :
+CollisionCost::CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars) :
     Cost("collision"),
     m_calc(new SingleTimestepCollisionEvaluator(rad, vars)), m_dist_pen(dist_pen), m_coeff(coeff)
 {}
 
-CollisionCost::CollisionCost(double dist_pen, double coeff, RobotAndDOFPtr rad, const VarVector& vars0, const VarVector& vars1) :
+CollisionCost::CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars0, const VarVector& vars1) :
     Cost("cast_collision"),
     m_calc(new CastCollisionEvaluator(rad, vars0, vars1)), m_dist_pen(dist_pen), m_coeff(coeff)
 {}

@@ -24,7 +24,7 @@ typedef boost::shared_ptr<CollisionEvaluator> CollisionEvaluatorPtr;
 
 struct SingleTimestepCollisionEvaluator : public CollisionEvaluator {
 public:
-  SingleTimestepCollisionEvaluator(RobotAndDOFPtr rad, const VarVector& vars);
+  SingleTimestepCollisionEvaluator(ConfigurationPtr rad, const VarVector& vars);
   /**
   @brief linearize all contact distances in terms of robot dofs
   
@@ -34,34 +34,17 @@ public:
   the contacts are associated with weights so that each pair of links are associated with a single cost term.
   In particular, if a pair of bodies have k contacts, then the contacts each have weight 1/k.
   */
-  void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights); // appends to this vector
+  void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights); 
   /**
    * Same as CalcDistExpressions, but just the distances--not the expressions
    */
-  void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights); // appends to this vector
+  void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights); 
   void CalcCollisions(const DblVec& x, vector<Collision>& collisions);
 
   OR::EnvironmentBasePtr m_env;
   CollisionCheckerPtr m_cc;
-  RobotAndDOFPtr m_rad;
+  ConfigurationPtr m_rad;
   VarVector m_vars;
-  Link2Int m_link2ind;
-  vector<OR::KinBody::LinkPtr> m_links;
-
-};
-
-struct InterpolatedCollisionEvaluator : public CollisionEvaluator {
-public:
-  InterpolatedCollisionEvaluator(RobotAndDOFPtr rad, const VarVector& vars0, const VarVector& vars1);
-  void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights); // appends to this vector
-  void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights); // appends to this vector
-
-  OR::EnvironmentBasePtr m_env;
-  CollisionCheckerPtr m_cc;
-  RobotAndDOFPtr m_rad;
-  VarVector m_vars0;
-  VarVector m_vars1;
-  typedef std::map<const OR::KinBody::Link*, int> Link2Int;
   Link2Int m_link2ind;
   vector<OR::KinBody::LinkPtr> m_links;
 
@@ -69,15 +52,15 @@ public:
 
 struct CastCollisionEvaluator : public CollisionEvaluator {
 public:
-  CastCollisionEvaluator(RobotAndDOFPtr rad, const VarVector& vars0, const VarVector& vars1);
-  void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights); // appends to this vector
-  void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights); // appends to this vector
+  CastCollisionEvaluator(ConfigurationPtr rad, const VarVector& vars0, const VarVector& vars1);
+  void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights);
+  void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights);
   void CalcCollisions(const DblVec& x, vector<Collision>& collisions);
 
   // parameters:
   OR::EnvironmentBasePtr m_env;
   CollisionCheckerPtr m_cc;
-  RobotAndDOFPtr m_rad;
+  ConfigurationPtr m_rad;
   VarVector m_vars0;
   VarVector m_vars1;
   typedef std::map<const OR::KinBody::Link*, int> Link2Int;
@@ -87,12 +70,12 @@ public:
 };
 
 
-class CollisionCost : public Cost, public Plotter {
+class TRAJOPT_API CollisionCost : public Cost, public Plotter {
 public:
   /* constructor for single timestep */
-  CollisionCost(double dist_pen, double coeff, RobotAndDOFPtr rad, const VarVector& vars);
+  CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars);
   /* constructor for cast cost */
-  CollisionCost(double dist_pen, double coeff, RobotAndDOFPtr rad, const VarVector& vars0, const VarVector& vars1);
+  CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars0, const VarVector& vars1);
   virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model);
   virtual double value(const vector<double>&);
   virtual void Plot(const DblVec& x, OR::EnvironmentBase&, std::vector<OR::GraphHandlePtr>& handles);

@@ -20,14 +20,24 @@ Vector4d quatExp(const Vector3d& r) {
     q.bottomRows(3) = (r/normr) * sin(normr/2);
     return q;
   }
-  else return Vector4d(1,0,0,0);
+  else {
+    Vector4d out(1,0,0,0);
+    out.bottomRows(3) += r;
+    out.normalize();
+    return out;
+  }
 }
 
 Vector3d quatLog(const Vector4d& q) {
-  Vector3d v = q.bottomRows(3);
-  double s = q(0);
-  Vector3d out = (acos(s) / v.norm()) * v;
-  return out;
+  if (1-q[0] >= 1e-10) {
+    Vector3d v = q.bottomRows(3);
+    double s = q(0);
+    Vector3d out = (acos(s) / v.norm()) * v;
+    return out;
+  }
+  else {
+    return 2*q.bottomRows(3);
+  }
 }
 Vector4d quatInv(const Vector4d& q) {
   Vector4d qinv = q;
@@ -42,4 +52,10 @@ MatrixXd getW(const MatrixXd& qs, double dt) {
   }
   // cout << "qs: " << endl << qs << endl;
   return out;
+}
+VectorXd quatRotate(const Vector4d& q, const Vector3d& p) {
+  Vector4d pquat;
+  pquat(0) = 0;
+  pquat.bottomRows(3) = p;
+  return quatMult(q, quatMult(pquat, quatInv(q)));
 }

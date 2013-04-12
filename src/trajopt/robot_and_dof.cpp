@@ -70,11 +70,18 @@ int RobotAndDOF::GetDOF() const {
   return joint_inds.size() + RaveGetAffineDOF(affinedofs);
 }
 DblMatrix RobotAndDOF::PositionJacobian(int link_ind, const OR::Vector& pt) const {
-  OR::RobotBase::RobotStateSaver saver = const_cast<RobotAndDOF*>(this)->Save();
+  Configuration::SaverPtr saver = const_cast<RobotAndDOF*>(this)->Save();
   const_cast<RobotAndDOF*>(this)->SetRobotActiveDOFs();
   vector<double> jacdata;
-  robot->CalculateActiveJacobian(link_ind, pt, jacdata);
+  boost::dynamic_pointer_cast<RobotBase>(robot)->CalculateActiveJacobian(link_ind, pt, jacdata);
   return Eigen::Map<DblMatrix>(jacdata.data(), 3, GetDOF());
+}
+DblMatrix RobotAndDOF::RotationJacobian(int link_ind) const {
+  Configuration::SaverPtr saver = const_cast<RobotAndDOF*>(this)->Save();
+  const_cast<RobotAndDOF*>(this)->SetRobotActiveDOFs();
+  vector<double> jacdata;
+  boost::dynamic_pointer_cast<RobotBase>(robot)->ComputeJacobianAxisAngle(link_ind, jacdata);
+  return Eigen::Map<DblMatrix>(jacdata.data(), 3, GetDOF());  
 }
 bool RobotAndDOF::DoesAffect(const KinBody::Link& link) {
   if (affinedofs > 0) return true;
@@ -100,9 +107,9 @@ void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool on
   }
 
   vector<KinBodyPtr> grabbed;
-  robot->GetGrabbed(grabbed);
+  boost::dynamic_pointer_cast<RobotBase>(robot)->GetGrabbed(grabbed);
   BOOST_FOREACH(const KinBodyPtr& body, grabbed) {
-    KinBody::LinkPtr grabberLink = robot->IsGrabbing(body);
+    KinBody::LinkPtr grabberLink = boost::dynamic_pointer_cast<RobotBase>(robot)->IsGrabbing(body);
     assert(grabberLink);
     BOOST_FOREACH(const KinBody::LinkPtr& link, body->GetLinks()) {
       if (link->GetGeometries().size() > 0) {

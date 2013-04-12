@@ -27,13 +27,17 @@ RobotBase::ManipulatorPtr GetManipulatorByName(RobotBase& robot, const std::stri
   return RobotBase::ManipulatorPtr();
 }
 
-RobotBasePtr GetRobotByName(EnvironmentBase& env, const std::string& name) {
-  vector<RobotBasePtr> robots;
-  env.GetRobots(robots);
-  BOOST_FOREACH(RobotBasePtr& robot, robots) {
-    if (robot->GetName() == name) return robot;
+KinBodyPtr GetBodyByName(EnvironmentBase& env, const std::string& name) {
+  vector<KinBodyPtr> bodies;
+  env.GetBodies(bodies);
+  BOOST_FOREACH(KinBodyPtr& body, bodies) {
+    if (body->GetName() == name) return body;
   }
-  return RobotBasePtr();
+  return KinBodyPtr();
+}
+
+RobotBasePtr GetRobotByName(EnvironmentBase& env, const std::string& name) {
+  return boost::dynamic_pointer_cast<RobotBase>(GetBodyByName(env, name));
 }
 
 RobotBasePtr GetRobot(EnvironmentBase& env) {

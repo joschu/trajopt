@@ -40,7 +40,7 @@ private:
   QuadExpr expr_;
 };
 
-class JointVelCost : public Cost {
+class TRAJOPT_API JointVelCost : public Cost {
 public:
   JointVelCost(const VarArray& traj, const VectorXd& coeffs);
   virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model);

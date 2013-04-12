@@ -1,6 +1,7 @@
 #include "hull2d.hpp"
 #include <algorithm>
 #include <vector>
+using namespace Eigen;
 using namespace std;
 
 
@@ -67,5 +68,32 @@ Eigen::MatrixX2d hull2d(const Eigen::MatrixX2d& in) {
     out(i,1) = hull[i].y;
   }
   return out;
+}
+
+void PolygonToEquations(const MatrixX2d& pts, MatrixX2d& ab, VectorXd& c) {
+  // ax + by + c <= 0
+  // assume polygon is convex
+  ab.resize(pts.rows(),2);
+  c.resize(pts.rows());
+  Vector2d p0 = pts.row(0);
+
+  for (int i=0; i < pts.rows(); ++i) {
+    int i1 = (i+1) % pts.rows();
+    double x0 = pts(i,0),
+        y0 = pts(i,1),
+        x1 = pts(i1,0),
+        y1 = pts(i1,1);
+    ab(i,0) = -(y1 - y0);
+    ab(i,1) = x1 - x0;
+    ab.row(i).normalize();
+    c(i) = -ab.row(i).dot(pts.row(i));
+  }
+
+  Vector2d centroid = pts.colwise().mean();
+  if (ab.row(0) * centroid + c(0) >= 0) {
+    ab *= -1;
+    c *= -1;
+  }
+
 }
 

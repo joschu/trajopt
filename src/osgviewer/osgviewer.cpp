@@ -613,6 +613,14 @@ GraphHandlePtr OSGViewer::PlotAxes(const OpenRAVE::Transform& T, float size) {
   AddCylinderBetweenPoints(o, z, size/10, osg::Vec4(0,0,1,1), group, false);
   return GraphHandlePtr(new OsgGraphHandle(group, m_root.get()));
 }
+GraphHandlePtr OSGViewer::PlotSphere(const OpenRAVE::Vector& pt, float radius) {
+  osg::Geode* geode = new osg::Geode;
+  osg::Sphere* sphere = new osg::Sphere(toOsgVec3(pt), radius);
+  osg::ShapeDrawable* sphereDrawable = new osg::ShapeDrawable(sphere);
+  geode->addDrawable(sphereDrawable);
+  return GraphHandlePtr(new OsgGraphHandle(geode, m_root.get()));
+  
+}
 
 OpenRAVE::GraphHandlePtr OSGViewer::drawtrimesh (const float *ppoints, int stride, const int *pIndices, int numTriangles, const RaveVectorf &color) {
 

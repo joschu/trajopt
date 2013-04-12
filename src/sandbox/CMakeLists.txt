@@ -17,5 +17,8 @@ include_directories(
 add_executable(quaternion_optimization quaternion_optimization.cpp)
 target_link_libraries(quaternion_optimization trajopt)
 
-add_executable(rigid_body_simulation rigid_body_simulation.cpp)
-target_link_libraries(rigid_body_simulation trajopt)
+# add_executable(rigid_body_simulation rigid_body_simulation.cpp)
+# target_link_libraries(rigid_body_simulation trajopt)
+
+add_executable(pushing pushing.cpp)
+target_link_libraries(pushing trajopt humanoids)
