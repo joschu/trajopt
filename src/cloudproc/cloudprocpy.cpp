@@ -163,6 +163,19 @@ PointCloud<PointXYZ>::Ptr pyMaskFilter(PointCloud<PointXYZ>::Ptr cloud, py::obje
   return maskFilter<PointXYZ>(cloud, mask, keep_organized);
 }
 
+PointCloud<PointXYZ>::Ptr pyComputeConvexHull(PointCloud<PointXYZ>::Ptr cloud, float alpha, int dim) {
+  return computeConvexHull(cloud, NULL);
+}
+PointCloud<PointXYZ>::Ptr pyComputeAlphaShape(PointCloud<PointXYZ>::Ptr cloud, float alpha, int dim) {
+  return computeAlphaShape(cloud, alpha, dim, NULL);
+}
+
+
+py::object pyGetNearestNeighborIndices(PointCloud<PointXYZ>::Ptr src, PointCloud<PointXYZ>::Ptr targ) {
+  vector<int> inds = getNearestNeighborIndices(src, targ);
+  return toNdarray1<int>(inds.data(), inds.size());
+}
+
 
 BOOST_PYTHON_MODULE(cloudprocpy) {
 
@@ -190,6 +203,9 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
       .def("save", &PolygonMesh_save, "Available formats: ply, obj, vtk")
       ;
 
+  py::def("computeConvexHull", &pyComputeConvexHull, (py::arg("cloud")));
+  py::def("computeAlphaShape", &pyComputeAlphaShape, (py::arg("cloud"), py::arg("alpha"), py::arg("dim")));
+  py::def("getNearestNeighborIndices", &pyGetNearestNeighborIndices, (py::arg("src_cloud"),py::arg("targ_cloud")));
   py::def("meshGP3", &meshGP3, (py::arg("cloud"), py::arg("search_radius")));
   py::def("meshOFM", &meshOFM, (py::arg("cloud"), py::arg("sigma_s")=15, py::arg("sigma_r") = .05));
   py::def("mlsAddNormals", &mlsAddNormals, (py::arg("cloud"), py::arg("search_radius")));

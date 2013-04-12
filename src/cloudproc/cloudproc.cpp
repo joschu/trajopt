@@ -13,6 +13,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/surface/convex_hull.h>
+#include <pcl/surface/concave_hull.h>
 #include "pcl/impl/instantiate.hpp"
 #include <boost/filesystem.hpp>
 #if 0
@@ -68,14 +69,47 @@ typename pcl::PointCloud<T>::Ptr downsampleCloud(typename pcl::PointCloud<T>::Co
   return out;
 }
 
+vector<int> getNearestNeighborIndices(PointCloud<PointXYZ>::Ptr src, PointCloud<PointXYZ>::Ptr targ) {
+  pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZ>(true));
+  tree->setEpsilon(0);
+  tree->setInputCloud (targ);
+  vector<int> out;
+  out.reserve(src->size());
+
+  vector<int> neighb_inds(1);
+  vector<float> sqdists(1);
+  int k_neighbs=1;
+  BOOST_FOREACH(const PointXYZ& pt, src->points) {
+     int n_neighbs = tree->nearestKSearch(pt, k_neighbs, neighb_inds, sqdists);
+     assert(n_neighbs == 1);
+     out.push_back(neighb_inds[0]);    
+  }
+  return out;
+}
+
 //////////////////////////
 
 
-void findConvexHull(PointCloud<pcl::PointXYZ>::ConstPtr in, pcl::PointCloud<pcl::PointXYZ>& out, std::vector<Vertices>& polygons) {
+
+
+PointCloud<pcl::PointXYZ>::Ptr computeConvexHull(PointCloud<pcl::PointXYZ>::ConstPtr in, std::vector<Vertices>* polygons) {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr out(new PointCloud<PointXYZ>()); 
   pcl::ConvexHull<PointXYZ> chull;
   chull.setInputCloud (in);
-  chull.reconstruct (out, polygons);
+  if (polygons != NULL) chull.reconstruct (*out, *polygons);
+  else chull.reconstruct(*out);
+  return out;
 }
+PointCloud<pcl::PointXYZ>::Ptr computeAlphaShape(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in, float alpha, int dim, std::vector<pcl::Vertices>* polygons) {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr out(new PointCloud<PointXYZ>()); 
+  pcl::ConcaveHull<PointXYZ> chull;
+  chull.setInputCloud (in);
+  chull.setDimension(dim);
+  if (polygons != NULL) chull.reconstruct (*out, *polygons);
+  else chull.reconstruct(*out);
+  return out;
+}
+
 
 PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::ConstPtr in, float searchRadius) {
   pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals (new pcl::PointCloud<pcl::PointNormal>);
@@ -246,7 +280,8 @@ typename pcl::PointCloud<T>::Ptr medianFilter(typename pcl::PointCloud<T>::Const
   mf.setInputCloud(in);
   mf.filter(*out);
   return out;
-#else PRINT_AND_THROW("not implemented");
+#else 
+  PRINT_AND_THROW("not implemented");
 #endif
 }
 

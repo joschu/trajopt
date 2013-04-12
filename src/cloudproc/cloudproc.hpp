@@ -30,7 +30,10 @@ TRAJOPT_API pcl::PolygonMesh::Ptr loadMesh(const std::string& fname);
 template <class T>
 TRAJOPT_API typename pcl::PointCloud<T>::Ptr downsampleCloud(typename pcl::PointCloud<T>::ConstPtr in, float vsize);
 
-TRAJOPT_API void findConvexHull(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in, pcl::PointCloud<pcl::PointXYZ>& out, std::vector<pcl::Vertices>& polygons);
+TRAJOPT_API std::vector<int> getNearestNeighborIndices(pcl::PointCloud<pcl::PointXYZ>::Ptr src, pcl::PointCloud<pcl::PointXYZ>::Ptr targ);
+
+TRAJOPT_API pcl::PointCloud<pcl::PointXYZ>::Ptr computeConvexHull(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in, std::vector<pcl::Vertices>* polygons);
+TRAJOPT_API pcl::PointCloud<pcl::PointXYZ>::Ptr computeAlphaShape(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in, float alpha, int dim, std::vector<pcl::Vertices>* polygons);
 
 TRAJOPT_API pcl::PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::ConstPtr in, float searchRadius);
 
