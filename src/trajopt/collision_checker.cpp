@@ -2,6 +2,7 @@
 #include "trajopt/rave_utils.hpp"
 #include <boost/foreach.hpp>
 #include "utils/eigen_conversions.hpp"
+#include "utils/logging.hpp"
 using namespace OpenRAVE;
 
 namespace trajopt {
@@ -15,7 +16,7 @@ void CollisionPairIgnorer::AddExcludes(const CollisionPairIgnorer& other) {
 boost::shared_ptr<CollisionChecker> CollisionChecker::GetOrCreate(OR::EnvironmentBase& env) {
   UserDataPtr ud = GetUserData(env, "trajopt_cc");
   if (!ud) {
-    RAVELOG_INFO("creating bullet collision checker for environment\n");
+    LOG_INFO("creating bullet collision checker for environment\n");
     ud =  CreateCollisionChecker(env.shared_from_this());
     SetUserData(env, "trajopt_cc", ud);
   }
