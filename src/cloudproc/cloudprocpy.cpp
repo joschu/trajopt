@@ -29,7 +29,8 @@ struct type_traits {
 };
 template<> const char* type_traits<float>::npname = "float32";
 template<> const char* type_traits<int>::npname = "int32";
-
+template<> const char* type_traits<uint8_t>::npname = "uint8";
+template<> const char* type_traits<uint16_t>::npname = "uint16";
 
 template <typename T>
 T* getPointer(const py::object& arr) {
@@ -48,15 +49,15 @@ py::object toNdarray1(const T* data, size_t dim0) {
 template<typename T>
 py::object toNdarray2(const T* data, size_t dim0, size_t dim1) {
   py::object out = np_mod.attr("empty")(py::make_tuple(dim0, dim1), type_traits<T>::npname);
-  float* pout = getPointer<float>(out);
-  memcpy(pout, data, dim0*dim1*sizeof(float));
+  T* pout = getPointer<T>(out);
+  memcpy(pout, data, dim0*dim1*sizeof(T));
   return out;
 }
 template<typename T>
 py::object toNdarray3(const T* data, size_t dim0, size_t dim1, size_t dim2) {
   py::object out = np_mod.attr("empty")(py::make_tuple(dim0, dim1, dim2), type_traits<T>::npname);
-  float* pout = getPointer<float>(out);
-  memcpy(pout, data, dim0*dim1*dim2*sizeof(float));
+  T* pout = getPointer<T>(out);
+  memcpy(pout, data, dim0*dim1*dim2*sizeof(T));
   return out;
 }
 template <class T>
@@ -176,6 +177,12 @@ py::object pyGetNearestNeighborIndices(PointCloud<PointXYZ>::Ptr src, PointCloud
   return toNdarray1<int>(inds.data(), inds.size());
 }
 
+py::object pyGetRGBD(CloudGrabber* grabber) {
+  RGBD::Ptr rgbd = grabber->getRGBD();
+  py::object np_rgb = toNdarray3<uint8_t>(rgbd->rgb.data(), 480, 640, 3);
+  py::object np_depth = toNdarray2<uint16_t>(rgbd->depth.data(), 480, 640);
+  return py::make_tuple(np_rgb, np_depth);
+}
 
 BOOST_PYTHON_MODULE(cloudprocpy) {
 
@@ -217,6 +224,8 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
       .def("getXYZ", &CloudGrabber::getXYZ, "Wait for new XYZ point cloud and return it. If not streaming, will start and stop. (and hang a couple seconds)")
       .def("startXYZRGB", &CloudGrabber::startXYZRGB, "Start streaming XYZRGB")
       .def("getXYZRGB", &CloudGrabber::getXYZRGB, "Wait for new XYZRGB point cloud and return it")
+      .def("startRGBD", &CloudGrabber::startRGBD, "Start streaming RGB+Depth images")
+      .def("getRGBD", &pyGetRGBD, "Wait for new RGB+Depth and return it")
       .def("stop", &CloudGrabber::stop, "Stop streaming")
       ;
 
