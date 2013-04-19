@@ -5,6 +5,7 @@
 #include <boost/foreach.hpp>
 #include "macros.h"
 #include "sco/modeling_utils.hpp"
+#include "numpy_utils.hpp"
 using namespace trajopt;
 using namespace Eigen;
 using namespace OpenRAVE;
@@ -12,45 +13,8 @@ using std::vector;
 
 namespace py = boost::python;
 
-
 bool gInteractive = true;
-py::object openravepy, np_mod;
-
-py::list toPyList(const IntVec& x) {
-  py::list out;
-  for (int i=0; i < x.size(); ++i) out.append(x[i]);
-  return out;
-}
-
-template<typename T>
-struct type_traits {
-  static const char* npname;
-};
-template<> const char* type_traits<float>::npname = "float32";
-template<> const char* type_traits<int>::npname = "int32";
-template<> const char* type_traits<double>::npname = "float64";
-
-template <typename T>
-T* getPointer(const py::object& arr) {
-  long int i = py::extract<long int>(arr.attr("ctypes").attr("data"));
-  T* p = (T*)i;
-  return p;
-}
-
-template<typename T>
-py::object toNdarray1(const T* data, size_t dim0) {
-  py::object out = np_mod.attr("empty")(py::make_tuple(dim0), type_traits<T>::npname);
-  T* p = getPointer<T>(out);
-  memcpy(p, data, dim0*sizeof(T));
-  return out;
-}
-template<typename T>
-py::object toNdarray2(const T* data, size_t dim0, size_t dim1) {
-  py::object out = np_mod.attr("empty")(py::make_tuple(dim0, dim1), type_traits<T>::npname);
-  float* pout = getPointer<float>(out);
-  memcpy(pout, data, dim0*dim1*sizeof(float));
-  return out;
-}
+py::object openravepy;
 
 
 EnvironmentBasePtr GetCppEnv(py::object py_env) {
@@ -67,6 +31,8 @@ KinBody::LinkPtr GetCppLink(py::object py_link, EnvironmentBasePtr env) {
   int idx = py::extract<int>(py_link.attr("GetIndex")());
   return parent->GetLinks()[idx];
 }
+
+
 
 
 class PyTrajOptProb {
@@ -300,6 +266,9 @@ public:
     m_viewer->Draw();
     return 0;
   }
+  void UpdateSceneData() {
+    m_viewer->UpdateSceneData();
+  }
   PyGraphHandle PlotKinBody(py::object py_kb) {
     return PyGraphHandle(m_viewer->PlotKinBody(GetCppKinBody(py_kb, m_viewer->GetEnv())));
   }
@@ -362,6 +331,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
      ;
 
   py::class_< PyOSGViewer >("OSGViewer", py::no_init)
+     .def("UpdateSceneData", &PyOSGViewer::UpdateSceneData)
      .def("Step", &PyOSGViewer::Step)
      .def("PlotKinBody", &PyOSGViewer::PlotKinBody)
      .def("SetAllTransparency", &PyOSGViewer::SetAllTransparency)
