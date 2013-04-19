@@ -1,8 +1,0 @@
-<launch>
-
-  <include file="$(find trajopt_plugin)/launch/planner_setup.launch"/>
-  <include file="$(find pr2_moveit_config)/launch/move_group.launch">
-    <arg name="allow_trajectory_execution" value="false" />   
-  </include>
-    
-</launch>

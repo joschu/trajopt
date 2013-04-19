@@ -16,7 +16,9 @@ The following core capabilities are included:
 The core libraries are implemented in C++ (`API docs <../../dox_build/index.html>`_), and python
 bindings are generated using boost python.
 
-The theory and technical details of this software are described in a |paper|_, which is under review for publication.
+The theory and technical details of this software are described in a |paper|_.
+
+Source code is available on `github <https://github.com/joschu/trajopt>`_.
 
 Contents:
 

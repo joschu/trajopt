@@ -63,8 +63,7 @@ public:
   std::vector<KinBody::LinkPtr> GetAffectedLinks();
   void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds);
   DblVec RandomDOFValues();
-  void SetRobotActiveDOFs() {boost::dynamic_pointer_cast<RobotBase>(robot)->SetActiveDOFs(joint_inds, affinedofs);}
-  
+
   struct RobotSaver : public Saver {
     OpenRAVE::KinBody::KinBodyStateSaver saver;
     RobotSaver(OpenRAVE::KinBodyPtr robot) : saver(robot) {}
@@ -72,7 +71,8 @@ public:
   SaverPtr Save() {
     return SaverPtr(new RobotSaver(robot));
   }
-    
+  void SetRobotActiveDOFs();
+  
 private:
   OpenRAVE::KinBodyPtr robot;
   IntVec joint_inds;

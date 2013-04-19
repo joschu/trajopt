@@ -1,3 +1,8 @@
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--interactive", action="store_true")
+args = parser.parse_args()
+
 import trajoptpy
 import openravepy as rave
 import numpy as np
@@ -76,16 +81,13 @@ if __name__ == "__main__":
     ENV_FILE = "robots/pr2-beta-static.zae"
     MANIP_NAME = "leftarm"
     LINK_NAME = "l_gripper_tool_frame"
-    INTERACTIVE = True
      #0.0640945 0.704273 -0.147528 0.691468 -0.168806 -0.0452678 0.762821
     ##################
     
     ### Env setup ####
-    env = rave.RaveGetEnvironment(1)
-    if env is None:
-        env = rave.Environment()
-        env.StopSimulation()
-        env.Load(ENV_FILE)
+    env = rave.Environment()
+    env.StopSimulation()
+    env.Load(ENV_FILE)
     robot = env.GetRobots()[0]
     robot.SetDOFValues([ 0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,-0.119839 ,0.861339 ,-2.22045e-16 ,-1.87834 ,-3.00095 ,-1.02143 ,3.0678 ,0.54 ,-1.01863e-14 ,0 ,-1.59595e-16 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,-8.16014e-15 ,0 ,-1.11022e-16 ,0])    
     manip = robot.GetManipulator(MANIP_NAME)
@@ -100,6 +102,6 @@ if __name__ == "__main__":
     request = move_arm_to_grasp(xyz_targ, quat_targ, LINK_NAME, MANIP_NAME)
     s = json.dumps(request)
     print "REQUEST:",s
-    trajoptpy.SetInteractive(INTERACTIVE);
+    trajoptpy.SetInteractive(args.interactive);
     prob = trajoptpy.ConstructProblem(s, env)
     result = trajoptpy.OptimizeProblem(prob)

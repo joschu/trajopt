@@ -1,3 +1,9 @@
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--interactive", action="store_true")
+args = parser.parse_args()
+
+
 import trajoptpy
 import openravepy as rave
 import numpy as np
@@ -62,26 +68,23 @@ if __name__ == "__main__":
     ENV_FILE = "data/wamtest1.env.xml"
     MANIP_NAME = "arm"
     LINK_NAME = "wam7"
-    INTERACTIVE = True
     ##################
     
     
     ### Env setup ####
-    env = rave.RaveGetEnvironment(1)
-    if env is None:
-        env = rave.Environment()
-        env.StopSimulation()
-        env.Load(ENV_FILE)
+    env = rave.Environment()
+    env.StopSimulation()
+    env.Load(ENV_FILE)
     robot = env.GetRobots()[0]
     manip = robot.GetManipulator(MANIP_NAME)
     ##################
     
     T_w_mug = env.GetKinBody("mug-table-cluttered").GetLinks()[0].GetTransform()
-    xyz_targ = (T_w_mug[:3,3] + np.array([0,0,.15])).tolist()
-    quat_targ = np.array([0,1,0,0]).tolist()
+    xyz_targ = (T_w_mug[:3,3] + np.array([0,0,.3])).tolist()
+    quat_targ = np.array([0,1/np.sqrt(2),1/np.sqrt(2),0]).tolist()
     request = move_arm_to_grasp(xyz_targ, quat_targ, LINK_NAME, MANIP_NAME)
     s = json.dumps(request)
     print "REQUEST:",s
-    trajoptpy.SetInteractive(INTERACTIVE);
+    trajoptpy.SetInteractive(args.interactive);
     prob = trajoptpy.ConstructProblem(s, env)
     result = trajoptpy.OptimizeProblem(prob)

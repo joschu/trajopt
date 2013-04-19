@@ -14,19 +14,25 @@ Dependencies
 - CMake
 - boost
 - Eigen
-- Gurobi (though in the future we plan to support other solvers and provide a custom solver)
+- Gurobi [#gurobi]_
+
+.. [#gurobi] We plan to eventually support a solver with a more permissive license.
 
 Instructions
 -------------
 
-- install OpenRAVE 0.9 or above (currently, that means getting the latest sources) using `instructions on openrave.org <http://openrave.org/docs/latest_stable>`_
+- install OpenRAVE 0.8 or above
+
+.. note:: For best results, install a new version of OpenRAVE (version 0.9).  Due to a recent bugfix, optimization over affine DOFs won't work with 0.8. You can install from source or use the `openrave testing <https://launchpad.net/~openrave/+archive/testing>`_ PPA.
+
 
 - install OpenSceneGraph, CMake, boost, and Eigen using your package manager. In Ubuntu, that's::
 
     sudo apt-get install libopenscene-graph cmake libboost-all-dev libeigen3-dev
 
-- download and install Gurobi from `<http://www.gurobi.com>`_. You'll need to make an account and obtain a license.
+- download and install Gurobi from `<http://www.gurobi.com>`_. You'll need to make an account and obtain a license. It's free for academic use, and non-academic users can get a free trial.
 - set the environment variable GUROBI_HOME to point to the folder of your Gurobi directory that contains the folders :file:`include` and :file:`lib`. On my development machines, these are :file:`/home/username/Src/gurobi502/linux64` and :file:`/Library/gurobi501/mac64`.
+- Clone trajopt from `github <https://github.com/joschu/trajopt>`_
 - Follow the usual CMake procedure::
 
     mkdir build_trajopt
@@ -52,21 +58,19 @@ You can check if the build worked by typing
 in the build directory. The output should look something like this::
 
   Running tests...
-  Test project /Users/joschu/build/trajopt-relwdeb
+  Test project /Users/joschu/build/trajopt-release
       Start 1: arm_to_cart_target.py
-  1/7 Test #1: arm_to_cart_target.py ............   Passed    2.03 sec
+  1/6 Test #1: arm_to_cart_target.py ............   Passed    2.30 sec
       Start 2: arm_to_joint_target.py
-  2/7 Test #2: arm_to_joint_target.py ...........   Passed    1.92 sec
-      Start 3: position_base.py
-  3/7 Test #3: position_base.py .................   Passed    2.59 sec
-      Start 4: sco-unit
-  4/7 Test #4: sco-unit .....................   Passed    0.04 sec
-      Start 5: collision-checker-unit
-  5/7 Test #5: collision-checker-unit ...........   Passed    0.05 sec
-      Start 6: planning-unit
-  6/7 Test #6: planning-unit ....................   Passed    1.40 sec
-      Start 7: cast-cost-unit
-  7/7 Test #7: cast-cost-unit ...................   Passed    0.06 sec
+  2/6 Test #2: arm_to_joint_target.py ...........   Passed    1.93 sec
+      Start 3: sco-unit
+  3/6 Test #3: sco-unit .........................   Passed    0.04 sec
+      Start 4: collision-checker-unit
+  4/6 Test #4: collision-checker-unit ...........   Passed    0.05 sec
+      Start 5: planning-unit
+  5/6 Test #5: planning-unit ....................   Passed    1.43 sec
+      Start 6: cast-cost-unit
+  6/6 Test #6: cast-cost-unit ...................   Passed    0.05 sec
 
   100% tests passed, 0 tests failed out of 7
 
@@ -86,8 +90,8 @@ Common installation problems
     [plugindatabase.h:929] /usr/local/share/openrave-0.9/plugins/libbulletrave.so: /usr/local/share/openrave-0.9/plugins/libbulletrave.so: undefined symbol: _ZNK16btCollisionShape17getBoundingSphereER9btVector3Rf
     Segmentation fault (core dumped)
 
-  One crude solution: ``rm /path/to/libbulletrave.so``. OpenRAVE uses ODE rather than Bullet by default, so there's no harm in removing the bullet plugin.
+  This is due to a name collision between a system installation of bullet and the local version in trajopt. One crude solution: ``sudo rm /usr/local/share/openrave-0.9/plugins/libbulletrave.so`` or whatever the path is to the bullet plugin. OpenRAVE uses ODE rather than Bullet by default, so there's no harm in removing the bullet plugin.
 
-* *All the python tests fail*. You probably need to set your ``PYTHONPATH``
+* *All the python tests fail* with an ``ImportError``, because ``trajoptpy`` is not found or ``ctrajoptpy`` is not found. That means your ``PYTHONPATH`` is not set correctly. It should have both the trajopt source directory ``/path/to/trajopt`` and the ``lib`` subdirectory of the build directory, ``/path/to/build_trajopt/lib``.
 
 * *Almost all the tests fail, where OpenRAVE symbols aren't found*. Set ``LD_LIBRARY_PATH=/usr/local/lib`` or whereever libopenrave.so is. (Note: if you know how to fix this problem through RPATH settings or linker flags, please enlighten me.)

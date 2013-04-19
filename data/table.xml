@@ -3,7 +3,7 @@
     <Body type="static" name="table_link">
       <Geom type="box">
         <Translation> 1.1 0 .635 </Translation>
-        <extents> .85 .55 .06 </extents>
+        <extents> .85 .55 .01 </extents>
       </Geom>
     </Body>
   </KinBody>
