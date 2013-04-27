@@ -35,6 +35,9 @@ struct BasicArray {
   int cols() const {
     return m_nCol;
   }
+  int size() const {
+    return m_data.size();
+  }
   BasicArray block(int startRow, int startCol, int nRow, int nCol) const {
     BasicArray out;
     out.resize(nRow, nCol);

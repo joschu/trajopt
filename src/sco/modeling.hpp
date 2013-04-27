@@ -158,6 +158,10 @@ public:
   void setLowerBounds(const vector<double>& lb);
   /** set the upper bounds of all the variables */
   void setUpperBounds(const vector<double>& ub);
+  /** set lower bounds of some of the variables */
+  void setLowerBounds(const vector<double>& lb, const vector<Var>& vars);
+  /** set upper bounds of some of the variables */
+  void setUpperBounds(const vector<double>& ub, const vector<Var>& vars);
   /** Note: in the current implementation, this function just adds the constraint to the
    * model. So if you're not careful, you might end up with an infeasible problem. */
   void addLinearConstr(const AffExpr&, ConstraintType type);
@@ -202,5 +206,20 @@ protected:
 
   OptProb(OptProb&);
 };
+
+template <typename VecType>
+inline void setVec(DblVec& x, const VarVector& vars, const VecType& vals) {
+  assert(vars.size() == vals.size());
+  for (int i = 0; i < vars.size(); ++i) {
+    x[vars[i].var_rep->index] = vals[i];
+  }
+}
+template <typename OutVecType>
+inline OutVecType getVec1(const vector<double>& x, const VarVector& vars) {
+  OutVecType out(vars.size());
+  for (unsigned i=0; i < vars.size(); ++i) out[i] = x[vars[i].var_rep->index];
+  return out;
+}
+
 
 }

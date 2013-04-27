@@ -126,13 +126,21 @@ Cnt GurobiModel::addIneqCnt(const AffExpr& expr, const string& name) {
   vector<double> vals = expr.coeffs;
   simplify2(inds, vals);
   ENSURE_SUCCESS(GRBaddconstr(model, inds.size(),
-      const_cast<int*>(inds.data()), const_cast<double*>(vals.data()), GRB_LESS_EQUAL, -expr.constant, const_cast<char*>(name.c_str())));
+      inds.data(), vals.data(), GRB_LESS_EQUAL, -expr.constant, const_cast<char*>(name.c_str())));
   cnts.push_back(new CntRep(cnts.size(), this));
   return cnts.back();
 }
-Cnt GurobiModel::addIneqCnt(const QuadExpr&, const string& name) {
-  PRINT_AND_THROW("NOT IMPLEMENTED");
-  return 0;
+Cnt GurobiModel::addIneqCnt(const QuadExpr& qexpr, const string& name) {
+  int numlnz = qexpr.affexpr.size();
+  vector<int> linds = vars2inds(qexpr.affexpr.vars);
+  vector<double> lvals = qexpr.affexpr.coeffs;
+  vector<int> inds1 = vars2inds(qexpr.vars1);
+  vector<int> inds2 = vars2inds(qexpr.vars2);  
+  int success = GRBaddqconstr(model, numlnz, linds.data(), lvals.data(), qexpr.size(), 
+    inds1.data(), inds2.data(), const_cast<double*>(qexpr.coeffs.data()), 
+    GRB_LESS_EQUAL, -qexpr.affexpr.constant, const_cast<char*>(name.c_str()));
+  cnts.push_back(new CntRep(cntssize(), this));
+  return cnts.back();
 }
 
 void resetIndices(VarVector& vars) {

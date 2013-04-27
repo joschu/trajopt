@@ -156,8 +156,20 @@ void OptProb::createVariables(const vector<string>& var_names, const DblVec& lb,
   }
   model_->update();
 }
-void OptProb::setLowerBounds(const vector<double>& lb) {assert(lb.size() == vars_.size()); lower_bounds_ = lb;}
-void OptProb::setUpperBounds(const vector<double>& ub) {assert(ub.size() == vars_.size()); upper_bounds_ = ub;}
+void OptProb::setLowerBounds(const vector<double>& lb) {
+  assert(lb.size() == vars_.size());
+  lower_bounds_ = lb;
+}
+void OptProb::setUpperBounds(const vector<double>& ub) {
+  assert(ub.size() == vars_.size());
+  upper_bounds_ = ub;
+}
+void OptProb::setLowerBounds(const vector<double>& lb, const vector<Var>& vars) {
+  setVec(lower_bounds_, vars, lb);
+}
+void OptProb::setUpperBounds(const vector<double>& ub, const vector<Var>& vars) {
+  setVec(upper_bounds_, vars, ub);
+}
 
 void OptProb::addCost(CostPtr cost) {
   costs_.push_back(cost);
