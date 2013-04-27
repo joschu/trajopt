@@ -71,6 +71,8 @@
     </Joint>
 
 	<!-- link that at the endpoint of Arm2 -->
+<!--
+
     <Body name="Finger">
       <offsetfrom>Arm2</offsetfrom>
       <Translation>0.08 0 0</Translation>
@@ -80,10 +82,9 @@
       <Body>Finger</Body>
       <limits>0 0</limits>
     </Joint>
-    
+-->    
     <!-- set the transparency of every geometry in the KinBody-->
     <transparency>0.1</transparency>
-  </KinBody>
  
   <!-- Specifying the manipulator structure-->
   <Manipulator name="arm">
@@ -97,4 +98,5 @@
     <!-- grasp goal with respect to the effector-->
     <Translation>0 0 0</Translation>
   </Manipulator>
+</KinBody>
 </Robot>
