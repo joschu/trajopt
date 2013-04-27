@@ -139,7 +139,7 @@ Cnt GurobiModel::addIneqCnt(const QuadExpr& qexpr, const string& name) {
   int success = GRBaddqconstr(model, numlnz, linds.data(), lvals.data(), qexpr.size(), 
     inds1.data(), inds2.data(), const_cast<double*>(qexpr.coeffs.data()), 
     GRB_LESS_EQUAL, -qexpr.affexpr.constant, const_cast<char*>(name.c_str()));
-  cnts.push_back(new CntRep(cntssize(), this));
+  cnts.push_back(new CntRep(cnts.size(), this));
   return cnts.back();
 }
 
