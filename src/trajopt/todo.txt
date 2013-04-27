@@ -1,36 +1,37 @@
-
-
 Critical
 =========
 
-
+collision constraint
 setcontactdistance screws you up if you have multiple collision cost groups
+self-collisions in continuous collision cost
+
+RobotAndDOF is a mess now
+bring in plot fixes from moving_obstacles
 
 Eventually
 ===========
 
+
+
 boost python arguments
 
-optimization shouldn't say converged when it got worse
+voxel grid collision checking. or at least preprocess voxel grid data.
 
-voxel grid collision checking
-
-TrajArray and DblMatrix mean the same thing
+TrajArray/DblMatrix/MatrixXd mean the same thing
 
 PECost is PE^2
 
-merit_coeff ratio and other optimization params
-constraint scaling
+play with merit_coeff ratio and other optimization params
+enable constraint scaling on all constraints
+
+analytic derivative for pose constraint.
 
 Figure out some consistent scheme for specifiying timestep of costs.
 
 velocity cost uses timestamps
 make optimization parameters settable
 
-Issue: now the collision checker will fail to find grazing self-collisions, since right now the continuous check
-doesn't look at robot-robot collisions.
-
-make a function specifically for self-collision testing
+make a function specifically for self-collision testing. or configure collision checker somehow.
 
 Maybe
 =======
@@ -43,6 +44,5 @@ No need to do all the hulls every time you load up the robot.
 
 Modifying bttransformaabb is a bad hack. figure out a better way.
 
-make it easier to print stuff out for debugging optimization
-
 collisionchecker segfaults if bullet world isn't updated
+

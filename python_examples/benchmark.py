@@ -1,6 +1,6 @@
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument("scenefile",choices=["tabletop", "bookshelves_modified", "kitchen_counter"] )
+parser.add_argument("scenefile",choices=["tabletop", "bookshelves", "kitchen_counter"] )
 parser.add_argument("--multi_init",type=bool, default=True)
 parser.add_argument("--pose_goal", action="store_true")
 parser.add_argument("--interactive", action="store_true")
@@ -17,7 +17,7 @@ import trajoptpy.kin_utils as ku
 from collections import namedtuple
 import os.path as osp
 
-PlanResult = namedtuple("PlanResult", "success time")
+PlanResult = namedtuple("PlanResult", "success t_total t_opt t_verify")
 
 def mirror_arm_joints(x):
     "mirror image of joints (r->l or l->r)"
@@ -43,7 +43,7 @@ if args.scenefile == "tabletop":
         0.   ,  0.   ,  0.   , -0.658,  0.889, -1.431, -1.073, -0.705,
        -1.107,  2.807,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ]
     manip = "leftarm"   
-elif args.scenefile == "bookshelves_modified": 
+elif args.scenefile == "bookshelves": 
     dof_vals = \
         [ 0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,
         0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.   ,  0.849,
@@ -78,6 +78,8 @@ def plan(robot, manip, end_joints, end_pose = None):
     
     success = False
     t_start = time()
+    t_verify = 0
+    t_opt = 0
     
     for (i_init,waypoint) in enumerate(joint_waypoints):
         d = {
@@ -116,24 +118,27 @@ def plan(robot, manip, end_joints, end_pose = None):
                         
         s = json.dumps(d)
         prob = trajoptpy.ConstructProblem(s, env)
-        result = trajoptpy.OptimizeProblem(prob)
         
+        t_start_opt = time()
+        result = trajoptpy.OptimizeProblem(prob)
+        t_opt += time() - t_start_opt
+                
         traj = result.GetTraj()
         
         prob.SetRobotActiveDOFs()
-        if not traj_is_safe(traj, robot):                       
+        t_start_verify = time()
+        is_safe = traj_is_safe(traj, robot)
+        t_verify += time() - t_start_verify
+        
+        if not is_safe:                       
             print "optimal trajectory has a collision. trying a new initialization"
         else:
             print "planning successful after %s initialization"%(i_init+1)
             success = True
             break
-    if not success:
-        return PlanResult(False, time()-t_start)
-    else:
-        return PlanResult(True, time()-t_start)
+    t_total = time() - t_start
+    return PlanResult(success, t_total, t_opt, t_verify)        
         
-        
-print args.interactive
 trajoptpy.SetInteractive(args.interactive)
 env = openravepy.Environment()
 env.StopSimulation()
@@ -157,8 +162,9 @@ for (x,y,z) in zip(xs.flat, ys.flat, zs.flat):
 
 success_frac = np.mean([result.success for result in results])
 print "success frac:", success_frac
-print "avg success time:", np.mean([result.time for result in results if result.success])
-if success_frac < 1: print "avg fail time:", np.mean([result.time for result in results if not result.success])
+print "avg total time:", np.mean([result.t_total for result in results])
+print "avg optimization time:", np.mean([result.t_opt for result in results])
+print "avg verification time:", np.mean([result.t_verify for result in results])
 
 
   

@@ -98,9 +98,10 @@ public:
   virtual void SetDOFValues(const DblVec& dofs) {
     int n=0;
     BOOST_FOREACH(const ConfigurationPtr& config, m_configs) {
-      DblVec part_dofs(dofs.begin()+n, dofs.begin()+n+config->GetDOF());
+      int d = config->GetDOF();
+      DblVec part_dofs(dofs.begin()+n, dofs.begin()+n+d);
       config->SetDOFValues(part_dofs);      
-      n += config->GetDOF();
+      n += d;
     }
   }
   virtual void GetDOFLimits(DblVec& lower, DblVec& upper) const {

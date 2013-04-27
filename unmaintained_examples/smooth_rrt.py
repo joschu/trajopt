@@ -1,3 +1,9 @@
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("--interactive", action="store_true")
+args = parser.parse_args()
+
+
 import trajoptpy
 import openravepy as rave
 import numpy as np
@@ -42,7 +48,7 @@ def smooth_traj_request(robot, traj):
     return request
 
 
-def main():
+if __name__ == "__main__":
         
     ### Parameters ###
     ENV_FILE = "../data/pr2_table.env.xml"
@@ -66,19 +72,16 @@ def main():
     robot.SetActiveDOFValues(np.zeros(robot.GetActiveDOF()))
 
     basemanip = rave.interfaces.BaseManipulation(robot)
-    print "starting planning..."
+    print "starting RRT planning..."
     traj=basemanip.MoveActiveJoints(goal=[0.609648, 1.37131, 1.6, -1.05298, -1.41295, -0.979627, 0.93925], 
                                     outputtrajobj=True,execute=False)    
-    print "done planning"
+    print "RRT done"
     if traj.GetNumWaypoints() == 0:
         raise Exception("planner couldn't find a path")
     ##################
     request = smooth_traj_request(robot, traj)
     s = json.dumps(request)
     print json.dumps(request, indent=1)
-    trajoptpy.SetInteractive(INTERACTIVE);
+    trajoptpy.SetInteractive(args.interactive);
     prob = trajoptpy.ConstructProblem(s, env)
     result = trajoptpy.OptimizeProblem(prob)
-
-if __name__ == "__main__":
-    main()

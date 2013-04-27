@@ -35,3 +35,4 @@ ext/rbdl/vendor
 ext/rbdl/doc
 *.vcproj
 *.sln
+callgrind.*

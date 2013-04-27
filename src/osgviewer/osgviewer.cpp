@@ -1,4 +1,3 @@
-#include "osgviewer.hpp"
 #include <boost/foreach.hpp>
 #include <osg/MatrixTransform>
 #include <osg/ShapeDrawable>
@@ -15,6 +14,8 @@
 #include <osg/io_utils>
 #include <iostream>
 #include "utils/logging.hpp"
+#include "openrave_userdata_utils.hpp"
+#include "osgviewer.hpp"
 
 using namespace osg;
 using namespace OpenRAVE;
@@ -395,6 +396,7 @@ OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false) 
   AddKeyCallback('p', boost::bind(&OSGViewer::Idle, this), "Toggle idle");
   AddKeyCallback(osgGA::GUIEventAdapter::KEY_Escape, &throw_runtime_error, "Quit (raise exception)");
   PrintHelp();
+  m_viewer.setRunFrameScheme(osgViewer::ViewerBase::ON_DEMAND);
 }
 
 int OSGViewer::main(bool bShow) {
@@ -414,8 +416,8 @@ void OSGViewer::Idle() {
     m_request_stop_idling=false;
     LOG_INFO("press p to stop idling");
     while (!m_viewer.done() && !m_request_stop_idling) {
-      m_viewer.frame();
-      sleep(.025);
+      if (m_viewer.checkNeedToDoFrame()) m_viewer.frame();
+      usleep(.03*1e6);
     }
     m_idling=false;
   }
@@ -427,22 +429,22 @@ void OSGViewer::Draw() {
 }
 
 void OSGViewer::RemoveKinBody(OpenRAVE::KinBodyPtr pbody) {
-  KinBodyGroup* node = (KinBodyGroup*)pbody->GetUserData("osg").get();
+  KinBodyGroup* node = (KinBodyGroup*)::GetUserData(*pbody, "osg").get();
   m_root->removeChild(node);
-  pbody->RemoveUserData("osg");
+  ::RemoveUserData(*pbody, "osg");
 }
 
 KinBodyGroup* GetOsgGroup(KinBody& body) {
-  UserDataPtr rph = body.GetUserData("osg");
+  UserDataPtr rph = GetUserData(body, "osg");
   return rph ? static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get())
       : NULL;
 }
 KinBodyGroup* CreateOsgGroup(KinBody& body) {
-  assert(!body.GetUserData("osg"));
+  assert(!GetUserData(body, "osg"));
   LOG_DEBUG("creating graphics for kinbody %s", body.GetName().c_str());
   osg::Node* node = osgNodeFromKinBody(body);
   UserDataPtr rph = UserDataPtr(new RefPtrHolder(node));
-  body.SetUserData("osg", rph);
+  SetUserData(body, "osg", rph);
   return static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get());
 }
 
@@ -463,6 +465,7 @@ void OSGViewer::UpdateSceneData() {
     }
     group->update();
   }
+  m_viewer.requestRedraw();
 }
 
 void OSGViewer::AddMouseCallback(const MouseCallback& cb) {

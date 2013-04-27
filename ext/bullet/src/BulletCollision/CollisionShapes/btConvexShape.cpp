@@ -139,9 +139,9 @@ btVector3 btConvexShape::localGetSupportVertexWithoutMarginNonVirtual (const btV
         #error unknown vector arch
     #endif
 #else
-		return btVector3(btFsels(localDir.x(), halfExtents.x(), -halfExtents.x()),
-			btFsels(localDir.y(), halfExtents.y(), -halfExtents.y()),
-			btFsels(localDir.z(), halfExtents.z(), -halfExtents.z()));
+		return btVector3(btFsels(-localDir.x(), -halfExtents.x(), +halfExtents.x()),
+			btFsels(-localDir.y(), -halfExtents.y(), +halfExtents.y()),
+			btFsels(-localDir.z(), -halfExtents.z(), +halfExtents.z()));
 #endif
 	}
 	case TRIANGLE_SHAPE_PROXYTYPE:

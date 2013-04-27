@@ -84,37 +84,5 @@ void PlotAxes(EnvironmentBase& env, const OpenRAVE::Transform& T, float size, ve
   handles.push_back(env.drawarrow(T.trans, z, size/10, Vector(0,0,1,1)));
 }
 
-class UserMap : public std::map<std::string, UserDataPtr>, public OpenRAVE::UserData {
-};
-
-
-OR::UserDataPtr GetUserData(const OR::EnvironmentBase& env, const std::string& key) {
-  UserDataPtr ud = env.GetUserData();
-  if (!ud) return OR::UserDataPtr();
-  else if (UserMap* um = dynamic_cast<UserMap*>(ud.get())) {
-    UserMap::iterator it = (*um).find(key);
-    if (it != (*um).end()) return it->second;
-    else return UserDataPtr();
-  }
-  else {
-    throw openrave_exception("someone else is using EnvironmentBase userdata. That screws me up!");
-    return OR::UserDataPtr();
-  }
-}
-void SetUserData(OR::EnvironmentBase& env, const std::string& key, OR::UserDataPtr val) {
-  UserDataPtr ud = env.GetUserData();
-  if (!ud) {
-    RAVELOG_INFO("setting userdata\n");
-    ud = UserDataPtr(new UserMap());
-    env.SetUserData(ud);
-  }
-
-  if (UserMap* um = dynamic_cast<UserMap*>(ud.get())) {
-    (*um)[key] = val;
-  }
-  else {
-    throw openrave_exception("someone else is using EnvironmentBase userdata. That screws me up!");
-  }
-}
 
 }

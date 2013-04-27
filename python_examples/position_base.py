@@ -3,6 +3,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--interactive", action="store_true")
 args = parser.parse_args()
 
+
 import trajoptpy
 import openravepy as rave
 import numpy as np
@@ -10,6 +11,11 @@ import json
 import trajoptpy.math_utils as mu
 import trajoptpy.kin_utils as ku
 from trajoptpy.check_traj import traj_is_safe
+
+
+if rave.__version__ < "0.9":
+    raise Exception("this example only works with openrave >= 0.9 due to recent jacobian bugfix")
+
 
 def position_base_request(robot, link_name, xyz_targ, quat_targ):
         

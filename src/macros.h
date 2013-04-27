@@ -51,7 +51,7 @@
   }
 
 #ifdef __CDT_PARSER__
-#define BOOST_FOREACH(a,b) for(;;)
+#define BOOST_FOREACH(a,b) for(a;;)
 #endif
 
 #define ALWAYS_ASSERT(exp) if (!(exp)) {printf("%s failed in file %s at line %i\n", #exp, __FILE__, __LINE__ ); abort();}

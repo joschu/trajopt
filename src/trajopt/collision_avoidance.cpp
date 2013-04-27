@@ -8,6 +8,7 @@
 #include "utils/eigen_conversions.hpp"
 #include "sco/modeling_utils.hpp"
 #include "utils/stl_to_string.hpp"
+#include "utils/logging.hpp"
 using namespace OpenRAVE;
 using namespace sco;
 using namespace util;
@@ -61,7 +62,7 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Config
       weights.push_back(col.weight);
     }
   }
-  RAVELOG_DEBUG("%i distance expressions\n", exprs.size());
+  LOG_DEBUG("%i distance expressions\n", exprs.size());
 }
 
 void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Configuration& rad, const Link2Int& link2ind,
@@ -89,11 +90,11 @@ void CollisionEvaluator::GetCollisionsCached(const DblVec& x, vector<Collision>&
   double key = vecSum(x);
   vector<Collision>* it = m_cache.get(key);
   if (it != NULL) {
-    RAVELOG_DEBUG("using cached collision check\n");
+    LOG_DEBUG("using cached collision check\n");
     collisions = *it;
   }
   else {
-    RAVELOG_DEBUG("not using cached collision check\n");
+    LOG_DEBUG("not using cached collision check\n");
     CalcCollisions(x, collisions);
     m_cache.put(key, collisions);
   }

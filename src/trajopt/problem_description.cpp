@@ -26,8 +26,8 @@ void RegisterMakers() {
   CostInfo::RegisterMaker("pose", &PoseCostInfo::create);
   CostInfo::RegisterMaker("joint_pos", &JointPosCostInfo::create);
   CostInfo::RegisterMaker("joint_vel", &JointVelCostInfo::create);
-  CostInfo::RegisterMaker("collision", &CollisionCostInfo::create);
-  CostInfo::RegisterMaker("continuous_collision", &ContinuousCollisionCostInfo::create);
+  CostInfo::RegisterMaker("collision", &CollisionCostInfo::create_discrete);
+  CostInfo::RegisterMaker("continuous_collision", &CollisionCostInfo::create_continuous);
 
   CntInfo::RegisterMaker("joint", &JointConstraintInfo::create);
   CntInfo::RegisterMaker("pose", &PoseCntInfo::create);
@@ -107,6 +107,7 @@ void BasicInfo::fromJson(const Json::Value& v) {
 void fromJson(const Json::Value& v, CostInfoPtr& cost) {
   string type;
   childFromJson(v, type, "type");
+  LOG_DEBUG("reading cost: %s", type.c_str());
   cost = CostInfo::fromName(type);
   if (!cost) PRINT_AND_THROW( boost::format("failed to construct cost named %s")%type );
   cost->fromJson(v);
@@ -231,9 +232,9 @@ TrajOptResult::TrajOptResult(OptResults& opt, TrajOptProb& prob) :
 TrajOptResultPtr OptimizeProblem(TrajOptProbPtr prob, bool plot) {
   Configuration::SaverPtr saver = prob->GetRAD()->Save();
   BasicTrustRegionSQP opt(prob);
-  opt.max_iter_ = 30;
+  opt.max_iter_ = 40;
   opt.min_approx_improve_frac_ = .001;
-  opt.merit_error_coeff_ = 10;
+  opt.merit_error_coeff_ = 20;
   if (plot) opt.addCallback(PlotCallback(*prob));
   //  opt.addCallback(boost::bind(&PlotCosts, boost::ref(prob->getCosts()),boost::ref(*prob->GetRAD()), boost::ref(prob->GetVars()), _1));
   opt.initialize(trajToDblVec(prob->GetInitTraj()));
@@ -342,7 +343,7 @@ void PoseCostInfo::fromJson(const Value& v) {
 
   string linkstr;
   childFromJson(params, linkstr, "link");
-  link = gPCI->rad->GetRobot()->GetLink(linkstr);
+  link = GetLinkMaybeAttached(gPCI->rad->GetRobot(), linkstr);
   if (!link) {
     PRINT_AND_THROW(boost::format("invalid link name: %s")%linkstr);
   }
@@ -450,44 +451,18 @@ void JointVelCostInfo::hatch(TrajOptProb& prob) {
   prob.getCosts().back()->setName(name);
 }
 
+
 void CollisionCostInfo::fromJson(const Value& v) {
-  FAIL_IF_FALSE(v.isMember("params"));
-  const Value& params = v["params"];
-
-  int n_steps = gPCI->basic_info.n_steps;
-  childFromJson(params, coeffs,"coeffs");
-  if (coeffs.size() == 1) coeffs = DblVec(n_steps, coeffs[0]);
-  else if (coeffs.size() != n_steps) {
-    PRINT_AND_THROW( boost::format("wrong size: coeffs. expected %i got %i")%n_steps%coeffs.size() );
-  }
-  childFromJson(params, dist_pen,"dist_pen");
-  if (dist_pen.size() == 1) dist_pen = DblVec(n_steps, dist_pen[0]);
-  else if (dist_pen.size() != n_steps) {
-    PRINT_AND_THROW( boost::format("wrong size: dist_pen. expected %i got %i")%n_steps%dist_pen.size() );
-  }
-}
-void CollisionCostInfo::hatch(TrajOptProb& prob) {
-  for (int i=0; i < prob.GetNumSteps(); ++i) {
-    prob.addCost(CostPtr(new CollisionCost(dist_pen[i], coeffs[i], prob.GetRAD(), prob.GetVarRow(i))));
-    prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
-  }
-  CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
-  cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .04);
-}
-CostInfoPtr CollisionCostInfo::create() {
-  return CostInfoPtr(new CollisionCostInfo());
-}
-
-
-void ContinuousCollisionCostInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));
   const Value& params = v["params"];
 
   int n_steps = gPCI->basic_info.n_steps;
   childFromJson(params, first_step, "first_step", 0);
   childFromJson(params, last_step, "last_step", n_steps-1);
+  FAIL_IF_FALSE((first_step >= 0) && (first_step < n_steps));
+  FAIL_IF_FALSE((last_step >= first_step) && (last_step < n_steps));
   childFromJson(params, coeffs, "coeffs");
-  int n_terms = last_step - first_step;
+  int n_terms = last_step - first_step + 1;
   if (coeffs.size() == 1) coeffs = DblVec(n_terms, coeffs[0]);
   else if (coeffs.size() != n_terms) {
     PRINT_AND_THROW (boost::format("wrong size: coeffs. expected %i got %i")%n_terms%coeffs.size());
@@ -498,16 +473,27 @@ void ContinuousCollisionCostInfo::fromJson(const Value& v) {
     PRINT_AND_THROW(boost::format("wrong size: dist_pen. expected %i got %i")%n_terms%dist_pen.size());
   }
 }
-void ContinuousCollisionCostInfo::hatch(TrajOptProb& prob) {
-  for (int i=first_step; i < last_step; ++i) {
-    prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
-    prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
+void CollisionCostInfo::hatch(TrajOptProb& prob) {
+  if (continuous) {
+    for (int i=first_step; i < last_step; ++i) {
+      prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
+      prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
+    }
+  }
+  else {
+    for (int i=first_step; i <= last_step; ++i) {
+      prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i))));
+      prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
+    }
   }
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
   cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .04);
 }
-CostInfoPtr ContinuousCollisionCostInfo::create() {
-  return CostInfoPtr(new ContinuousCollisionCostInfo());
+CostInfoPtr CollisionCostInfo::create_discrete() {
+  return CostInfoPtr(new CollisionCostInfo(false));
+}
+CostInfoPtr CollisionCostInfo::create_continuous() {
+  return CostInfoPtr(new CollisionCostInfo(true));
 }
 
 
