@@ -28,10 +28,14 @@ extern void PolygonToEquations(const MatrixX2d& pts, MatrixX2d& ab,VectorXd& c);
 
 
 double mu = 1; // TODO make it a parameter
+bool idle = false;
 
 
 OpenRAVE::Vector toRaveQuat(const Vector4d& v) {
   return OpenRAVE::Vector(v[0], v[1], v[2], v[3]);
+}
+OpenRAVE::Vector toRave(const Vector3d& v) {
+  return OpenRAVE::Vector(v[0], v[1], v[2]);
 }
 
 
@@ -95,8 +99,9 @@ struct IncrementalRB: public Configuration {
   }
   virtual void SetDOFValues(const DblVec& dofs) {
     OR::Transform T;
-    m_r = T.trans = OR::Vector(dofs[0], dofs[1], dofs[2]);
-    T.rot = geometry::quatMultiply(geometry::quatFromAxisAngle(OpenRAVE::Vector(dofs[3], dofs[4], dofs[5])), m_q);
+    T.trans = OR::Vector(dofs[0], dofs[1], dofs[2]);
+    m_r = OR::Vector(dofs[3],dofs[4], dofs[5]);
+    T.rot = geometry::quatMultiply(geometry::quatFromAxisAngle(m_r), m_q);
     m_body->SetTransform(T);
   }
   virtual void GetDOFLimits(DblVec& lower, DblVec& upper) const {
@@ -104,6 +109,7 @@ struct IncrementalRB: public Configuration {
     upper = DblVec(6, INFINITY);
   };
   virtual DblVec GetDOFValues() {
+    throw;
     DblVec out(6);
     OpenRAVE::Transform T = m_body->GetTransform();
     out[0] = T.trans.x;
@@ -211,7 +217,7 @@ public:
       qnew.row(i) = quatMult(quatExp(rvals.row(i)), q_.row(i));
     }
     MatrixXd wvals = getW(qnew, 1);
-    return wvals.array().square().sum();
+    return wvals.array().square().sum()*coeff_;
   }
   ConvexObjectivePtr convex(const DblVec& x, Model* model) {
     ConvexObjectivePtr out(new ConvexObjective(model));
@@ -347,8 +353,8 @@ struct FaceContactErrorCalculator: public VectorOfVector {
     m_config->SetDOFValues(toDblVec(x.topRows(m_nDof)));
     OR::Vector ptWorldA, ptWorldB, nWorldA, nWorldB;
     CalcWorldPoints(x, ptWorldA, ptWorldB);
-     return concat(toVector3d(ptWorldA - ptWorldB), toVector3d(nWorldA + nWorldB));
-//    return toVector3d(ptWorldA - ptWorldB);
+     return toVector3d(ptWorldA - ptWorldB);
+
   }
 
 };
@@ -552,37 +558,40 @@ struct SlidingFrictionErrorCalc : public VectorOfVector {
   SlidingFrictionErrorCalc(ConfigurationPtr config, double mu, const Face& face)
     : m_nDof(config->GetDOF()), m_mu(mu), m_face(face), m_config(config), m_link(face.link) {
     }
+  VectorXd operator()(const VectorXd& x) const;
   
-  VectorXd operator()(const VectorXd& x) const {
-    VectorXd dofs0 = x.topRows(m_nDof);
-    VectorXd dofs1 = x.middleRows(m_nDof, m_nDof);
-
-    OR::Vector localp;
-    localp[0] = x(2*m_nDof + 0);
-    localp[1] = x(2*m_nDof + 1);
-
-    double ffrx = x(2*m_nDof + 2 + 0);
-    double ffry = x(2*m_nDof + 2 + 1);
-    double fn = x(2*m_nDof + 2 + 2);
-        
-    m_config->SetDOFValues(toDblVec(x.middleRows(m_nDof, m_nDof)));
-    OR::Vector p1world = m_link->GetTransform().trans;
-    m_config->SetDOFValues(toDblVec(x.topRows(m_nDof)));
-    OR::Vector p0world = m_link->GetTransform().trans;
-    // cout << p1world << " | " <<  p0world << endl;
-    OR::Vector localvel0 = geometry::quatRotate(
-      geometry::quatMultiply(geometry::quatInverse(m_face.Tlf.rot), 
-                             geometry::quatInverse(m_link->GetTransform().rot)), 
-                (p1world - p0world));
-    double normvel = sqrtf(localvel0.lengthsqr2());
-    double normf = sqrtf(ffrx*ffrx + ffry*ffry);
-    Vector2d err;
-    err(0) = normvel * ffrx + m_mu * fn * localvel0[0] ;
-    err(1) = normvel * ffry + m_mu * fn * localvel0[1] ;
-    // printf("%.2f %.2f %.2f %.2f %.2f %.2f\n", ffrx, ffry, fn, localvel0[0], localvel0[1], localvel0[2]);
-    return err;
-  }
 };
+
+VectorXd SlidingFrictionErrorCalc::operator()(const VectorXd& x) const {
+  VectorXd dofs0 = x.topRows(m_nDof);
+  VectorXd dofs1 = x.middleRows(m_nDof, m_nDof);
+
+  OR::Vector localp;
+  localp[0] = x(2*m_nDof + 0);
+  localp[1] = x(2*m_nDof + 1);
+
+  double ffrx = x(2*m_nDof + 2 + 0);
+  double ffry = x(2*m_nDof + 2 + 1);
+  double fn = x(2*m_nDof + 2 + 2);
+      
+  m_config->SetDOFValues(toDblVec(x.middleRows(m_nDof, m_nDof)));
+  OR::Vector p1world = m_link->GetTransform().trans;
+  m_config->SetDOFValues(toDblVec(x.topRows(m_nDof)));
+  OR::Vector p0world = m_link->GetTransform().trans;
+  // cout << p1world << " | " <<  p0world << endl;
+  OR::Vector localvel0 = geometry::quatRotate(
+    geometry::quatMultiply(geometry::quatInverse(m_face.Tlf.rot), 
+                           geometry::quatInverse(m_link->GetTransform().rot)), 
+              (p1world - p0world));
+  double normvel = sqrtf(localvel0.lengthsqr2());
+  double normf = sqrtf(ffrx*ffrx + ffry*ffry);
+  Vector2d err;
+  err(0) = normvel * ffrx + m_mu * fn * localvel0[0] ;
+  err(1) = normvel * ffry + m_mu * fn * localvel0[1] ;
+  // printf("%.2f %.2f %.2f %.2f %.2f %.2f\n", ffrx, ffry, fn, localvel0[0], localvel0[1], localvel0[2]);
+  return err;  
+}
+
 
 
 struct MechanicsProblem: public OptProb {
@@ -683,13 +692,14 @@ MechanicsProblem::MechanicsProblem(int nSteps, const vector<KinBodyPtr>& dynBodi
   AddVarArrays(*this, m_nSteps, cols, prefixes, arrs);
 
 
-  for (int i=0; i < dynBodies.size(); ++i) {
-    m_obj2r[i] = m_obj2posvars[i].block(0, 3, m_nSteps, 3);
-    MatrixXd& q = m_obj2q[i];
+  for (int iBody=0; iBody < dynBodies.size(); ++iBody) {
+    m_obj2r[iBody] = m_obj2posvars[iBody].block(0, 3, m_nSteps, 3);
+    MatrixXd& q = m_obj2q[iBody];
     q.resize(m_nSteps,4);
-    for (int i = 0; i < m_nSteps; ++i) {
-      q.row(i) = Vector4d(1, 0, 0, 0).transpose();
+    for (int iStep = 0; iStep < m_nSteps; ++iStep) {
+      q.row(iStep) = Vector4d(1, 0, 0, 0).transpose();
     }
+    setIncremental(m_obj2r[iBody].flatten());    
   }
 
 }
@@ -844,8 +854,11 @@ void MechanicsProblem::Callback(const DblVec& x) {
     MatrixXd& q = m_obj2q[iObj];
     MatrixXd rvals = getTraj(x, m_obj2r[iObj]);
     for (int iStep = 0; iStep < q.rows(); ++iStep) {
-      q.row(iStep) = quatMult(q.row(iStep), quatExp(rvals.row(iStep)));
+      q.row(iStep) = quatMult(quatExp(rvals.row(iStep)), q.row(iStep));
+      // cout << quatMult(quatExp(rvals.row(iStep)), q.row(iStep)).transpose() << " =?= " << geometry::quatMultiply(geometry::quatFromAxisAngle(toRave(rvals.row(iStep))), toRaveQuat(q.row(iStep))) << endl;
+      // cout << quatExp(rvals.row(iStep)).transpose() << " =?= " << OR::geometry::quatFromAxisAngle(toRave(rvals.row(iStep))) << endl;
       m_dynObjConfigs(iStep, iObj)->m_q = toRaveQuat(q.row(iStep));
+      m_dynObjConfigs(iStep, iObj)->m_r = OR::Vector(0,0,0);      
     }
   }
 
@@ -915,7 +928,7 @@ void MechanicsProblem::Callback(const DblVec& x) {
     }
   }
 
-  viewer->Idle();
+  if (idle) viewer->Idle();
 
 }
 
@@ -993,6 +1006,7 @@ void Setup3DOFPush(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& 
   startPt.topRows(3) = toVector3d(obj->GetTransform().trans);
   VectorXd endPt = startPt;
   endPt[0] += -.1;
+  
 
   VarArray& posvars = prob->m_obj2posvars[0];
   for (int j = 0; j < 6; ++j) {
@@ -1003,16 +1017,58 @@ void Setup3DOFPush(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& 
     //   prob->addLinearConstr(exprSub(AffExpr(posvars(i, j)), ps(i)), EQ);
     // }
     prob->addLinearConstr(exprSub(AffExpr(posvars(0, j)), startPt[j]), EQ);
-    prob->addLinearConstr(exprSub(AffExpr(posvars(nSteps - 1, j)), endPt[j]),EQ);
+    if (j < 3) 
+      prob->addLinearConstr(exprSub(AffExpr(posvars(nSteps - 1, j)), endPt[j]),EQ);
+    else
+      prob->addLinearConstr(AffExpr(posvars(nSteps - 1, j)),EQ);
   }
 
-  // TODO disabling rotation since something screwy is going on
-  for (int iStep=0; iStep < nSteps; ++iStep) {
-    for (int j=3; j < 6; ++j) {
-      prob->addLinearConstr(AffExpr(prob->m_obj2posvars[0](iStep, j)), EQ);
-    }
-  }
 
+  // // TODO disabling rotation since something screwy is going on
+  // for (int iStep=0; iStep < nSteps; ++iStep) {
+  //   for (int j=3; j < 6; ++j) {
+  //     prob->addLinearConstr(AffExpr(prob->m_obj2posvars[0](iStep, j)), EQ);
+  //   }
+  // }
+
+}
+
+Face GetBoxFace(KinBody::LinkPtr boxlink, const OR::Vector& dir) {
+  Face f;
+  OR::Vector extents = boxlink->GetGeometry(0)->GetBoxExtents();
+  double lens[2];
+  if (dir.x == 1) {
+    lens[0] = extents.y;
+    lens[1] = extents.z;
+    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(0, 1, 0), M_PI / 2);
+  }
+  else if (dir.x == -1) {
+    lens[0] = extents.y;
+    lens[1] = extents.z;    
+    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(0, 1, 0), -M_PI / 2);
+  }
+  else if (dir.y == 1) {
+    lens[0] = extents.z;
+    lens[1] = extents.x;    
+    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(1, 0, 0), -M_PI / 2);
+  }
+  else if (dir.y == -1) {
+    lens[0] = extents.z;
+    lens[1] = extents.x;    
+    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(1, 0, 0), M_PI / 2);
+  }
+  else if (dir.z == 1) {
+    lens[0] = extents.x;
+    lens[1] = extents.y;    
+  }
+  else if (dir.z == -1) {
+    lens[0] = extents.x;
+    lens[1] = extents.y;    
+    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(0, 1, 0), M_PI);
+  }
+  f.poly.resize(4,2);
+  f.poly << lens[0], lens[1], -lens[0], lens[1], lens[0], lens[1], lens[0], -lens[1];
+  f.link = boxlink;
 }
 
 void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& prob, DblVec& xinit) {
@@ -1102,6 +1158,22 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
 
 }
 
+/**
+Problems:
+1. slide plate towards robot
+2. lift a box
+3. push a rolling chair
+4. tip a book out of a bookshelf
+5. grasp an object with a three-fingered hand
+
+4. is interesting. Just initialize it with a contact between its finger and the top. and tell the optimizer it needs to slide the thing out.
+so it'll first just try to push down and slide it. Let's first have a maybe top contact, and then we have two maybe side contacts. 
+
+*/
+
+
+
+
 int main(int argc, char** argv) {
 
   vector<string> validProblems; validProblems += "3linkpush", "pr2push";
@@ -1110,6 +1182,7 @@ int main(int argc, char** argv) {
   Config config;
   config.add(new Parameter<double>("mu", &mu, "mu (friction coefficient)"));
   config.add(new Parameter<string>("problem", &problem, "problem: [3linkpush, pr2push]"));
+  config.add(new Parameter<bool>("idle", &idle, "idle after stuff"));
   CommandParser parser(config);
   parser.read(argc, argv);
 
@@ -1141,7 +1214,7 @@ int main(int argc, char** argv) {
   opt.max_iter_ = 1000;
   opt.addCallback(&Callback);
   
-  viewer->Idle();
+  if (idle) viewer->Idle();
 
   OptStatus status = opt.optimize();
 
