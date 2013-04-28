@@ -111,7 +111,7 @@ Var GurobiModel::addVar(const string& name, double lb, double ub) {
 
 
 Cnt GurobiModel::addEqCnt(const AffExpr& expr, const string& name) {
-  LOG_DEBUG("adding eq constraint: %s = 0", CSTR(expr));
+  LOG_TRACE("adding eq constraint: %s = 0", CSTR(expr));
   vector<int> inds = vars2inds(expr.vars);
   vector<double> vals = expr.coeffs;
   simplify2(inds, vals);
@@ -121,7 +121,7 @@ Cnt GurobiModel::addEqCnt(const AffExpr& expr, const string& name) {
   return cnts.back();
 }
 Cnt GurobiModel::addIneqCnt(const AffExpr& expr, const string& name) {
-  LOG_DEBUG("adding ineq: %s <= 0", CSTR(expr));
+  LOG_TRACE("adding ineq: %s <= 0", CSTR(expr));
   vector<int> inds = vars2inds(expr.vars);
   vector<double> vals = expr.coeffs;
   simplify2(inds, vals);
@@ -139,8 +139,7 @@ Cnt GurobiModel::addIneqCnt(const QuadExpr& qexpr, const string& name) {
   int success = GRBaddqconstr(model, numlnz, linds.data(), lvals.data(), qexpr.size(), 
     inds1.data(), inds2.data(), const_cast<double*>(qexpr.coeffs.data()), 
     GRB_LESS_EQUAL, -qexpr.affexpr.constant, const_cast<char*>(name.c_str()));
-  cnts.push_back(new CntRep(cnts.size(), this));
-  return cnts.back();
+  return Cnt();
 }
 
 void resetIndices(VarVector& vars) {

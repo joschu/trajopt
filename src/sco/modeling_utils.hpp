@@ -35,6 +35,7 @@ Same idea as above, but different output type
  */
 DblVec getDblVec(const vector<double>& x, const VarVector& vars);
 
+AffExpr affFromValGrad(double y, const VectorXd& x, const VectorXd& dydx, const VarVector& vars);
 
 class CostFromFunc : public Cost {
 public:

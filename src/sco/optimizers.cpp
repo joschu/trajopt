@@ -188,8 +188,7 @@ void BasicTrustRegionSQP::setTrustBoxConstraints(const DblVec& x) {
   assert(vars.size() == x.size());
   DblVec& lb=prob_->getLowerBounds(), ub=prob_->getUpperBounds();
   DblVec lbtrust(x.size()), ubtrust(x.size());
-  vector<bool> incmask = prob_->getIncrementMask();
-  if (incmask.empty()) incmask = vector<bool>(x.size(), false);
+  const vector<bool>& incmask = prob_->getIncrementMask();
   for (size_t i=0; i < x.size(); ++i) {
     lbtrust[i] = fmax((incmask[i] ? 0 : x[i]) - trust_box_size_, lb[i]);
     ubtrust[i] = fmin((incmask[i] ? 0 : x[i]) + trust_box_size_, ub[i]);
@@ -239,12 +238,14 @@ OptStatus BasicTrustRegionSQP::optimize() {
   for (int merit_increases=0; merit_increases < max_merit_coeff_increases_; ++merit_increases) { /* merit adjustment loop */
     for (int iter=1; ; ++iter) { /* sqp loop */
       callCallbacks(x_);
+      vector<bool> incmask = prob_->getIncrementMask();
+      for (int i=0; i < incmask.size(); ++i) if (incmask[i]) x_[i] = 0;
 
       LOG_DEBUG("current iterate: %s", CSTR(x_));
       LOG_INFO("iteration %i", iter);
 
       // speedup: if you just evaluated the cost when doing the line search, use that
-      if (results_.cost_vals.empty()) { //only happens on the first iteration
+      if (results_.cost_vals.empty() && results_.cnt_viols.empty()) { //only happens on the first iteration
         results_.cnt_viols = evaluateConstraintViols(constraints, x_);
         results_.cost_vals = evaluateCosts(prob_->getCosts(), x_);
         assert(results_.n_func_evals == 0);
@@ -295,7 +296,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
 
         if (GetLogLevel() >= util::LevelDebug) {
           DblVec model_cnt_viols2 = evaluateModelCosts(cnt_cost_models, model_var_vals);
-          LOG_DEBUG("SHOULD BE THE SAME: %.2f*%s ?= %s", merit_error_coeff_, CSTR(model_cnt_viols), CSTR(model_cnt_viols2));
+          LOG_DEBUG("SHOULD BE THE SAME: %s ?= %s", CSTR(model_cnt_viols), CSTR(model_cnt_viols2) );
         }
 
         DblVec new_cost_vals = evaluateCosts(prob_->getCosts(), new_x);
@@ -317,7 +318,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
           printf("%15s | %10.3e | %10.3e | %10.3e | %10.3e\n", "TOTAL", old_merit, approx_merit_improve, exact_merit_improve, merit_improve_ratio);
         }
 
-        if (approx_merit_improve < -1e-4) {
+        if (approx_merit_improve < -1e-5) {
           LOG_ERROR("approximate merit function got worse (%.3e). (convexification is probably wrong to zeroth order)", approx_merit_improve);
         }
         if (approx_merit_improve < min_approx_improve_) {

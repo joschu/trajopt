@@ -155,6 +155,7 @@ void OptProb::createVariables(const vector<string>& var_names, const DblVec& lb,
     upper_bounds_.push_back(ub[i]);
   }
   model_->update();
+  incmask_.resize(getNumVars(),false);  
 }
 void OptProb::setLowerBounds(const vector<double>& lb) {
   assert(lb.size() == vars_.size());

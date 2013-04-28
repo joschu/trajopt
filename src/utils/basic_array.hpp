@@ -102,7 +102,7 @@ struct BasicArray {
   }
 
   std::vector<T> flatten() {
-    return std::vector<T>(m_data.begin(), m_data.end());
+    return m_data;
   }
 
   T* data() {
