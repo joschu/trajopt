@@ -22,3 +22,6 @@ target_link_libraries(quaternion_optimization trajopt)
 
 add_executable(pushing pushing.cpp)
 target_link_libraries(pushing trajopt humanoids)
+
+add_executable(compl_test compl_test.cpp complementarity.cpp)
+target_link_libraries(compl_test sco)
