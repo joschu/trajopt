@@ -29,180 +29,8 @@ extern void PolygonToEquations(const MatrixX2d& pts, MatrixX2d& ab,VectorXd& c);
 
 double mu = 1; // TODO make it a parameter
 bool idle = false;
+bool constrain_all_poses = true;
 
-
-OpenRAVE::Vector toRaveQuat(const Vector4d& v) {
-  return OpenRAVE::Vector(v[0], v[1], v[2], v[3]);
-}
-OpenRAVE::Vector toRave(const Vector3d& v) {
-  return OpenRAVE::Vector(v[0], v[1], v[2]);
-}
-
-
-template<typename T>
-void extend(vector<T>& a, const vector<T>& b) {
-  a.insert(a.end(), b.begin(), b.end());
-}
-
-VectorXd concat(const VectorXd& a, const VectorXd& b) {
-  VectorXd out(a.size() + b.size());
-  out.topRows(a.size()) = a;
-  out.middleRows(a.size(), b.size()) = b;
-  return out;
-}
-
-template<typename T>
-vector<T> concat(const vector<T>& a, const vector<T>& b) {
-  vector<T> out;
-  vector<int> x;
-  out.insert(out.end(), a.begin(), a.end());
-  out.insert(out.end(), b.begin(), b.end());
-  return out;
-}
-template<typename T>
-vector<T> concat(const vector<T>& a, const vector<T>& b, const vector<T>& c) {
-  vector<T> out;
-  vector<int> x;
-  out.insert(out.end(), a.begin(), a.end());
-  out.insert(out.end(), b.begin(), b.end());
-  out.insert(out.end(), c.begin(), c.end());
-  return out;
-}
-template<typename T>
-vector<T> concat(const vector<T>& a, const vector<T>& b, const vector<T>& c, const vector<T>& d) {
-  vector<T> out;
-  vector<int> x;
-  out.insert(out.end(), a.begin(), a.end());
-  out.insert(out.end(), b.begin(), b.end());
-  out.insert(out.end(), c.begin(), c.end());
-  out.insert(out.end(), d.begin(), d.end());
-  return out;
-}
-template<typename T>
-vector<T> concat(const vector<T>& a, const vector<T>& b, const vector<T>& c, const vector<T>& d, const vector<T>& e) {
-  vector<T> out;
-  vector<int> x;
-  out.insert(out.end(), a.begin(), a.end());
-  out.insert(out.end(), b.begin(), b.end());
-  out.insert(out.end(), c.begin(), c.end());
-  out.insert(out.end(), d.begin(), d.end());
-  out.insert(out.end(), e.begin(), e.end());
-  return out;
-}
-struct IncrementalRB: public Configuration {
-  KinBodyPtr m_body;
-  OpenRAVE::Vector m_q;
-  OpenRAVE::Vector m_r;
-
-  IncrementalRB(KinBodyPtr body) :
-      m_body(body), m_r(0, 0, 0) {
-  }
-  virtual void SetDOFValues(const DblVec& dofs) {
-    OR::Transform T;
-    T.trans = OR::Vector(dofs[0], dofs[1], dofs[2]);
-    m_r = OR::Vector(dofs[3],dofs[4], dofs[5]);
-    T.rot = geometry::quatMultiply(geometry::quatFromAxisAngle(m_r), m_q);
-    m_body->SetTransform(T);
-  }
-  virtual void GetDOFLimits(DblVec& lower, DblVec& upper) const {
-    lower = DblVec(6, -INFINITY);
-    upper = DblVec(6, INFINITY);
-  };
-  virtual DblVec GetDOFValues() {
-    throw;
-    DblVec out(6);
-    OpenRAVE::Transform T = m_body->GetTransform();
-    out[0] = T.trans.x;
-    out[1] = T.trans.y;
-    out[2] = T.trans.z;
-    out[3] = m_r[0];
-    out[4] = m_r[1];
-    out[5] = m_r[2];
-    return out;
-  }
-  ;
-  virtual int GetDOF() const {
-    return 6;
-  }
-  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {
-    return m_body->GetEnv();
-  }
-  virtual DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const {
-    MatrixXd out(3, 6);
-    out.leftCols(3) = Matrix3d::Identity();
-    assert(link_ind == 0);
-    KinBody::LinkPtr link = m_body->GetLinks()[link_ind];
-    OpenRAVE::Vector dr = pt - link->GetTransform().trans;
-    double matdata[9] = { 0, dr[2], -dr[1], -dr[2], 0, dr[0], dr[1], -dr[0], 0 };
-    out.rightCols(3) = Eigen::Map<MatrixXd>(matdata, 3, 3);
-    return out;
-  }
-  virtual DblMatrix RotationJacobian(int link_ind) const {
-    PRINT_AND_THROW("not implemented");
-  }
-  virtual bool DoesAffect(const KinBody::Link& link) {
-    BOOST_FOREACH(const KinBody::LinkPtr& link1, m_body->GetLinks()) {
-      if (link1.get() == &link)
-        return true;
-    }
-    return false;
-  }
-  virtual std::vector<KinBody::LinkPtr> GetAffectedLinks() {
-    return m_body->GetLinks();
-  }
-  virtual void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links,
-      bool only_with_geom, vector<int>& link_inds) {
-    links = GetAffectedLinks();
-    link_inds.resize(links.size());
-    for (int i = 0; i < links.size(); ++i)
-      link_inds.push_back(links[i]->GetIndex());
-  }
-  virtual DblVec RandomDOFValues() {
-    return toDblVec(VectorXd::Random(6));
-  }
-};
-typedef boost::shared_ptr<IncrementalRB> IncrementalRBPtr;
-
-struct StaticObject: public Configuration {
-  KinBodyPtr m_body;
-
-  StaticObject(KinBodyPtr body) :
-      m_body(body) {}
-  virtual void SetDOFValues(const DblVec& dofs) {}
-  virtual DblVec GetDOFValues() {return DblVec();};
-  virtual int GetDOF() const {return 0;}
-  virtual void GetDOFLimits(DblVec&, DblVec&) const {}
-  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {
-    return m_body->GetEnv();
-  }
-  virtual DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const {
-    return MatrixXd::Zero(3,0);
-  }
-  virtual DblMatrix RotationJacobian(int link_ind) const {
-    PRINT_AND_THROW("not implemented");
-  }
-  virtual bool DoesAffect(const KinBody::Link& link) {
-    BOOST_FOREACH(const KinBody::LinkPtr& link1, m_body->GetLinks()) {
-      if (link1.get() == &link)
-        return true;
-    }
-    return false;
-  }
-  virtual std::vector<KinBody::LinkPtr> GetAffectedLinks() {
-    return m_body->GetLinks();
-  }
-  virtual void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links,
-      bool only_with_geom, vector<int>& link_inds) {
-    links = GetAffectedLinks();
-    link_inds.resize(links.size());
-    for (int i = 0; i < links.size(); ++i)
-      link_inds.push_back(links[i]->GetIndex());
-  }
-  virtual DblVec RandomDOFValues() {
-    return toDblVec(VectorXd::Random(0));
-  }
-};
-typedef boost::shared_ptr<StaticObject> StaticObjectPtr;
 
 
 class AngVelCost: public Cost {
@@ -234,62 +62,6 @@ public:
   double coeff_;
 };
 
-struct PositionRB: public Configuration {
-  KinBodyPtr m_body;
-  KinBody::LinkPtr m_link;
-
-  PositionRB(KinBodyPtr body, KinBody::LinkPtr link) :
-      m_body(body), m_link(link) {
-  }
-  virtual void SetDOFValues(const DblVec& dofs) {
-    OpenRAVE::Transform T = m_link->GetTransform();
-    T.trans.x = dofs[0];
-    T.trans.y = dofs[1];
-    T.trans.z = dofs[2];
-    m_body->SetTransform(T);
-  }
-  virtual void GetDOFLimits(DblVec& lower, DblVec& upper) const {
-    lower = DblVec(3, -INFINITY);
-    upper = DblVec(3, INFINITY);
-  }
-  ;
-  virtual DblVec GetDOFValues() {
-    DblVec out(3);
-    OpenRAVE::Transform T = m_link->GetTransform();
-    out[0] = T.trans.x;
-    out[1] = T.trans.y;
-    out[2] = T.trans.z;
-    return out;
-  }
-  ;
-  virtual int GetDOF() const {
-    return 3;
-  }
-  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {
-    return m_link->GetParent()->GetEnv();
-  }
-  virtual DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const {
-    return Matrix3d::Identity();
-  }
-  virtual DblMatrix RotationJacobian(int link_ind) const {
-    PRINT_AND_THROW("not implemented");
-  }
-  virtual bool DoesAffect(const KinBody::Link& link) {
-    return &link == m_link.get();
-  }
-  virtual std::vector<KinBody::LinkPtr> GetAffectedLinks() {
-    return vector<KinBody::LinkPtr>(1, m_link);
-  }
-  virtual void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links,
-      bool only_with_geom, vector<int>& link_inds) {
-    links = GetAffectedLinks();
-    link_inds.resize(1);
-    link_inds[0] = 0;
-  }
-  virtual DblVec RandomDOFValues() {
-    return toDblVec(VectorXd::Random(3));
-  }
-};
 
 enum ContactType {
   SLIDING, STICKING
@@ -380,56 +152,6 @@ void FaceContactConstraint::Plot(const DblVec& xvec, OR::EnvironmentBase& env, s
 
 
 
-template<typename S, typename T, typename U>
-vector<U> cross1(const vector<S>& a, const vector<T>& b) {
-  vector<U> c(3);
-  c[0] = a[1] * b[2] - a[2] * b[1];
-  c[1] = a[2] * b[0] - a[0] * b[2];
-  c[2] = a[0] * b[1] - a[1] * b[0];
-  return c;
-}
-
-void exprInc(AffExprVector& a, const AffExprVector&  b) {
-  for (int i=0; i < a.size(); ++i) {
-    exprInc(a[i], b[i]);
-  }
-}
-void exprDec(AffExprVector& a, const AffExprVector&  b) {
-  for (int i=0; i < a.size(); ++i) {
-    exprDec(a[i], b[i]);
-  }
-}
-AffExprVector linearizedCrossProduct(const DblVec& x, const AffExprVector& a, const AffExprVector& b) {
-  assert(a.size() == 3 && b.size() == 3);
-  DblVec aval(3), bval(3);
-  for (int i=0; i < 3; ++i) {
-    aval[i] = a[i].value(x);
-    bval[i] = b[i].value(x);
-  }
-  AffExprVector c(3);
-  exprInc(c, cross1<AffExpr, double, AffExpr>(a, bval));
-  exprInc(c, cross1<double, AffExpr, AffExpr>(aval, b));
-  DblVec acrossbval = cross1<double,double,double>(aval, bval);
-  for (int i=0; i<3; ++i) exprDec(c[i], acrossbval[i]);
-  return c;
-}
-
-AffExprVector transformExpr(const OR::Transform& T, const AffExprVector& v) {
-  OR::TransformMatrix M(T);
-  AffExprVector out(3);
-  for (int i=0; i < 3; ++i) {
-    for (int j=0; j < 3; ++j) {
-      exprInc(out[i], M.rot(i,j) * v[j]);
-    }
-    exprInc(out[i], T.trans[i]);
-  }
-  return out;
-}
-AffExprVector rotateExpr(const OR::Vector& rot, const AffExprVector& v) {
-  OR::Transform T;
-  T.rot = rot;
-  return transformExpr(T, v);
-}
 
 struct ForceBalanceConstraint : public EqConstraint {
 
@@ -476,7 +198,7 @@ AffExprVector ForceBalanceConstraint::CalcWrenchExpr(const DblVec& x, Contact& c
 
 
   AffExprVector fExprLink = rotateExpr(Tlf.rot, fExprFace);
-  AffExprVector rExprLink = transformExpr(Tlf, rExprFace);
+  AffExprVector rExprLink = transformExpr(Tlf, rExprFace);  
 
   AffExprVector tExprLink = linearizedCrossProduct(x, rExprLink, fExprLink);
 
@@ -1033,98 +755,58 @@ void Setup3DOFPush(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& 
 
 }
 
-Face GetBoxFace(KinBody::LinkPtr boxlink, const OR::Vector& dir) {
+Face GetFace(KinBody::LinkPtr link, const OR::Vector& dir) {  
   Face f;
-  OR::Vector extents = boxlink->GetGeometry(0)->GetBoxExtents();
+  OR::AABB bb = link->ComputeLocalAABB();
+  OR::Vector extents = bb.extents;
   double lens[2];
-  if (dir.x == 1) {
-    lens[0] = extents.y;
-    lens[1] = extents.z;
-    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(0, 1, 0), M_PI / 2);
+  int i=-1;
+  int sgn;
+  for (int j=0; j < 3; ++j) if (fabs(dir[j]) > 1e-5) {
+    i = j;
+    sgn = dir[j];
   }
-  else if (dir.x == -1) {
-    lens[0] = extents.y;
-    lens[1] = extents.z;    
-    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(0, 1, 0), -M_PI / 2);
-  }
-  else if (dir.y == 1) {
-    lens[0] = extents.z;
-    lens[1] = extents.x;    
-    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(1, 0, 0), -M_PI / 2);
-  }
-  else if (dir.y == -1) {
-    lens[0] = extents.z;
-    lens[1] = extents.x;    
-    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(1, 0, 0), M_PI / 2);
-  }
-  else if (dir.z == 1) {
-    lens[0] = extents.x;
-    lens[1] = extents.y;    
-  }
-  else if (dir.z == -1) {
-    lens[0] = extents.x;
-    lens[1] = extents.y;    
-    f.Tlf.rot = geometry::quatFromAxisAngle(OpenRAVE::Vector(0, 1, 0), M_PI);
-  }
+  assert(i != -1);
+  lens[0] = extents[(i+1)%3];
+  lens[1] = extents[(i+2)%3];
+  f.Tlf.rot = geometry::quatRotateDirection(OR::Vector(0,0,1), dir);
+  f.Tlf.trans = bb.pos;
+  f.Tlf.trans[i] += sgn*extents[i];
+  cout <<link->GetName() << " dir: " << dir << " trans: " << f.Tlf.trans << " rot: " << f.Tlf.rot << endl;
   f.poly.resize(4,2);
-  f.poly << lens[0], lens[1], -lens[0], lens[1], lens[0], lens[1], lens[0], -lens[1];
-  f.link = boxlink;
+  f.poly << lens[0], lens[1], -lens[0], lens[1], -lens[0], -lens[1], lens[0], -lens[1];
+  f.link = link;
+  return f;
 }
 
 void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& prob, DblVec& xinit) {
 
 
-  Face armtip, boxface, boxbottom, tabletop;//xxx
   env->Load(string(DATA_DIR) + "/pr2_pushing.env.xml");
 
   RobotBasePtr robot = GetRobotByName(*env, "pr2");
-  assert(robot);
-  KinBodyPtr obj = GetBodyByName(*env, "box");
-  assert(obj);
+  KinBodyPtr box = GetBodyByName(*env, "box");
   KinBodyPtr table = GetBodyByName(*env, "table");
-  assert(table);
-
+  assert(robot && box && table);
 
   int nSteps = 10;
 
   RobotAndDOFPtr robotConfig(new RobotAndDOF(robot, GetManipulatorByName(*robot,"rightarm")->GetArmIndices()));
 
-  {
-    boxface.poly.resize(4,2);
-    boxface.poly << -.1, -.1, -.1, .1, .1, .1, .1, -.1;
-    boxface.Tlf.trans.x = -.1;
-    boxface.Tlf.rot = OpenRAVE::geometry::quatFromAxisAngle(OpenRAVE::Vector(0, 1, 0), -M_PI / 2);
-    boxface.link = obj->GetLinks()[0];
-  }
-  {
-    armtip.poly.resize(4,2);
-    armtip.poly << -.1, -.1, -.1, .1, .1, .1, .1, -.1;
-    armtip.poly *= .2;
-    armtip.Tlf.trans.x = 0;
-    armtip.Tlf.trans.z = .02;
-    armtip.Tlf.rot =  OpenRAVE::geometry::quatFromAxisAngle(OpenRAVE::Vector(0,0,1), M_PI / 2);
-    armtip.link = robot->GetLink("r_gripper_tool_frame");
-  }
-  {
-    boxbottom = boxface;
-    boxbottom.Tlf.rot = OpenRAVE::geometry::quatFromAxisAngle(OpenRAVE::Vector(0, 1, 0), M_PI);    
-    boxbottom.Tlf.trans = OR::Vector(0,0,-.1);
-  }
-  {
-    tabletop.poly.resize(4,2);
-    tabletop.poly << -0.65, -0.35,  -.65, .35,  .65, .35,  .65, -.35;
-    tabletop.Tlf.trans.z = .05;
-    tabletop.link = table->GetLinks()[0];
-  }
-  
-  vector<KinBodyPtr> staticBodies, dynamicBodies;
-  dynamicBodies.push_back(obj);
-  staticBodies.push_back(table);
+
+  Face finger0 = GetFace(robot->GetLink("r_gripper_l_finger_link"), OR::Vector(0,1,0));
+  Face finger1 = GetFace(robot->GetLink("r_gripper_r_finger_link"), OR::Vector(0,1,0));
+    
+  Face boxfront = GetFace(box->GetLinks()[0], OR::Vector(-1,0,0));
+  Face boxbottom = GetFace(box->GetLinks()[0], OR::Vector(0,0,-1));
+  Face tabletop = GetFace(table->GetLinks()[0], OR::Vector(0,0,1));
+
+  vector<KinBodyPtr> staticBodies = list_of(table), dynamicBodies = list_of(box);
 
   prob.reset(new MechanicsProblem(nSteps, dynamicBodies, staticBodies, robotConfig));
 
-//
-  prob->AddContacts(STICKING, 0, nSteps-1, armtip, boxface);
+  prob->AddContacts(STICKING, 0, nSteps-1, finger0, boxfront);
+  prob->AddContacts(STICKING, 0, nSteps-1, finger1, boxfront);
   prob->AddContacts(SLIDING, 0, nSteps-1, boxbottom, tabletop);
   prob->AddDynamicsConstraints();
   prob->AddMotionCosts(10,10,10);
@@ -1133,30 +815,73 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
 
   xinit = DblVec(prob->getNumVars(), 0);
   VectorXd startPt(6);
-  startPt.topRows(3) = toVector3d(obj->GetTransform().trans);
+  startPt.topRows(3) = toVector3d(box->GetTransform().trans);
   VectorXd endPt = startPt;
   endPt[0] += .1;
 
   VarArray& posvars = prob->m_obj2posvars[0];
-  for (int j = 0; j < 6; ++j) {
-    setVec(xinit, posvars.col(j),VectorXd::LinSpaced(nSteps, startPt(j), endPt(j)));
-    VectorXd ps = VectorXd::LinSpaced(nSteps, startPt(j), endPt(j));
-    
-     for (int i=0; i < nSteps; ++i) {
-       prob->addLinearConstr(exprSub(AffExpr(posvars(i, j)), ps(i)), EQ);
-     }
-//    prob->addLinearConstr(exprSub(AffExpr(posvars(0, j)), startPt[j]), EQ);
-//    prob->addLinearConstr(exprSub(AffExpr(posvars(nSteps - 1, j)), endPt[j]),EQ);
+  for (int i=0; i < nSteps; ++i) {
+    for (int j=0; j < 6; ++j) {
+      double ptarg = (startPt(j) * (nSteps-i) + endPt(j) * i) / (nSteps-1);
+      xinit[posvars(i,j).var_rep->index] = ptarg;
+      if (constrain_all_poses || (i==0) || (i==nSteps-1)) prob->addLinearConstr(exprSub(AffExpr(posvars(i, j)), ptarg), EQ);
+    }
   }
+  
+}
 
-  // TODO disabling rotation since something screwy is going on
-  for (int iStep=0; iStep < nSteps; ++iStep) {
-    for (int j=3; j < 6; ++j) {
-      prob->addLinearConstr(AffExpr(prob->m_obj2posvars[0](iStep, j)), EQ);
+#if 0
+void SetupPR2Pickup(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& prob, DblVec& xinit) {
+
+
+  env->Load(string(DATA_DIR) + "/pr2_pushing.env.xml");
+
+  RobotBasePtr robot = GetRobotByName(*env, "pr2");
+  KinBodyPtr box = GetBodyByName(*env, "box");
+  KinBodyPtr table = GetBodyByName(*env, "table");
+  assert(robot && box && table);
+
+  int nSteps = 10;
+
+  RobotAndDOFPtr robotConfig(new RobotAndDOF(robot, GetManipulatorByName(*robot,"rightarm")->GetArmIndices()));
+
+
+  Face finger0 = GetFace(robot->GetLink("r_gripper_l_finger_tip_link"), OR::Vector(1,0,0));
+  Face finger1 = GetFace(robot->GetLink("r_gripper_r_finger_tip_link"), OR::Vector(1,0,0));
+
+  Face boxfront = GetFace(box->GetLinks()[0], OR::Vector(-1,0,0));
+  Face boxbottom = GetFace(box->GetLinks()[0], OR::Vector(0,0,-1));
+  Face tabletop = GetFace(table->GetLinks()[0], OR::Vector(0,0,1));
+
+  vector<KinBodyPtr> staticBodies = list_of(table), dynamicBodies = list_of(box);
+
+  prob.reset(new MechanicsProblem(nSteps, dynamicBodies, staticBodies, robotConfig));
+
+  prob->AddContacts(STICKING, 0, nSteps-1, finger0, boxfront);
+  prob->AddContacts(STICKING, 0, nSteps-1, finger1, boxfront);
+  prob->AddContacts(SLIDING, 0, nSteps-1, boxbottom, tabletop);
+  prob->AddDynamicsConstraints();
+  prob->AddMotionCosts(10,10,10);
+   prob->AddCollisionCosts(1);
+  BasicTrustRegionSQP opt(prob);
+
+  xinit = DblVec(prob->getNumVars(), 0);
+  VectorXd startPt(6);
+  startPt.topRows(3) = toVector3d(box->GetTransform().trans);
+  VectorXd endPt = startPt;
+  endPt[0] += .1;
+
+  VarArray& posvars = prob->m_obj2posvars[0];
+  for (int i=0; i < nSteps; ++i) {
+    for (int j=0; j < 6; ++j) {
+      double ptarg = (startPt(j) * (nSteps-i) + endPt(j) * i) / (nSteps-1);
+      xinit[posvars(i,j).var_rep->index] = ptarg;
+      if (constrain_all_poses || (i==0) || (i==nSteps-1)) prob->addLinearConstr(exprSub(AffExpr(posvars(i, j)), ptarg), EQ);
     }
   }
 
 }
+#endif
 
 /**
 Problems:
@@ -1168,6 +893,16 @@ Problems:
 
 4. is interesting. Just initialize it with a contact between its finger and the top. and tell the optimizer it needs to slide the thing out.
 so it'll first just try to push down and slide it. Let's first have a maybe top contact, and then we have two maybe side contacts. 
+
+Assuming one of the contacting objects is a face/surface, we can use that
+
+So each contact has a surface face. Contact knows how to calculate the world wrench, and the expression for it.
+But I decided that it was better to do the force balance in the link frame so everything isn't dependent on the origin.
+Or we could compromise by doing force balance in a world-aligned frame centered at the link COM.
+
+So next generation: fix force balance, contact knows about which face to use
+Then a later generation will accommodate non-faces
+
 
 */
 
@@ -1183,6 +918,7 @@ int main(int argc, char** argv) {
   config.add(new Parameter<double>("mu", &mu, "mu (friction coefficient)"));
   config.add(new Parameter<string>("problem", &problem, "problem: [3linkpush, pr2push]"));
   config.add(new Parameter<bool>("idle", &idle, "idle after stuff"));
+  config.add(new Parameter<bool>("constrain_all_poses", &constrain_all_poses, "constrain pose trajectory, as opposed to just start and end"));
   CommandParser parser(config);
   parser.read(argc, argv);
 
@@ -1214,8 +950,6 @@ int main(int argc, char** argv) {
   opt.max_iter_ = 1000;
   opt.addCallback(&Callback);
   
-  if (idle) viewer->Idle();
-
   OptStatus status = opt.optimize();
 
   RaveDestroy();

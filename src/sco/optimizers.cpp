@@ -252,6 +252,17 @@ OptStatus BasicTrustRegionSQP::optimize() {
         ++results_.n_func_evals;
       }
 
+      // DblVec new_cnt_viols = evaluateConstraintViols(constraints, x_);
+      // DblVec new_cost_vals = evaluateCosts(prob_->getCosts(), x_);
+      // cout << "costs" << endl;
+      // for (int i=0; i < new_cnt_viols.size(); ++i) {
+      //   cout << cnt_names[i] << " " << new_cnt_viols[i] - results_.cnt_viols[i] << endl;
+      // }
+      // for (int i=0; i < new_cost_vals.size(); ++i) {
+      //   cout << cost_names[i] << " " << new_cost_vals[i] - results_.cost_vals[i] << endl;
+      // }
+
+
       vector<ConvexObjectivePtr> cost_models = convexifyCosts(prob_->getCosts(),x_, model_.get());
       vector<ConvexConstraintsPtr> cnt_models = convexifyConstraints(constraints, x_, model_.get());
       vector<ConvexObjectivePtr> cnt_cost_models = cntsToCosts(cnt_models, merit_error_coeff_, model_.get());
