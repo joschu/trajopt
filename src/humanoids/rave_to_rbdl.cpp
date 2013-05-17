@@ -3,7 +3,6 @@
 #include <boost/foreach.hpp>
 #include "trajopt/utils.hpp"
 #include "trajopt/rave_utils.hpp"
-#include <rbdl_utils.h>
 using namespace OpenRAVE;
 using namespace Eigen;
 using namespace trajopt;
@@ -66,15 +65,26 @@ boost::shared_ptr<rbd::Model> MakeRBDLModel(OpenRAVE::RobotBasePtr robot, bool f
     Matrix3d inertia_jj = T_j_m.inverse() * inertia_mm * T_j_m;
 
     rbd::Body body(child->GetMass(), toVector3d(T_j_l1 * child->GetLocalCOM()), inertia_jj);
-
-    link2id[child] = model->AddBody(link2id[parent], toSpatialTransform(link2Tjl[parent] * T_l0_j), rbd_joint, body, child->GetName());
+    cout << "----------" << endl;
+    cout <<  joint->GetName() << " " << rave_type << endl;
+    
+    KinBody::LinkPtr realParent = parent;
+    while (link2id.find(realParent) == link2id.end()) {
+      cout << "realParent" << realParent->GetName() << endl;
+      vector<KinBody::LinkPtr> parentLinks;
+      realParent->GetParentLinks(parentLinks);
+      assert(parentLinks.size() == 1);
+      realParent = parentLinks[0];
+    }
+    
+    
+    cout << "parent: " << parent->GetName() << " " << link2id[parent] << endl;
+    link2id[child] = model->AddBody(link2id[realParent], toSpatialTransform(link2Tjl[realParent] * T_l0_j), rbd_joint, body, child->GetName());
+    cout << "child: " << child->GetName() << link2id[child] << endl;
     link2Tjl[child] = T_j_l1;
-
+    cout << "---------" << endl;
   }
 
-//  cout << rbd::Utils::GetModelHierarchy (*model) << endl;
-//  cout << rbd::Utils::GetModelDOFOverview (*model) << endl;
-//  cout << rbd::Utils::GetNamedBodyOriginsOverview(*model) << endl;
   return model;
 
 

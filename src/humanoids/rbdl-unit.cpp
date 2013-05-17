@@ -10,6 +10,8 @@
 #include <iostream>
 #include "osgviewer/osgviewer.hpp"
 #include <Eigen/Geometry>
+#include <rbdl_utils.h>
+
 using namespace std;
 using namespace OpenRAVE;
 using namespace trajopt;
@@ -96,7 +98,7 @@ TEST(fixed_base, kinematics) {
    */
   EnvironmentBasePtr env = RaveCreateEnvironment();
   env->StopSimulation();
-  env->Load("robots/puma.robot.xml");
+  env->Load("robots/pr2-beta-static.zae");
   RobotBasePtr robot = GetRobot(*env);
   vector<int> inds;
   for (int i=0; i < robot->GetDOF(); ++i) inds.push_back(i);
@@ -104,17 +106,24 @@ TEST(fixed_base, kinematics) {
   DblVec dofvals = rad->RandomDOFValues();
 
 
-  robot->SetDOFValues(dofvals,false);
+  robot->SetDOFValues(dofvals,true);
 
   std::map<KinBody::LinkPtr, unsigned> link2id;
   boost::shared_ptr<rbd::Model> model = MakeRBDLModel(robot, false, link2id);
   rbd::Math::VectorNd Q = toVectorXd(dofvals);
   rbd::UpdateKinematicsCustom(*model, &Q, NULL, NULL);
 
+  cout << "model hier\n" << rbd::Utils::GetModelHierarchy (*model) << endl;
+  cout << "model dof overview\n" << rbd::Utils::GetModelDOFOverview (*model) << endl;
+  cout << "named bodies\n" << rbd::Utils::GetNamedBodyOriginsOverview(*model) << endl;
+
   BOOST_FOREACH(KinBody::JointPtr joint, robot->GetJoints()) {
     KinBody::LinkPtr childLink = joint->GetHierarchyChildLink();
     int i = link2id[childLink];
-    cout << childLink->GetName() << endl;
+    cout << childLink->GetName() << " " << childLink->GetTransform() <<  endl;
+    DblVec vals;
+    joint->GetValues(vals);
+    cout << "vasls: " << vals[0] << endl;
     EXPECT_MATRIX_NEAR(toVector3d((toRave(model->X_base[i]) * joint->GetInternalHierarchyRightTransform()).trans),
         toVector3d(childLink->GetTransform().trans), 1e-4);
     EXPECT_MATRIX_NEAR(toMatrix3d(toRave(model->X_base[i]) * joint->GetInternalHierarchyRightTransform()),
