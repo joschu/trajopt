@@ -125,7 +125,7 @@ DblVec RobotAndDOF::RandomDOFValues() {
   GetDOFLimits(lower, upper);
   DblVec out(ndof);
   for (int i=0; i < ndof; ++i) {
-    lower[i] = fmax(lower[i], 2*M_PI);
+    lower[i] = fmax(lower[i], -2*M_PI);
     upper[i] = fmin(upper[i], 2*M_PI);
     out[i] = lower[i] + randf() * (upper[i] - lower[i]);
   }
