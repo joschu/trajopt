@@ -4,3 +4,5 @@ Linear vs nonlinear costs
 
 Improve SQP algorithm performance in infeasible-start case
 
+Make index compression more efficient
+When you're removing convexconstraints, don't need to update until the end

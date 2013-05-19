@@ -33,35 +33,32 @@ double QuadExpr::value(const double* x) const {
   }
   return out;
 }
-//double QuadExpr::value() const {
-//  double out = affexpr.value();
-//  for (size_t i=0; i < size(); ++i) {
-//    out += coeffs[i] * vars1[i].value() * vars2[i].value();
-//  }
-//  return out;
-//}
+
 
 Var Model::addVar(const string& name, double lb, double ub) {
   Var v = addVar(name);
   setVarBounds(v, lb, ub);
   return v;
 }
-void Model::removeVars(const VarVector& vars) {
-  BOOST_FOREACH(const Var& var, vars) removeVar(var);
+void Model::removeVar(const Var& var) {
+  vector<Var> vars(1,var);
+  removeVars(vars);
 }
-void Model::removeCnts(const vector<Cnt>& cnts) {
-  BOOST_FOREACH(const Cnt& cnt, cnts) removeCnt(cnt);
-}
-vector<double> Model::getVarValues(const VarVector& vars) const {
-  vector<double> out(vars.size());
-  for (size_t i=0; i < out.size(); ++i) out[i] = getVarValue(vars[i]);
-  return out;
+void Model::removeCnt(const Cnt& cnt) {
+  vector<Cnt> cnts(1, cnt);
+  removeCnts(cnts);
 }
 
-void Model::setVarBounds(const VarVector& vars, const vector<double>& lower, const vector<double>& upper) {
-  for (int i=0; i < vars.size(); ++i) setVarBounds(vars[i], lower[i], upper[i]);
+double Model::getVarValue(const Var& var) const {
+  VarVector vars(1,var);
+  return getVarValues(vars)[0];
 }
 
+void Model::setVarBounds(const Var& var, double lower, double upper) {
+  vector<double> lowers(1,lower), uppers(1, upper);
+  vector<Var> vars(1,var);
+  setVarBounds(vars, lowers, uppers);
+}
 
 
 ostream& operator<<(ostream& o, const Var& v) {
@@ -92,8 +89,10 @@ ostream& operator<<(ostream& o, const QuadExpr& e) {
 
 
 ModelPtr createModel(CvxSolverID solver) {
-  extern ModelPtr createGurobiModel();
-  return createGurobiModel();
+  // extern ModelPtr createGurobiModel();
+  // return createGurobiModel();
+  extern ModelPtr createBPMPDModel();
+  return createBPMPDModel();
 }
 
 
