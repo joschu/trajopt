@@ -133,7 +133,8 @@ DblVec RobotAndDOF::RandomDOFValues() {
   GetDOFLimits(lower, upper);
   DblVec out(ndof);
   for (int i=0; i < ndof; ++i) {
-    lower[i] = fmax(lower[i], 2*M_PI);
+    // TODO this is only right for a circular joint!!
+    lower[i] = fmax(lower[i], -2*M_PI);
     upper[i] = fmin(upper[i], 2*M_PI);
     out[i] = lower[i] + randf() * (upper[i] - lower[i]);
   }
