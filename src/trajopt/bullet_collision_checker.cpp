@@ -25,10 +25,12 @@ enum CollisionFilterGroups {
 
 const float MARGIN = 0;
 
+#if 0
 ostream &operator<<(ostream &stream, const btVector3& v) {
   stream << v.x() << " " << v.y() << " " << v.z();
   return stream;
 }
+#endif
 
 class CollisionObjectWrapper : public btCollisionObject {
 public:
@@ -92,21 +94,21 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
   btCollisionShape* subshape;
 
   switch (geom->GetType()) {
-  case KinBody::Link::GEOMPROPERTIES::GeomBox:
+  case OpenRAVE::GT_Box:
     subshape = new btBoxShape(toBt(geom->GetBoxExtents()));
     break;
-  case KinBody::Link::GEOMPROPERTIES::GeomSphere:
+  case OpenRAVE::GT_Sphere:
     subshape = new btSphereShape(geom->GetSphereRadius());
     break;
-  case KinBody::Link::GEOMPROPERTIES::GeomCylinder:
+  case OpenRAVE::GT_Cylinder:
     // cylinder axis aligned to Y
   {
     float r = geom->GetCylinderRadius(), h = geom->GetCylinderHeight() / 2;
     subshape = new btCylinderShapeZ(btVector3(r, r, h / 2));
     break;
   }
-  case KinBody::Link::GEOMPROPERTIES::GeomTrimesh: {
-    const KinBody::Link::TRIMESH &mesh = geom->GetCollisionMesh();
+  case OpenRAVE::GT_TriMesh: {
+    const OpenRAVE::TriMesh &mesh = geom->GetCollisionMesh();
     assert(mesh.indices.size() >= 3);
     boost::shared_ptr<btTriangleMesh> ptrimesh(new btTriangleMesh());
 
@@ -162,7 +164,7 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
 COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link, bool useTrimesh) {
   LOG_DEBUG("creating bt collision object from from %s",link->GetName().c_str());
 
-  const std::vector<boost::shared_ptr<OpenRAVE::KinBody::Link::GEOMPROPERTIES> > & geometries=link->GetGeometries();
+  const std::vector<boost::shared_ptr<OpenRAVE::KinBody::Link::Geometry> > & geometries=link->GetGeometries();
 
   if (geometries.empty()) return COWPtr();
 
@@ -181,7 +183,7 @@ COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link, bool useTrimesh) {
     compound->setMargin(MARGIN); //margin: compound. seems to have no effect when positive but has an effect when negative
     cow->setCollisionShape(compound);
 
-    BOOST_FOREACH(const boost::shared_ptr<OpenRAVE::KinBody::Link::GEOMPROPERTIES>& geom, geometries) {
+    BOOST_FOREACH(const boost::shared_ptr<OpenRAVE::KinBody::Link::Geometry>& geom, geometries) {
 
       btCollisionShape* subshape = createShapePrimitive(geom, useTrimesh, cow.get());
       if (subshape != NULL) {
@@ -451,7 +453,7 @@ void BulletCollisionChecker::LinkVsAll_NoUpdate(const KinBody::Link& link, vecto
   m_world->contactTest(cow, cc);
 }
 
-class KinBodyCollisionData;
+struct KinBodyCollisionData;
 typedef boost::shared_ptr<KinBodyCollisionData> CDPtr;
 struct KinBodyCollisionData : public OpenRAVE::UserData {
   OpenRAVE::KinBodyWeakPtr body;
@@ -850,8 +852,8 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
                 l01 = (ptWorld1 - ptWorld0).length();
           const float COLLINEARITY_TOLERANCE = 1e-5;
           // cout << ptWorld0 << " / " << ptWorld1 << " / " << ptOnCast << endl;
-          // if ( l0c + l1c - l01 > COLLINEARITY_TOLERANCE ) LOG_DEBUG("points aren't collinear?!");
-          m_collisions.back().time = l01 > 0  ?  fmin(l0c/l01, 1) : .5;            
+          if ( l0c + l1c - l01 > COLLINEARITY_TOLERANCE ) LOG_WARN("points are supposed to be collinear here");
+          m_collisions.back().time = (l01 > 0)  ?  fmin(l0c/l01, 1) : .5;            
         }
           
       }
@@ -906,7 +908,7 @@ void BulletCollisionChecker::CastVsAll(Configuration& rad, const vector<KinBody:
     CollisionObjectWrapper* cow = m_link2cow[links[i].get()];
     CheckShapeCast(cow->getCollisionShape(), tbefore[i], tafter[i], cow, m_world, collisions);
   }
-  LOG_DEBUG("CastVsAll checked %i links and found %i collisions", links.size(), collisions.size());
+  LOG_DEBUG("CastVsAll checked %li links and found %li collisions", links.size(), collisions.size());
 }
 
 }

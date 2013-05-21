@@ -62,7 +62,7 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Config
       weights.push_back(col.weight);
     }
   }
-  LOG_DEBUG("%i distance expressions\n", exprs.size());
+  LOG_DEBUG("%ld distance expressions\n", exprs.size());
 }
 
 void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Configuration& rad, const Link2Int& link2ind,

@@ -154,7 +154,7 @@ int main(int argc, char** argv) {
   MatrixXd inittraj = MatrixXd::Zero(n_steps, 3);
   opt.initialize(DblVec(inittraj.data(),inittraj.data() + 3*n_steps));
   opt.addCallback(&Callback);
-  OptStatus status = opt.optimize();
+  opt.optimize();
   
   
   cout << "slerp cost: " << getW(slerptraj, dt).array().square().sum() << endl;

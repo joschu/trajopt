@@ -47,7 +47,7 @@ void CollisionChecker::IgnoreZeroStateSelfCollisions(OpenRAVE::KinBodyPtr body) 
 
   vector<Collision> collisions;
   BodyVsAll(*body,  collisions);
-  LOG_DEBUG("%i extra self collisions in zero state", collisions.size());
+  LOG_DEBUG("%li extra self collisions in zero state", collisions.size());
   for(int i=0; i < collisions.size(); ++i) {
     LOG_DEBUG("ignoring self-collision: %s %s", collisions[i].linkA->GetName().c_str(), collisions[i].linkB->GetName().c_str());
     ExcludeCollisionPair(*collisions[i].linkA, *collisions[i].linkB);

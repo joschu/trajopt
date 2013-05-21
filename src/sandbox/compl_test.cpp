@@ -59,6 +59,7 @@ int main(int argc, char** argv) {
   vector<double> x = list_of(1)(1);
   solver.initialize(x);
   OptStatus status = solver.optimize();
+  cout << "status: " << status << endl;
   cout << CSTR(solver.x()) << endl;
   
     

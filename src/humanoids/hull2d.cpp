@@ -75,7 +75,7 @@ void PolygonToEquations(const MatrixX2d& pts, MatrixX2d& ab, VectorXd& c) {
   // assume polygon is convex
   ab.resize(pts.rows(),2);
   c.resize(pts.rows());
-  Vector2d p0 = pts.row(0);
+  // Vector2d p0 = pts.row(0);
 
   for (int i=0; i < pts.rows(); ++i) {
     int i1 = (i+1) % pts.rows();

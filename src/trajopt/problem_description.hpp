@@ -12,14 +12,14 @@ typedef Json::Value TrajOptRequest;
 typedef Json::Value TrajOptResponse;
 using std::string;
 
-class CostInfo;
+struct CostInfo;
 typedef boost::shared_ptr<CostInfo> CostInfoPtr;
-class CntInfo;
+struct CntInfo;
 typedef boost::shared_ptr<CntInfo> CntInfoPtr;
 class TrajOptProb;
 typedef boost::shared_ptr<TrajOptProb> TrajOptProbPtr;
-class ProblemConstructionInfo;
-class TrajOptResult;
+struct ProblemConstructionInfo;
+struct TrajOptResult;
 typedef boost::shared_ptr<TrajOptResult> TrajOptResultPtr;
 
 TrajOptProbPtr TRAJOPT_API ConstructProblem(const ProblemConstructionInfo&);

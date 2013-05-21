@@ -9,6 +9,7 @@ find_package(osgGA)
 set(OSG_LIBRARIES osg osgViewer OpenThreads osgDB osgGA osgUtil)       
        
 include_directories(
+  SYSTEM  
   ${Boost_INCLUDE_DIRS}
   ${OpenRAVE_INCLUDE_DIRS}
   ${OSG_INCLUDE_DIRS}

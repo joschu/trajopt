@@ -330,7 +330,7 @@ class OsgGraphHandle : public OpenRAVE::GraphHandle {
 public:
   osg::Group* parent;
   osg::ref_ptr<osg::Node> node;
-  OsgGraphHandle(osg::Node* _node, osg::Group* _parent) : node(_node), parent(_parent) {
+  OsgGraphHandle(osg::Node* _node, osg::Group* _parent) : parent(_parent), node(_node) {
     parent->addChild(node);
   }
   ~OsgGraphHandle() {
@@ -495,7 +495,7 @@ void OSGViewer::PrintHelp() {
   for (EventHandler::Key2Desc::iterator it = m_handler->descs.begin(); it != m_handler->descs.end(); ++it) {
     ss << boost::format("%c:       %s\n")%((char)it->first)%(it->second);
   }
-  LOG_INFO(ss.str().c_str());
+  LOG_INFO("%s", ss.str().c_str());
 }
 
 

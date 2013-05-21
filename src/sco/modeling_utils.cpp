@@ -109,8 +109,10 @@ double CostFromErrFunc::value(const vector<double>& xin) {
     case SQUARED: return err.array().square().sum();
     case ABS: return err.array().abs().sum();
     case HINGE: return err.cwiseMax(VectorXd::Zero(err.size())).sum();
-    default: assert(0 && "unreachable");
+    default: assert(0 && "unreachable"); 
   }
+  
+  return 0; // avoid compiler warning
 }
 ConvexObjectivePtr CostFromErrFunc::convex(const vector<double>& xin, Model* model) {
   VectorXd x = getVec(xin, vars_);

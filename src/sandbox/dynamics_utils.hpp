@@ -105,7 +105,6 @@ public:
     }
   }
   virtual void GetDOFLimits(DblVec& lower, DblVec& upper) const {
-    int n=0;
     lower.clear();
     upper.clear();
     BOOST_FOREACH(const ConfigurationPtr& config, m_configs) {

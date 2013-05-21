@@ -63,11 +63,14 @@ RobotAndDOFPtr RADFromName(const string& name, RobotBasePtr robot) {
   return RobotAndDOFPtr(new RobotAndDOF(robot, dof_inds, affinedofs, rotationaxis));
 }
 
+
+#if 0
 BoolVec toMask(const VectorXd& x) {
   BoolVec out(x.size());
   for (int i=0; i < x.size(); ++i) out[i] = (x[i] > 0);
   return out;
 }
+#endif
 
 bool allClose(const VectorXd& a, const VectorXd& b) {
   return (a-b).array().abs().maxCoeff() < 1e-4;

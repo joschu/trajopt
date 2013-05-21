@@ -3,6 +3,8 @@
 #include <openrave/openrave.h>
 #include <map>
 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 class UserMap : public std::map<std::string, OpenRAVE::UserDataPtr>, public OpenRAVE::UserData {};
 
 template <typename T>
@@ -39,4 +41,5 @@ void RemoveUserData(T& body, const std::string& key) {
     (*um).erase(key);
   }
 }
+
 

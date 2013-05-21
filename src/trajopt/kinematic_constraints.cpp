@@ -1,17 +1,17 @@
-#include "utils/stl_to_string.hpp"
-#include "trajopt/kinematic_constraints.hpp"
-#include "trajopt/utils.hpp"
-#include "trajopt/rave_utils.hpp"
-#include "utils/logging.hpp"
 #include "sco/expr_ops.hpp"
 #include "sco/modeling_utils.hpp"
-#include <boost/format.hpp>
-#include <boost/bind.hpp>
-#include <iostream>
-#include <Eigen/Geometry>
-#include <openrave/openrave.h>
+#include "trajopt/kinematic_constraints.hpp"
+#include "trajopt/rave_utils.hpp"
+#include "trajopt/utils.hpp"
 #include "utils/eigen_conversions.hpp"
 #include "utils/eigen_slicing.hpp"
+#include "utils/logging.hpp"
+#include "utils/stl_to_string.hpp"
+#include <boost/bind.hpp>
+#include <boost/format.hpp>
+#include <Eigen/Geometry>
+#include <iostream>
+
 using namespace std;
 using namespace sco;
 using namespace Eigen;
@@ -23,10 +23,12 @@ namespace {
 static MatrixXd diffAxis0(const MatrixXd& in) {
   return in.middleRows(1, in.rows()-1) - in.middleRows(0, in.rows()-1);
 }
+#if 0
 Vector3d rotVec(const Matrix3d& m) {
   Quaterniond q; q = m;
   return Vector3d(q.x(), q.y(), q.z());
 }
+#endif
 Vector3d rotVec(const OpenRAVE::Vector& q) {
   return Vector3d(q[1], q[2], q[3]);
 }
@@ -52,32 +54,12 @@ vector<T> concat(const vector<T>& a, const vector<T>& b) {
 
 namespace trajopt {
 
-//////////////////////
 
 
-
-void makeTrajVariablesAndBounds(int n_steps, RobotAndDOFPtr manip, OptProb& prob_out, VarArray& vars_out) {
-  int n_dof = manip->GetDOF();
-  DblVec lower, upper;
-  manip->GetDOFLimits(lower, upper);
-  LOG_INFO("Dof limits: %s, %s", CSTR(lower), CSTR(upper));
-  vector<double> vlower, vupper;
-  vector<string> names;
-  for (int i=0; i < n_steps; ++i) {
-    vlower.insert(vlower.end(), lower.data(), lower.data()+lower.size());
-    vupper.insert(vupper.end(), upper.data(), upper.data()+upper.size());
-    for (unsigned j=0; j < n_dof; ++j) {
-      names.push_back( (boost::format("j_%i_%i")%i%j).str() );
-    }
-  }
-
-  prob_out.createVariables(names, vlower, vupper);
-  vars_out = VarArray(n_steps, n_dof, prob_out.getVars().data());
-
-}
+//////////// Quadratic cost functions /////////////////
 
 JointPosCost::JointPosCost(const VarVector& vars, const VectorXd& vals, const VectorXd& coeffs) :
-    Cost("JointVel"), vars_(vars), vals_(vals), coeffs_(coeffs) {
+    Cost("JointPos"), vars_(vars), vals_(vals), coeffs_(coeffs) {
     for (int i=0; i < vars.size(); ++i) {
       if (coeffs[i] > 0) {
         AffExpr diff = exprSub(AffExpr(vars[i]), AffExpr(vals[i]));
@@ -141,7 +123,7 @@ ConvexObjectivePtr JointAccCost::convex(const vector<double>& x, Model* model) {
   return out;
 }
 
-
+/////////////////////
 
 
 struct CartPoseErrCalculator : public VectorOfVector {
@@ -200,7 +182,7 @@ void CartPoseConstraint::Plot(const DblVec& x, OR::EnvironmentBase& env, std::ve
   handles.push_back(env.drawarrow(cur.trans, target.trans, .01, OR::Vector(1,0,1,1)));
 }
 
-
+#if 0
 struct CartPositionErrCalculator {
   Vector3d pt_world_;
   RobotAndDOFPtr manip_;
@@ -216,6 +198,7 @@ struct CartPositionErrCalculator {
     return pt_world_ - toVector3d(newpose.trans);
   }
 };
+#endif
 
 struct CartVelJacCalculator : MatrixOfVector {
   RobotAndDOFPtr manip_;
@@ -263,12 +246,10 @@ struct CartVelCalculator : VectorOfVector {
 
 CartVelConstraint::CartVelConstraint(const VarVector& step0vars, const VarVector& step1vars, RobotAndDOFPtr manip, KinBody::LinkPtr link, double distlimit) :
         ConstraintFromFunc(VectorOfVectorPtr(new CartVelCalculator(manip, link, distlimit)),
-                           MatrixOfVectorPtr(new CartVelJacCalculator(manip, link, distlimit)),
-                          concat(step0vars, step1vars), INEQ, "CartVel")
+             MatrixOfVectorPtr(new CartVelJacCalculator(manip, link, distlimit)), concat(step0vars, step1vars), INEQ, "CartVel")
 {}
 
-
-
+#if 0
 struct UpErrorCalculator {
   Vector3d dir_local_;
   Vector3d goal_dir_world_;
@@ -293,4 +274,5 @@ struct UpErrorCalculator {
     return perp_basis_*(toRot(newpose.rot) * dir_local_ - goal_dir_world_);
   }
 };
+#endif
 }

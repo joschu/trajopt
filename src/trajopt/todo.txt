@@ -6,12 +6,11 @@ setcontactdistance screws you up if you have multiple collision cost groups
 self-collisions in continuous collision cost
 
 RobotAndDOF is a mess now
-bring in plot fixes from moving_obstacles
 
 Eventually
 ===========
 
-
+fix up bpmd interface
 
 boost python arguments
 

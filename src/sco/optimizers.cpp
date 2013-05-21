@@ -322,7 +322,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
         double merit_improve_ratio = exact_merit_improve / approx_merit_improve;
 
         if (util::GetLogLevel() >= util::LevelInfo) {
-          LOG_INFO("");
+          LOG_INFO(" ");
           printCostInfo(results_.cost_vals, model_cost_vals, new_cost_vals,
                         results_.cnt_viols, model_cnt_viols, new_cnt_viols, cost_names,
                         cnt_names, merit_error_coeff_);
