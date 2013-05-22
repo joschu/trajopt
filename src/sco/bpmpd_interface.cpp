@@ -4,13 +4,11 @@
 #include <boost/foreach.hpp>
 #include <cmath>
 #include <fstream>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/filesystem.hpp>
 #include "bpmpd_io.hpp"
-#include "boost/date_time/posix_time/posix_time.hpp"
+#include <signal.h>
 
 using namespace std;
+using namespace bpmpd_io;
 
 /**
 This is a readme file for the linux DLL version of BPMPD version 2.21
@@ -162,10 +160,72 @@ ModelPtr createBPMPDModel() {
 }
 
 
+#define READ 0
+#define WRITE 1
 
+pid_t popen2(const char *command, int *infp, int *outfp)
+{
+    int p_stdin[2], p_stdout[2];
+    pid_t pid;
 
+    if (pipe(p_stdin) != 0 || pipe(p_stdout) != 0)
+        return -1;
 
-BPMPDModel::BPMPDModel() {  
+    pid = fork();
+
+    if (pid < 0) {
+      assert(0);
+      return pid;      
+    }
+    else if (pid == 0)
+    {
+        close(p_stdin[WRITE]);
+        dup2(p_stdin[READ], READ);
+        close(p_stdout[READ]);
+        dup2(p_stdout[WRITE], WRITE);
+
+        execl("/bin/sh", "sh", "-c", command, NULL);
+        perror("execl");
+        exit(1);
+    }
+
+    if (infp == NULL)
+        close(p_stdin[WRITE]);
+    else
+        *infp = p_stdin[WRITE];
+
+    if (outfp == NULL)
+        close(p_stdout[READ]);
+    else
+        *outfp = p_stdout[READ];
+
+    return pid;
+}
+
+pid_t gPID=0;
+int gPipeIn=0, gPipeOut=0;
+
+void fexit() {
+  char text[1] = {EXIT_CHAR};
+  int n = write(gPipeIn, text, 1);
+  assert(n==1);
+}
+
+BPMPDModel::BPMPDModel() : m_pipeIn(0), m_pipeOut(0) {  
+  if (gPID == 0) {
+    atexit(fexit);
+    gPID = popen2(BPMPD_CALLER, &gPipeIn, &gPipeOut);
+  }
+}
+
+BPMPDModel::~BPMPDModel() {
+  // char text[1] = {123};
+  // write(gPipeIn, text, 1);
+  // // kill(m_pid, SIGKILL); // TODO: WHY DOES THIS KILL THE PARENT PROCESS?!
+  // close(m_pipeIn);
+  // close(m_pipeOut);
+  // m_pipeIn=0;
+  // m_pipeOut=0;
 }
 
 Var BPMPDModel::addVar(const string& name) {
@@ -355,25 +415,22 @@ CvxOptStatus BPMPDModel::optimize() {
       qnz = qcolnzs.size();
 
 
-      if (1) {
-        DBG(m);
-        DBG(n);
-        DBG(nz);
-        DBG(qn);
-        DBG(qnz);
-        DBG(acolcnt);
-        DBG(acolidx);
-        DBG(acolnzs);
-        DBG(qcolcnt);
-        DBG(qcolidx);
-        DBG(qcolnzs);
-        DBG(rhs);
-        DBG(obj);
-        DBG(lbound);
-        DBG(ubound);
+  DBG(m);
+  DBG(n);
+  DBG(nz);
+  DBG(qn);
+  DBG(qnz);
+  DBG(acolcnt);
+  DBG(acolidx);
+  DBG(acolnzs);
+  DBG(qcolcnt);
+  DBG(qcolidx);
+  DBG(qcolnzs);
+  DBG(rhs);
+  DBG(obj);
+  DBG(lbound);
+  DBG(ubound);
 
-        
-      }
 
 
 
@@ -395,38 +452,19 @@ CvxOptStatus BPMPDModel::optimize() {
 #undef DBG
 
 #else
-  boost::posix_time::ptime start = boost::posix_time::microsec_clock::local_time( );      
-  {
-    ofstream ofs("/tmp/fs/bpmpd_input");
-    boost::archive::binary_oarchive oa(ofs);
     
-    bpmpd_input bi(m,n,nz, qn, qnz, acolcnt, acolidx, acolnzs, qcolcnt, qcolidx, qcolnzs, rhs, obj, lbound, ubound);
-    oa << bi;    
-    ofstream ofs1("/tmp/fs/bpmpd_input_ready");
-  }
-  boost::posix_time::ptime end = boost::posix_time::microsec_clock::local_time( );      
-  std::cout << "serialization time:" << end-start << std::endl;
+  bpmpd_input bi(m,n,nz, qn, qnz, acolcnt, acolidx, acolnzs, qcolcnt, qcolidx, qcolnzs, rhs, obj, lbound, ubound);
+  ser(gPipeIn, bi, SER);    
 
-  int counter=0;
-  namespace fs = boost::filesystem;
-  int retcode;
-  while (true) {
-   if  (fs::exists("/tmp/fs/bpmpd_output_ready")) {
-     ifstream ifs("/tmp/fs/bpmpd_output");
-     boost::archive::binary_iarchive ia(ifs);
-     bpmpd_output bo;
-     ia >> bo;
-     remove("/tmp/fs/bpmpd_output_ready");
-     m_soln = vector<double>(bo.primal.begin(), bo.primal.begin()+n);
-     retcode = bo.code;
-     break;
-   }
-   else {
-     usleep(100);
-     if (counter % 10000 == 0) printf("interface waiting\n");
-     ++counter;
-    }
-  }
+  // std::cout << "serialization time:" << end-start << std::endl;
+
+
+   bpmpd_output bo;
+   ser(gPipeOut, bo, DESER);
+   
+   m_soln = vector<double>(bo.primal.begin(), bo.primal.begin()+n);
+   int retcode = bo.code;
+
   if (retcode == 2) return CVX_SOLVED;
   else if (retcode==3 || retcode ==4) return CVX_INFEASIBLE;
   else return CVX_FAILED;

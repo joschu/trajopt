@@ -1,38 +1,59 @@
-#include <boost/serialization/vector.hpp>
 #include <vector>
+#include <string>
+using std::string;
 using std::vector;
+#include <iostream>
+#include <assert.h>
+#include <stdlib.h>
+using namespace std;
 
-// bpmpd(&m, &n, &nz, &qn, &qnz, acolcnt.data(), acolidx.data(), acolnzs.data(), qcolcnt.data(), qcolidx.data(), qcolnzs.data(),
-//     rhs.data(), obj.data(), lbound.data(), ubound.data(), 
-//     primal.data(), dual.data(), status.data(), &BIG, &code, &opt, &memsiz);
+namespace bpmpd_io {
 
+enum SerMode {
+  DESER,
+  SER
+};
+
+template <typename T>
+void ser(int fp, T& x, SerMode mode) {
+  
+  switch (mode) {
+    case SER: {
+      T xcopy=x;
+      int n = write(fp, &xcopy, sizeof(T));
+      assert (n == sizeof(T));
+      break;
+    }
+    case DESER: {
+      int n = read(fp, &x, sizeof(T));
+      assert (n == sizeof(T));
+      break;
+    }
+  }
+}
+
+template <typename T>
+void ser(int fp,  vector<T>& x,  SerMode mode) {
+  int size = x.size();
+  ser(fp, size, mode);
+  switch (mode) {
+    case SER: {
+      int n = write(fp, x.data(), sizeof(T)*size);
+      assert (n == sizeof(T)*size);      
+      break;
+    }
+    case DESER: {
+      x.resize(size);
+      int n = read(fp, x.data(), sizeof(T)*size);    
+      assert (n == sizeof(T)*size);            
+      break;
+    }
+  }
+  
+}
 
 struct bpmpd_input
 {
-
-    friend class boost::serialization::access;
-    // When the class Archive corresponds to an output archive, the
-    // & operator is defined similar to <<.  Likewise, when the class Archive
-    // is a type of input archive the & operator is defined similar to >>.
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        ar & m;
-        ar & n;
-        ar & nz;
-        ar & qn;
-        ar & qnz;
-        ar & acolcnt;
-        ar & acolidx;
-        ar & acolnzs;
-        ar & qcolcnt;
-        ar & qcolidx;
-        ar & qcolnzs;
-        ar & rhs;
-        ar & obj;
-        ar & lbound;
-        ar & ubound;
-    }
     int m, n, nz, qn, qnz;
     vector<int> acolcnt, acolidx;
     vector<double> acolnzs;
@@ -49,25 +70,40 @@ struct bpmpd_input
     rhs(rhs), obj(obj), lbound(lbound), ubound(ubound) {}
 };
 
+const char EXIT_CHAR = 123;
+const char CHECK_CHAR = 111;
+
+void ser(int fp, bpmpd_input & bi, SerMode mode) {
+  
+  char scorrect='z', s=(mode==SER) ? scorrect : 0;
+  ser(fp, s, mode);
+  if (s == EXIT_CHAR) {
+    exit(0);
+  }
+  
+  
+    ser(fp,bi.m,mode);
+    ser(fp,bi.n,mode);
+    ser(fp,bi.nz,mode);
+    ser(fp,bi.qn,mode);
+    ser(fp,bi.qnz,mode);
+    ser(fp,bi.acolcnt,mode);
+    ser(fp,bi.acolidx,mode);
+    ser(fp,bi.acolnzs,mode);
+    ser(fp,bi.qcolcnt,mode);
+    ser(fp,bi.qcolidx,mode);
+    ser(fp,bi.qcolnzs,mode);
+    ser(fp,bi.rhs,mode);
+    ser(fp,bi.obj,mode);
+    ser(fp,bi.lbound,mode);
+    ser(fp,bi.ubound,mode);      
+}
+
+
 
 
 struct bpmpd_output
 {
-
-    friend class boost::serialization::access;
-    // When the class Archive corresponds to an output archive, the
-    // & operator is defined similar to <<.  Likewise, when the class Archive
-    // is a type of input archive the & operator is defined similar to >>.
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        ar & primal;
-        ar & dual;
-        ar & status;
-        ar & code;
-        ar & opt;
-    }
-    // primal.data(), dual.data(), status.data(), &BIG, &code, &optpublic:
 
   vector<double> primal, dual;
   vector<int> status;
@@ -77,3 +113,21 @@ struct bpmpd_output
   bpmpd_output(const vector<double>& primal, const vector<double>& dual, const vector<int>& status, int code, double opt)  :
     primal(primal), dual(dual), status(status), code(code), opt(opt) {}
 };
+
+void ser(int fp, bpmpd_output & bo, SerMode mode)
+{
+  char scorrect=CHECK_CHAR, s=(mode==SER) ? scorrect : 0;
+  ser(fp, s, mode);
+  if (s == EXIT_CHAR) {
+    exit(0);
+  }
+  ser(fp, bo.primal, mode);
+  ser(fp, bo.dual, mode);
+  ser(fp, bo.status, mode);
+  ser(fp, bo.code, mode);
+  ser(fp, bo.opt, mode);
+
+
+}
+
+}

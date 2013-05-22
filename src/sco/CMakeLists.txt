@@ -12,9 +12,10 @@ add_library(sco SHARED
 	modeling_utils.cpp
 	num_diff.cpp
 )
-target_link_libraries(sco ${GUROBI_LIBRARIES} utils boost_filesystem boost_serialization boost_system )
+target_link_libraries(sco ${GUROBI_LIBRARIES} utils )
 
-add_executable(bpmpd_caller bpmpd_caller.cpp )
-target_link_libraries(bpmpd_caller "${CMAKE_SOURCE_DIR}/3rdpartylib/bpmpd_linux64.a" boost_serialization boost_system boost_filesystem )
+add_executable(bpmpd_caller bpmpd_caller.cpp)
+SET_SOURCE_FILES_PROPERTIES( bpmpd_interface.cpp PROPERTIES COMPILE_FLAGS -DBPMPD_CALLER="\\\"${CMAKE_BINARY_DIR}/bin/bpmpd_caller\\\"" )
+target_link_libraries(bpmpd_caller "${CMAKE_SOURCE_DIR}/3rdpartylib/bpmpd_linux64.a")
 
 add_subdirectory(test)

@@ -16,7 +16,11 @@ public:
   
   QuadExpr m_objective;  
   
+  int m_pipeIn, m_pipeOut, m_pid;
+  
   BPMPDModel();
+  virtual ~BPMPDModel();
+  
   Var addVar(const string& name);
   Cnt addEqCnt(const AffExpr&, const string& name);
   Cnt addIneqCnt(const AffExpr&, const string& name);
