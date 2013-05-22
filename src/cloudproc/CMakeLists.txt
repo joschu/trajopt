@@ -1,12 +1,12 @@
 
 
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL 1.6 REQUIRED)
 
-include_directories(${PCL_INCLUDE_DIRS})
+include_directories(SYSTEM ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-include_directories(${HACD_INCLUDE_DIRS})
+include_directories(SYSTEM ${HACD_INCLUDE_DIRS})
 
 
 if (APPLE)

@@ -16,7 +16,7 @@ using namespace pcl;
 namespace {
 void toPCL(vtkPolyData& in, pcl::PolygonMesh& out) {
   int nPts = in.GetNumberOfPoints();
-  vtkPoints* points = in.GetPoints();
+//  vtkPoints* points = in.GetPoints();
   pcl::PointCloud<PointXYZ> cloud;
   cloud.resize(nPts);
   for (int i = 0; i < nPts; ++i) {

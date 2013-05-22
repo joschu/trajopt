@@ -25,7 +25,7 @@ enum CollisionFilterGroups {
 
 const float MARGIN = 0;
 
-#if 1
+#if 0
 ostream &operator<<(ostream &stream, const btVector3& v) {
   stream << v.x() << " " << v.y() << " " << v.z();
   return stream;

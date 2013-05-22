@@ -64,7 +64,7 @@ vector<pcl::PolygonMesh::Ptr> ConvexDecompHACD(const pcl::PolygonMesh& mesh, flo
 //  size_t targetNTrianglesDecimatedMesh = atoi(argv[8]);
 //
   int minClusters = 2;
-  bool invert = false;
+//  bool invert = false;
   bool addExtraDistPoints = true;
   bool addFacesPoints = true;
   float ccConnectDist = 30;

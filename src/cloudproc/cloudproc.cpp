@@ -18,8 +18,8 @@
 #include <boost/filesystem.hpp>
 #if 0
 #include <pcl/filters/median_filter.h>
-#endif
 #include <pcl/filters/fast_bilateral.h>
+#endif
 
 using namespace std;
 using namespace pcl;
@@ -81,7 +81,7 @@ vector<int> getNearestNeighborIndices(PointCloud<PointXYZ>::Ptr src, PointCloud<
   int k_neighbs=1;
   BOOST_FOREACH(const PointXYZ& pt, src->points) {
      int n_neighbs = tree->nearestKSearch(pt, k_neighbs, neighb_inds, sqdists);
-     assert(n_neighbs == 1);
+     FAIL_IF_FALSE(n_neighbs > 0);
      out.push_back(neighb_inds[0]);    
   }
   return out;
@@ -287,6 +287,7 @@ typename pcl::PointCloud<T>::Ptr medianFilter(typename pcl::PointCloud<T>::Const
 
 template <class T>
 typename pcl::PointCloud<T>::Ptr fastBilateralFilter(typename pcl::PointCloud<T>::ConstPtr in, float sigmaS, float sigmaR) {
+#if 0
   pcl::FastBilateralFilter<T> mf;
   mf.setSigmaS(sigmaS);
   mf.setSigmaR(sigmaR);
@@ -294,6 +295,9 @@ typename pcl::PointCloud<T>::Ptr fastBilateralFilter(typename pcl::PointCloud<T>
   mf.setInputCloud(in);
   mf.applyFilter(*out);
   return out;
+#else
+  PRINT_AND_THROW("not implemented");
+#endif
 }
 
 void removenans(sensor_msgs::PointCloud2& cloud, float fillval=0);
@@ -314,13 +318,14 @@ void saveMesh(const pcl::PolygonMesh& origmesh, const std::string& fname) {
   string ext = fs::extension(fname);
   int errcode;
   if (ext == ".ply") {
-    errcode = pcl::io::savePLYFileBinary (fname, mesh);
+//    errcode = pcl::io::savePLYFileBinary (fname, mesh);
+    PRINT_AND_THROW("not implemented");
   }
   else if (ext == ".obj") {
-    bool success = pcl::io::saveOBJFile (fname, mesh);
+    errcode = pcl::io::saveOBJFile (fname, mesh);
   }
   else if (ext == ".vtk") {
-    bool success = pcl::io::saveVTKFile (fname, mesh);
+    errcode = pcl::io::saveVTKFile (fname, mesh);
   }
   else PRINT_AND_THROW(boost::format("filename %s had unrecognized extension")%fname);
   if (errcode) PRINT_AND_THROW(boost::format("saving mesh to file %s failed")%fname);
