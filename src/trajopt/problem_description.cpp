@@ -441,18 +441,37 @@ void CollisionCostInfo::fromJson(const Value& v) {
   }
 }
 void CollisionCostInfo::hatch(TrajOptProb& prob) {
-  if (continuous) {
-    for (int i=first_step; i < last_step; ++i) {
-      prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
-      prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
+  if (term_type == TT_COST) {
+    if (continuous) {
+      for (int i=first_step; i < last_step; ++i) {
+        prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
+        prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
+      }
+    }
+    else {
+      for (int i=first_step; i <= last_step; ++i) {
+        prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i))));
+        prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
+      }
     }
   }
-  else {
-    for (int i=first_step; i <= last_step; ++i) {
-      prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i))));
-      prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
+  else { // ALMOST COPIED
+    if (continuous) {
+      for (int i=first_step; i < last_step; ++i) {
+        prob.addIneqConstr(ConstraintPtr(new CollisionConstraint(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
+        prob.getIneqConstraints().back()->setName( (boost::format("%s_%i")%name%i).str() );
+      }
+    }
+    else {
+      for (int i=first_step; i <= last_step; ++i) {
+        prob.addIneqConstr(ConstraintPtr(new CollisionConstraint(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i))));
+        prob.getIneqConstraints().back()->setName( (boost::format("%s_%i")%name%i).str() );
+      }
     }
   }
+
+
+
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
   cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .04);
 }
@@ -479,9 +498,6 @@ void JointConstraintInfo::hatch(TrajOptProb& prob) {
     prob.addLinearConstr(exprSub(AffExpr(vars[j]), vals[j]), EQ);    
   }
 }
-// CntInfoPtr JointConstraintInfo::create() {
-//   return CntInfoPtr(new JointConstraintInfo());
-// }
 
 
 }

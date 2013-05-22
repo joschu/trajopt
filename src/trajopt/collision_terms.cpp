@@ -199,8 +199,6 @@ CollisionCost::CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad
     Cost("cast_collision"),
     m_calc(new CastCollisionEvaluator(rad, vars0, vars1)), m_dist_pen(dist_pen), m_coeff(coeff)
 {}
-
-
 ConvexObjectivePtr CollisionCost::convex(const vector<double>& x, Model* model) {
   ConvexObjectivePtr out(new ConvexObjective(model));
   vector<AffExpr> exprs;
@@ -222,10 +220,46 @@ double CollisionCost::value(const vector<double>& x) {
   return out;
 }
 
+#if 0
 void CollisionCost::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles) {
   vector<Collision> collisions;
   m_calc->GetCollisionsCached(x, collisions);
   PlotCollisions(collisions, env, handles, m_dist_pen);
+}
+#endif
+
+// ALMOST EXACTLY COPIED FROM CollisionCost
+
+CollisionConstraint::CollisionConstraint(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars) :
+    m_calc(new SingleTimestepCollisionEvaluator(rad, vars)), m_dist_pen(dist_pen), m_coeff(coeff)
+{
+  name_="collision";
+}
+
+CollisionConstraint::CollisionConstraint(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars0, const VarVector& vars1) :
+    m_calc(new CastCollisionEvaluator(rad, vars0, vars1)), m_dist_pen(dist_pen), m_coeff(coeff)
+{
+  name_="collision";
+}
+ConvexConstraintsPtr CollisionConstraint::convex(const vector<double>& x, Model* model) {
+  ConvexConstraintsPtr out(new ConvexConstraints(model));
+  vector<AffExpr> exprs;
+  DblVec weights;
+  m_calc->CalcDistExpressions(x, exprs, weights);
+  for (int i=0; i < exprs.size(); ++i) {
+    AffExpr viol = exprSub(AffExpr(m_dist_pen), exprs[i]);
+    out->addIneqCnt(exprMult(viol,m_coeff*weights[i]));
+  }
+  return out;
+}
+DblVec CollisionConstraint::value(const vector<double>& x) {
+  DblVec dists, weights;
+  m_calc->CalcDists(x, dists, weights);
+  DblVec out(dists.size());
+  for (int i=0; i < dists.size(); ++i) {
+    out[i] = pospart(m_dist_pen - dists[i]) * m_coeff * weights[i];
+  }
+  return out;
 }
 
 

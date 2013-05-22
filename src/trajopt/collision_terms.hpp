@@ -70,7 +70,7 @@ public:
 };
 
 
-class TRAJOPT_API CollisionCost : public Cost, public Plotter {
+class TRAJOPT_API CollisionCost : public Cost {
 public:
   /* constructor for single timestep */
   CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars);
@@ -78,7 +78,19 @@ public:
   CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars0, const VarVector& vars1);
   virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model);
   virtual double value(const vector<double>&);
-  virtual void Plot(const DblVec& x, OR::EnvironmentBase&, std::vector<OR::GraphHandlePtr>& handles);
+private:
+  CollisionEvaluatorPtr m_calc;
+  double m_dist_pen;
+  double m_coeff;
+};
+class TRAJOPT_API CollisionConstraint : public IneqConstraint {
+public:
+  /* constructor for single timestep */
+  CollisionConstraint(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars);
+  /* constructor for cast cost */
+  CollisionConstraint(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars0, const VarVector& vars1);
+  virtual ConvexConstraintsPtr convex(const vector<double>& x, Model* model);
+  virtual DblVec value(const vector<double>&);
 private:
   CollisionEvaluatorPtr m_calc;
   double m_dist_pen;
