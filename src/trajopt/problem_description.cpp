@@ -263,14 +263,14 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
       PRINT_AND_THROW( "robot dof values don't match initialization. I don't know what you want me to use for the dof values");
     }
     for (int j=0; j < n_dof; ++j) {
-      prob->addLinearConstr(exprSub(AffExpr(prob->m_traj_vars(0,j)), cur_dofvals[j]), EQ);
+      prob->addLinearConstraint(exprSub(AffExpr(prob->m_traj_vars(0,j)), cur_dofvals[j]), EQ);
     }
   }
 
   if (!bi.dofs_fixed.empty()) {
     BOOST_FOREACH(const int& dof_ind, bi.dofs_fixed) {
       for (int i=1; i < prob->GetNumSteps(); ++i) {
-        prob->addLinearConstr(exprSub(AffExpr(prob->m_traj_vars(i,dof_ind)), AffExpr(prob->m_traj_vars(0,dof_ind))), EQ);
+        prob->addLinearConstraint(exprSub(AffExpr(prob->m_traj_vars(i,dof_ind)), AffExpr(prob->m_traj_vars(0,dof_ind))), EQ);
       }
     }
   }
@@ -346,7 +346,7 @@ void PoseCostInfo::hatch(TrajOptProb& prob) {
       prob.GetRAD(), link)), prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), ABS, name)));
   }
   else if (term_type == TT_CNT) {
-    prob.addConstr(ConstraintPtr(new ConstraintFromFunc(
+    prob.addConstraint(ConstraintPtr(new ConstraintFromFunc(
       VectorOfVectorPtr(new CartPoseErrCalculator(toRaveTransform(wxyz, xyz), 
       prob.GetRAD(), link)), prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), EQ, name)));
   }
@@ -393,7 +393,7 @@ void CartVelCntInfo::fromJson(const Value& v) {
 
 void CartVelCntInfo::hatch(TrajOptProb& prob) {
   for (int iStep = first_step; iStep < last_step; ++iStep) {
-    prob.addConstr(ConstraintPtr(new ConstraintFromFunc(
+    prob.addConstraint(ConstraintPtr(new ConstraintFromFunc(
       VectorOfVectorPtr(new CartVelCalculator(prob.GetRAD(), link, distance_limit)),
        MatrixOfVectorPtr(new CartVelJacCalculator(prob.GetRAD(), link, distance_limit)), 
       concat(prob.GetVarRow(iStep), prob.GetVarRow(iStep+1)), VectorXd::Ones(0), INEQ, "CartVel")));     
@@ -458,13 +458,13 @@ void CollisionCostInfo::hatch(TrajOptProb& prob) {
   else { // ALMOST COPIED
     if (continuous) {
       for (int i=first_step; i < last_step; ++i) {
-        prob.addIneqConstr(ConstraintPtr(new CollisionConstraint(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
+        prob.addIneqConstraint(ConstraintPtr(new CollisionConstraint(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
         prob.getIneqConstraints().back()->setName( (boost::format("%s_%i")%name%i).str() );
       }
     }
     else {
       for (int i=first_step; i <= last_step; ++i) {
-        prob.addIneqConstr(ConstraintPtr(new CollisionConstraint(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i))));
+        prob.addIneqConstraint(ConstraintPtr(new CollisionConstraint(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i))));
         prob.getIneqConstraints().back()->setName( (boost::format("%s_%i")%name%i).str() );
       }
     }
@@ -495,7 +495,7 @@ void JointConstraintInfo::hatch(TrajOptProb& prob) {
   VarVector vars = prob.GetVarRow(timestep);
   int n_dof = vars.size();
   for (int j=0; j < n_dof; ++j) {
-    prob.addLinearConstr(exprSub(AffExpr(vars[j]), vals[j]), EQ);    
+    prob.addLinearConstraint(exprSub(AffExpr(vars[j]), vals[j]), EQ);    
   }
 }
 

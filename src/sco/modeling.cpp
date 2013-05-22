@@ -175,15 +175,15 @@ void OptProb::setUpperBounds(const vector<double>& ub, const vector<Var>& vars) 
 void OptProb::addCost(CostPtr cost) {
   costs_.push_back(cost);
 }
-void OptProb::addConstr(ConstraintPtr cnt) {
-  if (cnt->type() == EQ) addEqConstr(cnt);
-  else addIneqConstr(cnt);
+void OptProb::addConstraint(ConstraintPtr cnt) {
+  if (cnt->type() == EQ) addEqConstraint(cnt);
+  else addIneqConstraint(cnt);
 }
-void OptProb::addEqConstr(ConstraintPtr cnt) {
+void OptProb::addEqConstraint(ConstraintPtr cnt) {
   assert (cnt->type() == EQ);
   eqcnts_.push_back(cnt);
 }
-void OptProb::addIneqConstr(ConstraintPtr cnt) {
+void OptProb::addIneqConstraint(ConstraintPtr cnt) {
   assert (cnt->type() == INEQ);
   ineqcnts_.push_back(cnt);
 }
@@ -194,7 +194,7 @@ vector<ConstraintPtr> OptProb::getConstraints() const {
   out.insert(out.end(), ineqcnts_.begin(), ineqcnts_.end());
   return out;
 }
-void OptProb::addLinearConstr(const AffExpr& expr, ConstraintType type) {
+void OptProb::addLinearConstraint(const AffExpr& expr, ConstraintType type) {
   if (type == EQ) model_->addEqCnt(expr, "");
   else model_->addIneqCnt(expr, "");
 }

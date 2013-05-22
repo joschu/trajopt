@@ -280,7 +280,7 @@ struct ZMPConstraintCntInfo : public CntInfo {
       }
       planted_links.push_back(link);
     }
-    prob.addConstr(ConstraintPtr(new ZMPConstraint(prob.GetRAD(), GetFeetPoly(planted_links), prob.GetVarRow(timestep))));
+    prob.addConstraint(ConstraintPtr(new ZMPConstraint(prob.GetRAD(), GetFeetPoly(planted_links), prob.GetVarRow(timestep))));
     prob.getIneqConstraints().back()->setName(name);    
   }
   static CntInfoPtr create() {
@@ -306,7 +306,7 @@ struct FootHeightCntInfo : public CntInfo {
     if (!link) {
       PRINT_AND_THROW(boost::format("invalid link name: %s")%link_name);
     }
-    prob.addConstr(ConstraintPtr(new FootHeightConstraint(prob.GetRAD(), link, height, prob.GetVarRow(timestep))));
+    prob.addConstraint(ConstraintPtr(new FootHeightConstraint(prob.GetRAD(), link, height, prob.GetVarRow(timestep))));
     prob.getIneqConstraints().back()->setName(name);    
   }
   static CntInfoPtr create() {

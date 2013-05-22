@@ -443,7 +443,7 @@ void MechanicsProblem::AddContacts(ContactType ctype, int iFirst, int iLast, con
       VarVector compositeDOFVars1 = concat(GetDOFVars(faceA.link, iStep+1), GetDOFVars(faceB.link, iStep+1));
       VarVector vars = concat(compositeDOFVars0, compositeDOFVars1, ptAVars.row(iStep), ffrVars.row(iStep), fnVars.row(iStep));
       VectorOfVectorPtr f(new SlidingFrictionErrorCalc(GetConfig(faceA.link, iStep), mu, faceA));
-      addConstr(ConstraintPtr(new ConstraintFromFunc(f, vars, INEQ, "slipfric")));
+      addConstraint(ConstraintPtr(new ConstraintFromFunc(f, vars, INEQ, "slipfric")));
     }    
   }
 
@@ -459,7 +459,7 @@ void MechanicsProblem::AddContact(int iStep, const Face& faceA, const Face& face
   ConfigurationPtr compositeConfig(new CompositeConfig(configA, configB));
   VarVector compositeDOFVars = concat(GetDOFVars(faceA.link, iStep), GetDOFVars(faceB.link, iStep));
   ContactPtr contact(new Contact(SLIDING, compositeConfig, faceA, faceB, compositeDOFVars, ptAVars, ptBVars, fn, ffr));
-  addConstr(ConstraintPtr(new FaceContactConstraint(compositeConfig, compositeDOFVars, ptAVars, ptBVars, faceA, faceB)));
+  addConstraint(ConstraintPtr(new FaceContactConstraint(compositeConfig, compositeDOFVars, ptAVars, ptBVars, faceA, faceB)));
   m_timestep2contacts[iStep].push_back(contact);
 }
 
@@ -505,10 +505,10 @@ void MechanicsProblem::AddContactVariables(ContactType ctype, int iFirst, int iL
   int nContacts = ptAVars.rows();
   for (int i=0; i < nContacts; ++i) {
     for (int iSide = 0; iSide < Aab.rows(); ++iSide) {
-      addLinearConstr(Aab(iSide, 0) * ptAVars(i,0) + Aab(iSide, 1) * ptAVars(i,1) + Ac(iSide),INEQ);
+      addLinearConstraint(Aab(iSide, 0) * ptAVars(i,0) + Aab(iSide, 1) * ptAVars(i,1) + Ac(iSide),INEQ);
     }
     for (int iSide = 0; iSide < Bab.rows(); ++iSide) {
-      addLinearConstr(Bab(iSide, 0) * ptBVars(i,0) + Bab(iSide, 1) * ptBVars(i,1) + Bc(iSide),INEQ);
+      addLinearConstraint(Bab(iSide, 0) * ptBVars(i,0) + Bab(iSide, 1) * ptBVars(i,1) + Bc(iSide),INEQ);
     }
   }
   
@@ -542,7 +542,7 @@ void MechanicsProblem::AddDynamicsConstraints() {
       ConfigurationPtr config = m_dynObjConfigs(iStep, iObj);
       KinBody::LinkPtr link = m_dynBodies[iObj]->GetLinks()[0];
       VarVector dofvars = GetDOFVars(link, iStep);
-      addConstr(ConstraintPtr(new ForceBalanceConstraint(config, link, GetContacts(link, iStep), dofvars)));
+      addConstraint(ConstraintPtr(new ForceBalanceConstraint(config, link, GetContacts(link, iStep), dofvars)));
     }
   }
 }
@@ -738,11 +738,11 @@ void Setup3DOFPush(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& 
     // for (int i=0; i < nSteps; ++i) {
     //   prob->addLinearConstr(exprSub(AffExpr(posvars(i, j)), ps(i)), EQ);
     // }
-    prob->addLinearConstr(exprSub(AffExpr(posvars(0, j)), startPt[j]), EQ);
+    prob->addLinearConstraint(exprSub(AffExpr(posvars(0, j)), startPt[j]), EQ);
     if (j < 3) 
-      prob->addLinearConstr(exprSub(AffExpr(posvars(nSteps - 1, j)), endPt[j]),EQ);
+      prob->addLinearConstraint(exprSub(AffExpr(posvars(nSteps - 1, j)), endPt[j]),EQ);
     else
-      prob->addLinearConstr(AffExpr(posvars(nSteps - 1, j)),EQ);
+      prob->addLinearConstraint(AffExpr(posvars(nSteps - 1, j)),EQ);
   }
 
 
@@ -824,7 +824,7 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
     for (int j=0; j < 6; ++j) {
       double ptarg = (startPt(j) * (nSteps-i) + endPt(j) * i) / (nSteps-1);
       xinit[posvars(i,j).var_rep->index] = ptarg;
-      if (constrain_all_poses || (i==0) || (i==nSteps-1)) prob->addLinearConstr(exprSub(AffExpr(posvars(i, j)), ptarg), EQ);
+      if (constrain_all_poses || (i==0) || (i==nSteps-1)) prob->addLinearConstraint(exprSub(AffExpr(posvars(i, j)), ptarg), EQ);
     }
   }
   
@@ -876,7 +876,7 @@ void SetupPR2Pickup(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>&
     for (int j=0; j < 6; ++j) {
       double ptarg = (startPt(j) * (nSteps-i) + endPt(j) * i) / (nSteps-1);
       xinit[posvars(i,j).var_rep->index] = ptarg;
-      if (constrain_all_poses || (i==0) || (i==nSteps-1)) prob->addLinearConstr(exprSub(AffExpr(posvars(i, j)), ptarg), EQ);
+      if (constrain_all_poses || (i==0) || (i==nSteps-1)) prob->addLinearConstraint(exprSub(AffExpr(posvars(i, j)), ptarg), EQ);
     }
   }
 

@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
   
 
   prob->addCost(CostPtr(new CostFromFunc(ScalarOfVectorPtr(new DistFromPt(Vector2d(2,1))), prob->getVars(), "distfunc")));
-  prob->addConstr(ConstraintPtr(new ComplCnt(INEQ, VectorOfVectorPtr(new g0()), VectorOfVectorPtr(new h0()), x0, y0, 1e-4)));
+  prob->addConstraint(ConstraintPtr(new ComplCnt(INEQ, VectorOfVectorPtr(new g0()), VectorOfVectorPtr(new h0()), x0, y0, 1e-4)));
   
   BasicTrustRegionSQP solver(prob);
   vector<double> x = list_of(1)(1);

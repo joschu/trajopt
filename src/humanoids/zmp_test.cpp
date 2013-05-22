@@ -88,20 +88,20 @@ MatrixX2d GetBothPoly(const RobotBase& gfe) {
 
 void SetLeftZMP(TrajOptProb& prob, int t) {
   RobotAndDOFPtr rad = prob.GetRAD();
-  prob.addConstr(ConstraintPtr(new ZMP(rad, GetLeftPoly(*rad->GetRobot()), prob.GetVarRow(t))));
+  prob.addConstraint(ConstraintPtr(new ZMP(rad, GetLeftPoly(*rad->GetRobot()), prob.GetVarRow(t))));
 }
 void SetRightZMP(TrajOptProb& prob, int t) {
   RobotAndDOFPtr rad = prob.GetRAD();
-  prob.addConstr(ConstraintPtr(new ZMP(rad, GetRightPoly(*rad->GetRobot()), prob.GetVarRow(t))));
+  prob.addConstraint(ConstraintPtr(new ZMP(rad, GetRightPoly(*rad->GetRobot()), prob.GetVarRow(t))));
 }
 void SetBothZMP(TrajOptProb& prob, int t) {
   RobotAndDOFPtr rad = prob.GetRAD();
-  prob.addConstr(ConstraintPtr(new ZMP(rad, GetBothPoly(*rad->GetRobot()), prob.GetVarRow(t))));
+  prob.addConstraint(ConstraintPtr(new ZMP(rad, GetBothPoly(*rad->GetRobot()), prob.GetVarRow(t))));
 }
 void SetLinkFixed(TrajOptProb& prob, KinBody::LinkPtr link, int t, const OpenRAVE::Transform& tlink) {
 //  BoolVec allbutz(6,true);
 //  allbutz[5] = false;
-  prob.addConstr(ConstraintPtr(new CartPoseConstraint(prob.GetVarRow(t), tlink, prob.GetRAD(), link)));
+  prob.addConstraint(ConstraintPtr(new CartPoseConstraint(prob.GetVarRow(t), tlink, prob.GetRAD(), link)));
 }
 void SetLinkFixed(TrajOptProb& prob, KinBody::LinkPtr link, int t) {
   OpenRAVE::Transform tlink = link->GetTransform();
@@ -111,7 +111,7 @@ void SetStartFixed(TrajOptProb& prob) {
   DblVec cur_dofvals = prob.GetRAD()->GetDOFValues();
   VarArray& vars = prob.GetVars();
   for (int j=0; j < vars.cols(); ++j) {
-    prob.addLinearConstr(exprSub(AffExpr(vars(0,j)), cur_dofvals[j]), EQ);
+    prob.addLinearConstraint(exprSub(AffExpr(vars(0,j)), cur_dofvals[j]), EQ);
   }
 }
 
@@ -313,7 +313,7 @@ int main(int argc, char* argv[]) {
     buttonpose.trans.z += .1;
     BoolVec justposition(6, false);
     justposition[3] = justposition[4] = justposition[5] = true;
-    prob->addConstr(ConstraintPtr(new CartPoseConstraint(prob->GetVarRow(n_steps-1), buttonpose,
+    prob->addConstraint(ConstraintPtr(new CartPoseConstraint(prob->GetVarRow(n_steps-1), buttonpose,
         rad, gfe->GetLink("r_hand"), justposition)));
     TrajArray traj1 = Optimize(prob);
     extend0(traj, traj1);

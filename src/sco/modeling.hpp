@@ -164,13 +164,13 @@ public:
   void setUpperBounds(const vector<double>& ub, const vector<Var>& vars);
   /** Note: in the current implementation, this function just adds the constraint to the
    * model. So if you're not careful, you might end up with an infeasible problem. */
-  void addLinearConstr(const AffExpr&, ConstraintType type);
+  void addLinearConstraint(const AffExpr&, ConstraintType type);
   /** Add nonlinear cost function */
   void addCost(CostPtr);
   /** Add nonlinear constraint function */
-  void addConstr(ConstraintPtr);
-  void addEqConstr(ConstraintPtr);
-  void addIneqConstr(ConstraintPtr);
+  void addConstraint(ConstraintPtr);
+  void addEqConstraint(ConstraintPtr);
+  void addIneqConstraint(ConstraintPtr);
   virtual ~OptProb() {}
   /** Find closest point to solution vector x that satisfies linear inequality constraints */
   vector<double> getCentralFeasiblePoint(const vector<double>& x);
