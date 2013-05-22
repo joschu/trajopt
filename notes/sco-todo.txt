@@ -1,0 +1,11 @@
+Select solver intelligently (bpmpd vs gurobi) 
+
+Add unit tests for solver interface
+
+Linear vs nonlinear costs
+
+Improve SQP algorithm performance in infeasible-start case
+
+Allow constraints to be added as equality constraints, not hinge
+
+Perhaps move complementarity stuff in here

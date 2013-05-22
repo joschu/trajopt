@@ -1,6 +1,0 @@
-Add unit tests for solver interface
-
-Linear vs nonlinear costs
-
-Improve SQP algorithm performance in infeasible-start case
-
