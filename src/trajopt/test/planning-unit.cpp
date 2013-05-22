@@ -124,6 +124,8 @@ TEST_F(PlanningTest, arm_around_table) {
 
 int main(int argc, char** argv)
 {
+  ::testing::InitGoogleTest(&argc, argv);
+
   {
     Config config;
     config.add(new Parameter<bool>("plotting", &plotting, "plotting"));
@@ -133,6 +135,5 @@ int main(int argc, char** argv)
   }
   srand(0);
 
-  ::testing::InitGoogleTest(&argc, argv);
    return RUN_ALL_TESTS();
 }

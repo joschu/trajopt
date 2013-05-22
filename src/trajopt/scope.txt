@@ -1,0 +1,9 @@
+What types of problems does trajopt aim to handle
+
+- articulated robot that's a a kinematic chain or tree
+- 6dof navigation, e.g. helicopter
+- mimic joints (e.g. pr2 gripper)
+- configuration space that's made of two robots
+- configuration space on arbitrary manifold, where there are different global and local coordinates
+
+I should make some test problems for all of these cases

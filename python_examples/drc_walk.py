@@ -25,7 +25,7 @@ def request_skeleton(n_steps):
             "params" : {"coeffs": ([.1]*28 + [0]*7), "vals":standing_posture.tolist()}
         },
         {
-            "type":"continuous_collision",
+            "type":"collision",
             "params":{"coeffs":[1], "dist_pen":[.04]}
         }
         ],

@@ -5,6 +5,8 @@
 using namespace OpenRAVE;
 using namespace util;
 
+// TODO: configuration should know something about what dofs are part of SO(1), SO(2) etc for functions like RandomDOFValues
+
 namespace trajopt {
 
 void RobotAndDOF::SetDOFValues(const DblVec& dofs) {

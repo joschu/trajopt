@@ -94,7 +94,7 @@ def plan(robot, manip, end_joints, end_pose = None):
                 "params": {"coeffs" : [1]}
             },            
             {
-                "type" : "continuous_collision",
+                "type" : "collision",
                 "params" : {"coeffs" : [coll_coeff],"dist_pen" : [dist_pen]}
             }
             ],

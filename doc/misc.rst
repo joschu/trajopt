@@ -27,6 +27,7 @@ Discrete-time collision:
             "params" : {"coeffs" : [10],"dist_pen" : [0.025], "first_step":0, "last_step":19}
         }
 
+TODO: update this
 Continuous-time collision:
 
 .. code-block:: python

@@ -104,7 +104,7 @@ CostFromErrFunc::CostFromErrFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, co
 double CostFromErrFunc::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
   VectorXd err = f_->call(x);
-  if (coeffs_.size()>0) err = err.cwiseProduct(coeffs_);
+  if (coeffs_.size()>0) err.array() *= coeffs_.array();
   switch (pen_type_) {
     case SQUARED: return err.array().square().sum();
     case ABS: return err.array().abs().sum();
@@ -136,15 +136,17 @@ ConvexObjectivePtr CostFromErrFunc::convex(const vector<double>& xin, Model* mod
 }
 
 
-ConstraintFromFunc::ConstraintFromFunc(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name) :
+ConstraintFromFunc::ConstraintFromFunc(VectorOfVectorPtr f, const VarVector& vars, const VectorXd& coeffs, ConstraintType type, const std::string& name) :
     Constraint(name), f_(f), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON) {}
 
-ConstraintFromFunc::ConstraintFromFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, ConstraintType type, const std::string& name) :
+ConstraintFromFunc::ConstraintFromFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, const VectorXd& coeffs, ConstraintType type, const std::string& name) :
     Constraint(name), f_(f), dfdx_(dfdx), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON) {}
 
 vector<double> ConstraintFromFunc::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);
-  return toDblVec(f_->call(x));
+   VectorXd err = f_->call(x);
+   if (coeffs_.size()>0) err.array() *= coeffs_.array();     
+   return toDblVec(err);
 }
 
 ConvexConstraintsPtr ConstraintFromFunc::convex(const vector<double>& xin, Model* model) {
@@ -154,6 +156,10 @@ ConvexConstraintsPtr ConstraintFromFunc::convex(const vector<double>& xin, Model
   VectorXd y = f_->call(x);
   for (int i=0; i < jac.rows(); ++i) {
     AffExpr aff = affFromValGrad(y[i], x, jac.row(i), vars_);
+    if (coeffs_.size()>0) {
+      if (coeffs_[i] == 0) continue;
+      exprScale(aff, coeffs_[i]);
+    }    
     if (type() == INEQ) out->addIneqCnt(aff);
     else out->addEqCnt(aff);
   }

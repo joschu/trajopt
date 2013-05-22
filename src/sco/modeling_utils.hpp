@@ -12,7 +12,6 @@ using numerical derivatives or user-defined analytic derivatives.
  */
 
 
-
 namespace sco {
 
 enum PenaltyType {
@@ -53,9 +52,9 @@ protected:
 class CostFromErrFunc : public Cost {
 public:
   /// supply error function, obtain derivative numerically
-  CostFromErrFunc(VectorOfVectorPtr f, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const string&  name);
+  CostFromErrFunc(VectorOfVectorPtr f, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const string& name);
   /// supply error function and gradient
-  CostFromErrFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const string&  name);
+  CostFromErrFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const string& name);
   double value(const vector<double>& x);
   ConvexObjectivePtr convex(const vector<double>& x, Model* model);
 protected:
@@ -70,9 +69,9 @@ protected:
 class ConstraintFromFunc : public Constraint {
 public:
   /// supply error function, obtain derivative numerically  
-  ConstraintFromFunc(VectorOfVectorPtr f, const VarVector& vars, ConstraintType type, const std::string& name);
+  ConstraintFromFunc(VectorOfVectorPtr f, const VarVector& vars, const VectorXd& coeffs, ConstraintType type, const std::string& name);
   /// supply error function and gradient
-  ConstraintFromFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, ConstraintType type, const std::string& name);
+  ConstraintFromFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, const VectorXd& coeffs, ConstraintType type, const std::string& name);
   vector<double> value(const vector<double>& x);
   ConvexConstraintsPtr convex(const vector<double>& x, Model* model);
   ConstraintType type() {return type_;}
@@ -80,8 +79,10 @@ protected:
   VectorOfVectorPtr f_;
   MatrixOfVectorPtr dfdx_;
   VarVector vars_;
+  VectorXd coeffs_;
   ConstraintType type_;
   double epsilon_;
+  VectorXd scaling_;
 };
 
 

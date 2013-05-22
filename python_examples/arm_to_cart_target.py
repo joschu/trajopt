@@ -45,9 +45,10 @@ request = {
     # Also valid: "coeffs" : [7,6,5,4,3,2,1]
   },
   {
-    "type" : "continuous_collision",
+    "type" : "collision",
     "name" :"cont_coll", # shorten name so printed table will be prettier
     "params" : {
+      "continuous" : True,
       "coeffs" : [20], # penalty coefficients. list of length one is automatically expanded to a list of length n_timesteps
       "dist_pen" : [0.025] # robot-obstacle distance that penalty kicks in. expands to length n_timesteps
     }

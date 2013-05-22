@@ -9,11 +9,12 @@ include_directories(
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
 
 add_library(trajopt
+  trajectory_costs.cpp
+	kinematic_constraints.cpp 
 	collision_avoidance.cpp
 	json_marshal.cpp
 	problem_description.cpp
 	bullet_collision_checker.cpp 
-	kinematic_constraints.cpp 
 	robot_and_dof.cpp 
 	utils.cpp
 	rave_utils.cpp

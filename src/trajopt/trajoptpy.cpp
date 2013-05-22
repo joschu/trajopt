@@ -107,13 +107,13 @@ VarVector _GetVars(py::list ijs, const VarArray& vars) {
 void PyTrajOptProb::AddConstraint1(py::object f, py::list ijs, const string& typestr, const string& name) {  
   ConstraintType type = _GetConstraintType(typestr);
   VarVector vars = _GetVars(ijs, m_prob->GetVars());
-  ConstraintPtr c(new ConstraintFromFunc(VectorOfVectorPtr(new VectorFuncFromPy(f)), vars, type, name));
+  ConstraintPtr c(new ConstraintFromFunc(VectorOfVectorPtr(new VectorFuncFromPy(f)), vars, VectorXd::Ones(0), type, name));
   m_prob->addConstr(c);
 }
 void PyTrajOptProb::AddConstraint2(py::object f, py::object dfdx, py::list ijs, const string& typestr, const string& name) {
   ConstraintType type = _GetConstraintType(typestr);
   VarVector vars = _GetVars(ijs, m_prob->GetVars());
-  ConstraintPtr c(new ConstraintFromFunc(VectorOfVectorPtr(new VectorFuncFromPy(f)), MatrixOfVectorPtr(new MatrixFuncFromPy(dfdx)), vars, type, name));
+  ConstraintPtr c(new ConstraintFromFunc(VectorOfVectorPtr(new VectorFuncFromPy(f)), MatrixOfVectorPtr(new MatrixFuncFromPy(dfdx)), vars, VectorXd::Ones(0), type, name));
   m_prob->addConstr(c);
 }
 void PyTrajOptProb::AddCost1(py::object f, py::list ijs, const string& name) {

@@ -25,6 +25,22 @@ inline DblVec trajToDblVec(const TrajArray& x) {
   return DblVec(x.data(), x.data()+x.rows()*x.cols());
 }
 
+inline VectorXd concat(const VectorXd& a, const VectorXd& b) {
+  VectorXd out(a.size()+b.size());
+  out.topRows(a.size()) = a;
+  out.middleRows(a.size(), b.size()) = b;
+  return out;
+}
+
+template <typename T>
+vector<T> concat(const vector<T>& a, const vector<T>& b) {
+  vector<T> out;
+  vector<int> x;
+  out.insert(out.end(), a.begin(), a.end());
+  out.insert(out.end(), b.begin(), b.end());
+  return out;
+}
+
 
 }
 

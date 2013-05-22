@@ -39,11 +39,11 @@ int main() {
 //  bool success = env->Load("data/pr2test2.env.xml");
   {
     bool success = env->Load("/home/joschu/Proj/drc/gfe.xml");
-    assert(success);
+    FAIL_IF_FALSE(success);
   }
   {
     bool success = env->Load("/home/joschu/Proj/trajopt/data/test2.env.xml");
-    assert(success);
+    FAIL_IF_FALSE(success);
   }
   vector<RobotBasePtr> robots;
   env->GetRobots(robots);

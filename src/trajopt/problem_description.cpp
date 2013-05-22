@@ -4,6 +4,7 @@
 #include "utils/logging.hpp"
 #include "sco/expr_ops.hpp"
 #include "trajopt/kinematic_constraints.hpp"
+#include "trajopt/trajectory_costs.hpp"
 #include "trajopt/collision_avoidance.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/plot_callback.hpp"
@@ -21,18 +22,17 @@ namespace {
 
 
 bool gRegisteredMakers = false;
+
+
 void RegisterMakers() {
 
-  CostInfo::RegisterMaker("pose", &PoseCostInfo::create);
-  CostInfo::RegisterMaker("joint_pos", &JointPosCostInfo::create);
-  CostInfo::RegisterMaker("joint_vel", &JointVelCostInfo::create);
-  CostInfo::RegisterMaker("collision", &CollisionCostInfo::create_discrete);
-  CostInfo::RegisterMaker("continuous_collision", &CollisionCostInfo::create_continuous);
+  TermInfo::RegisterMaker("pose", &PoseCostInfo::create);
+  TermInfo::RegisterMaker("joint_pos", &JointPosCostInfo::create);
+  TermInfo::RegisterMaker("joint_vel", &JointVelCostInfo::create);
+  TermInfo::RegisterMaker("collision", &CollisionCostInfo::create);
 
-  CntInfo::RegisterMaker("joint", &JointConstraintInfo::create);
-  CntInfo::RegisterMaker("pose", &PoseCntInfo::create);
-  CntInfo::RegisterMaker("cart_vel", &CartVelCntInfo::create);
-
+  TermInfo::RegisterMaker("joint", &JointConstraintInfo::create);
+  TermInfo::RegisterMaker("cart_vel", &CartVelCntInfo::create);
 
   gRegisteredMakers = true;
 }
@@ -103,60 +103,45 @@ void BasicInfo::fromJson(const Json::Value& v) {
   childFromJson(v, manip, "manip");
   childFromJson(v, robot, "robot", string(""));
   childFromJson(v, dofs_fixed, "dofs_fixed", IntVec());
+  // TODO: optimization parameters, etc?
 }
 
 
 ////
-void fromJson(const Json::Value& v, CostInfoPtr& cost) {
+bool gReadingCosts=false, gReadingConstraints=false;
+void fromJson(const Json::Value& v, TermInfoPtr& term) {
   string type;
   childFromJson(v, type, "type");
-  LOG_DEBUG("reading cost: %s", type.c_str());
-  cost = CostInfo::fromName(type);
-  if (!cost) PRINT_AND_THROW( boost::format("failed to construct cost named %s")%type );
-  cost->fromJson(v);
-  childFromJson(v, cost->name, "name", type);
+  LOG_DEBUG("reading term: %s", type.c_str());
+  term = TermInfo::fromName(type);
+  if (gReadingCosts) {
+    if (!term) PRINT_AND_THROW( boost::format("failed to construct cost named %s")%type );    
+    if (!dynamic_cast<MakesCost*>(term.get())) PRINT_AND_THROW( boost::format("%s is only a constraint, but you listed it as a cost")%type) ;
+  }
+  else if (gReadingConstraints) {
+    if (!term) PRINT_AND_THROW( boost::format("failed to construct constraint named %s")%type );        
+    if (!dynamic_cast<MakesConstraint*>(term.get())) PRINT_AND_THROW( boost::format("%s is only a cost, but you listed it as a constraint")%type);
+  }
+  else assert(0 && "shouldnt happen");
+  term->fromJson(v);
+  childFromJson(v, term->name, "name", type);
 }
-CostInfoPtr CostInfo::fromName(const string& type) {
+
+std::map<string, TermInfo::MakerFunc> TermInfo::name2maker;
+void TermInfo::RegisterMaker(const std::string& type, MakerFunc f) {
+  name2maker[type] = f;
+}
+
+TermInfoPtr TermInfo::fromName(const string& type) {
   if (!gRegisteredMakers) RegisterMakers();
   if (name2maker.find(type) != name2maker.end()) {
     return (*name2maker[type])();
   }
   else {
     RAVELOG_ERROR("There is no cost of type%s\n", type.c_str());
-    return CostInfoPtr();
+    return TermInfoPtr();
   }
 }
-map<string, CostInfo::MakerFunc> CostInfo::name2maker;
-
-void CostInfo::RegisterMaker(const std::string& type, MakerFunc f) {
-  name2maker[type] = f;
-}
-
-
-////
-//// almost copied
-
-
-void fromJson(const Json::Value& v, CntInfoPtr& cnt) {
-  string type;
-  childFromJson(v, type, "type");
-  LOG_DEBUG("reading constraint: %s", type.c_str());
-  cnt = CntInfo::fromName(type);
-  if (!cnt) PRINT_AND_THROW( boost::format("failed to construct constraint named %s")%type );
-  cnt->fromJson(v);
-  childFromJson(v, cnt->name, "name", type);
-}
-CntInfoPtr CntInfo::fromName(const string& type) {
-  if (!gRegisteredMakers) RegisterMakers();
-  if (name2maker.find(type) != name2maker.end()) {
-    return (*name2maker[type])();
-  }
-  else {
-    RAVELOG_ERROR("There is no constraint of type%s\n", type.c_str());
-    return CntInfoPtr();
-  }
-}
-map<string,CntInfo::MakerFunc> CntInfo::name2maker;
 
 void InitInfo::fromJson(const Json::Value& v) {
   string type_str;
@@ -209,15 +194,17 @@ void ProblemConstructionInfo::fromJson(const Value& v) {
   }
 
   gPCI = this;
+  gReadingCosts=true;
+  gReadingConstraints=false;
   if (v.isMember("costs")) fromJsonArray(v["costs"], cost_infos);
+  gReadingCosts=false;
+  gReadingConstraints=true;
   if (v.isMember("constraints")) fromJsonArray(v["constraints"], cnt_infos);
+  gReadingConstraints=false;
 
   childFromJson(v, init_info, "init_info");
   gPCI = NULL;
 
-}
-void CntInfo::RegisterMaker(const std::string& type, MakerFunc f) {
-  name2maker[type] = f;
 }
 
 TrajOptResult::TrajOptResult(OptResults& opt, TrajOptProb& prob) :
@@ -288,10 +275,10 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
     }
   }
 
-  BOOST_FOREACH(const CostInfoPtr& ci, pci.cost_infos) {
+  BOOST_FOREACH(const TermInfoPtr& ci, pci.cost_infos) {
     ci->hatch(*prob);
   }
-  BOOST_FOREACH(const CntInfoPtr& ci, pci.cnt_infos) {
+  BOOST_FOREACH(const TermInfoPtr& ci, pci.cnt_infos) {
     ci->hatch(*prob);
   }
 
@@ -351,30 +338,20 @@ void PoseCostInfo::fromJson(const Value& v) {
     PRINT_AND_THROW(boost::format("invalid link name: %s")%linkstr);
   }
 }
-CostInfoPtr PoseCostInfo::create() {
-  return CostInfoPtr(new PoseCostInfo());
-}
+
 void PoseCostInfo::hatch(TrajOptProb& prob) {
-  prob.addCost(CostPtr(new CartPoseCost(prob.GetVarRow(timestep), toRaveTransform(wxyz, xyz), rot_coeffs, pos_coeffs, prob.GetRAD(), link)));
-  prob.getCosts().back()->setName(name);
-}
-
-void PoseCntInfo::fromJson(const Value& v) {
-  FAIL_IF_FALSE(v.isMember("params"));
-  const Value& params = v["params"];
-  childFromJson(params, timestep, "timestep", gPCI->basic_info.n_steps-1);
-  childFromJson(params, xyz,"xyz");
-  childFromJson(params, wxyz,"wxyz");
-  childFromJson(params, pos_coeffs,"pos_coeffs", (Vector3d)Vector3d::Ones());
-  childFromJson(params, rot_coeffs,"rot_coeffs", (Vector3d)Vector3d::Ones());
-
-  string linkstr;
-  childFromJson(params, linkstr, "link");
-  link = gPCI->rad->GetRobot()->GetLink(linkstr);
-  if (!link) {
-    PRINT_AND_THROW(boost::format("invalid link name: %s")%linkstr);
+  if (term_type == TT_COST) {
+    prob.addCost(CostPtr(new CostFromErrFunc(
+      VectorOfVectorPtr(new CartPoseErrCalculator(toRaveTransform(wxyz, xyz), 
+      prob.GetRAD(), link)), prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), ABS, name)));
+  }
+  else if (term_type == TT_CNT) {
+    prob.addConstr(ConstraintPtr(new ConstraintFromFunc(
+      VectorOfVectorPtr(new CartPoseErrCalculator(toRaveTransform(wxyz, xyz), 
+      prob.GetRAD(), link)), prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), EQ, name)));
   }
 }
+
 
 void JointPosCostInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));
@@ -394,19 +371,7 @@ void JointPosCostInfo::hatch(TrajOptProb& prob) {
   prob.addCost(CostPtr(new JointPosCost(prob.GetVarRow(timestep), toVectorXd(vals), toVectorXd(coeffs))));
   prob.getCosts().back()->setName(name);  
 }
-CostInfoPtr JointPosCostInfo::create() {
-  return CostInfoPtr(new JointPosCostInfo());
-}
 
-
-CntInfoPtr PoseCntInfo::create() {
-  return CntInfoPtr(new PoseCntInfo());
-}
-void PoseCntInfo::hatch(TrajOptProb& prob) {
-  VectorXd coeffs(6); coeffs << rot_coeffs, pos_coeffs;
-  prob.addConstr(ConstraintPtr(new CartPoseConstraint(prob.GetVarRow(timestep), toRaveTransform(wxyz, xyz), prob.GetRAD(), link, coeffs)));
-  prob.getEqConstraints().back()->setName(name);
-}
 
 void CartVelCntInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));
@@ -425,13 +390,13 @@ void CartVelCntInfo::fromJson(const Value& v) {
     PRINT_AND_THROW( boost::format("invalid link name: %s")%linkstr);
   }
 }
-CntInfoPtr CartVelCntInfo::create() {
-  return CntInfoPtr(new CartVelCntInfo());
-}
+
 void CartVelCntInfo::hatch(TrajOptProb& prob) {
   for (int iStep = first_step; iStep < last_step; ++iStep) {
-    prob.addConstr(ConstraintPtr(new CartVelConstraint(prob.GetVarRow(iStep), prob.GetVarRow(iStep+1), prob.GetRAD(), link, distance_limit)));
-    prob.getIneqConstraints().back()->setName(name);
+    prob.addConstr(ConstraintPtr(new ConstraintFromFunc(
+      VectorOfVectorPtr(new CartVelCalculator(prob.GetRAD(), link, distance_limit)),
+       MatrixOfVectorPtr(new CartVelJacCalculator(prob.GetRAD(), link, distance_limit)), 
+      concat(prob.GetVarRow(iStep), prob.GetVarRow(iStep+1)), VectorXd::Ones(0), INEQ, "CartVel")));     
   }
 }
 
@@ -446,9 +411,7 @@ void JointVelCostInfo::fromJson(const Value& v) {
     PRINT_AND_THROW( boost::format("wrong number of coeffs. expected %i got %i")%n_dof%coeffs.size());
   }
 }
-CostInfoPtr JointVelCostInfo::create() {
-  return CostInfoPtr(new JointVelCostInfo());
-}
+
 void JointVelCostInfo::hatch(TrajOptProb& prob) {
   prob.addCost(CostPtr(new JointVelCost(prob.GetVars(), toVectorXd(coeffs))));
   prob.getCosts().back()->setName(name);
@@ -460,6 +423,7 @@ void CollisionCostInfo::fromJson(const Value& v) {
   const Value& params = v["params"];
 
   int n_steps = gPCI->basic_info.n_steps;
+  childFromJson(params, continuous, "continuous", true);
   childFromJson(params, first_step, "first_step", 0);
   childFromJson(params, last_step, "last_step", n_steps-1);
   FAIL_IF_FALSE((first_step >= 0) && (first_step < n_steps));
@@ -492,12 +456,7 @@ void CollisionCostInfo::hatch(TrajOptProb& prob) {
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*prob.GetEnv());
   cc->SetContactDistance(*std::max_element(dist_pen.begin(), dist_pen.end()) + .04);
 }
-CostInfoPtr CollisionCostInfo::create_discrete() {
-  return CostInfoPtr(new CollisionCostInfo(false));
-}
-CostInfoPtr CollisionCostInfo::create_continuous() {
-  return CostInfoPtr(new CollisionCostInfo(true));
-}
+
 
 
 
@@ -520,9 +479,9 @@ void JointConstraintInfo::hatch(TrajOptProb& prob) {
     prob.addLinearConstr(exprSub(AffExpr(vars[j]), vals[j]), EQ);    
   }
 }
-CntInfoPtr JointConstraintInfo::create() {
-  return CntInfoPtr(new JointConstraintInfo());
-}
+// CntInfoPtr JointConstraintInfo::create() {
+//   return CntInfoPtr(new JointConstraintInfo());
+// }
 
 
 }
