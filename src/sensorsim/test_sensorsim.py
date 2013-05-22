@@ -1,0 +1,11 @@
+import openravepy, sensorsimpy, trajoptpy
+env = openravepy.Environment()
+env.StopSimulation()
+env.Load("robots/pr2-beta-static.zae")
+viewer = trajoptpy.GetViewer(env)
+viewer.Idle()
+sensor = sensorsimpy.CreateFakeKinect(env)
+sensor.SetPose([0,0,2], [0,0,1,0])
+sensor.SetIntrinsics(525)
+sensor.Update()
+d = sensor.GetDepthImage()
