@@ -25,9 +25,17 @@ enum CollisionFilterGroups {
 
 const float MARGIN = 0;
 
-#if 0
+#if 1
 ostream &operator<<(ostream &stream, const btVector3& v) {
   stream << v.x() << " " << v.y() << " " << v.z();
+  return stream;
+}
+ostream &operator<<(ostream &stream, const btQuaternion& v) {
+  stream << v.w() << " " << v.x() << " " << v.y() << " " << v.z();
+  return stream;
+}
+ostream &operator<<(ostream &stream, const btTransform& v) {
+  stream << v.getOrigin() << " " << v.getRotation();
   return stream;
 }
 #endif
@@ -826,7 +834,7 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
       float retval = CollisionCollector::addSingleResult(cp, colObj0Wrap,partId0,index0, colObj1Wrap,partId1,index1); // call base class func
       if (retval == 1) { // if contact was added
         bool castShapeIsFirst =  (colObj0Wrap->getCollisionObject() == m_cow);
-        btVector3 normalWorldFromCast = -(castShapeIsFirst ? 1 : -1) * cp.m_normalWorldOnB;          
+        btVector3 normalWorldFromCast = -(castShapeIsFirst ? 1 : -1) * cp.m_normalWorldOnB;
         const CastHullShape* shape = dynamic_cast<const CastHullShape*>((castShapeIsFirst ? colObj0Wrap : colObj1Wrap)->getCollisionObject()->getCollisionShape());
         assert(!!shape);
         btTransform tfWorld0 = m_cow->getWorldTransform();
@@ -837,8 +845,8 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
         btVector3 ptWorld1 = tfWorld1*shape->localGetSupportingVertex(normalLocal1);
         float sup0 = normalWorldFromCast.dot(ptWorld0);
         float sup1 = normalWorldFromCast.dot(ptWorld1);
-        const float SUPPORT_FUNC_TOLERANCE = 1e-5;
-        LOG_DEBUG("sup0: %.2f. sup1: %.2f", sup0, sup1);
+        const float SUPPORT_FUNC_TOLERANCE = .03;
+        // TODO: this section is potentially problematic. think hard about the math
         if (sup0 - sup1 > SUPPORT_FUNC_TOLERANCE) {
           m_collisions.back().time = 0;
         }
@@ -850,10 +858,21 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
           float l0c = (ptOnCast - ptWorld0).length(), 
                 l1c = (ptOnCast - ptWorld1).length(), 
                 l01 = (ptWorld1 - ptWorld0).length();
-          const float COLLINEARITY_TOLERANCE = 1e-5;
-          // cout << ptWorld0 << " / " << ptWorld1 << " / " << ptOnCast << endl;
-          if ( l0c + l1c - l01 > COLLINEARITY_TOLERANCE ) LOG_WARN("points are supposed to be collinear here");
-          m_collisions.back().time = (l01 > 0)  ?  fmin(l0c/l01, 1) : .5;            
+          const float COLLINEARITY_TOLERANCE = .03;
+          const float LENGTH_TOLERANCE = .001;
+          if ( l01 < LENGTH_TOLERANCE || fabs(l0c + l1c - l01) > COLLINEARITY_TOLERANCE ) {
+//            LOG_WARN("collin. viol: %f + %f != %f", l0c, l1c, l01);
+//            cerr << "tfWorld0 " << tfWorld0 << endl;
+//            cerr << "tfWorld1 " << tfWorld1 << endl;
+//            cerr << "ptWorld0 " << ptWorld0 << endl;
+//            cerr << "ptWorld1 " << ptWorld1 << endl;
+//             cout << ptWorld0 << " / " << ptWorld1 << " / " << ptOnCast << endl;
+
+            m_collisions.back().time = .5;
+          }
+          else {
+            m_collisions.back().time = fmin(l0c/l01, 1);
+          }
         }
           
       }
