@@ -1,6 +1,6 @@
 #include "sco/expr_ops.hpp"
 #include "sco/modeling_utils.hpp"
-#include "trajopt/kinematic_constraints.hpp"
+#include "trajopt/kinematic_terms.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/utils.hpp"
 #include "utils/eigen_conversions.hpp"

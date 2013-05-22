@@ -4,7 +4,7 @@
 #include <utility>
 #include <iostream>
 #include <openrave/openrave.h>
-#include "robot_and_dof.hpp"
+#include "configuration_space.hpp"
 #include "macros.h"
 
 namespace trajopt {

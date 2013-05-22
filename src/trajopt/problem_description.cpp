@@ -3,9 +3,9 @@
 #include <boost/foreach.hpp>
 #include "utils/logging.hpp"
 #include "sco/expr_ops.hpp"
-#include "trajopt/kinematic_constraints.hpp"
+#include "trajopt/kinematic_terms.hpp"
 #include "trajopt/trajectory_costs.hpp"
-#include "trajopt/collision_avoidance.hpp"
+#include "trajopt/collision_terms.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/plot_callback.hpp"
 #include "trajopt/rave_utils.hpp"

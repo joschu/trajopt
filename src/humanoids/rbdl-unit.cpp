@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "humanoids/rave_to_rbdl.hpp"
 #include <openrave-core.h>
-#include "trajopt/robot_and_dof.hpp"
+#include "trajopt/configuration_space.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/utils.hpp"
 #include <boost/foreach.hpp>

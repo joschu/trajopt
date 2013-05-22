@@ -16,7 +16,7 @@
 #include "utils/config.hpp"
 #include "trajopt/plot_callback.hpp"
 #include "trajopt_test_utils.hpp"
-#include "trajopt/collision_avoidance.hpp"
+#include "trajopt/collision_terms.hpp"
 using namespace trajopt;
 using namespace std;
 using namespace OpenRAVE;

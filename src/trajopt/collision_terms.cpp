@@ -1,4 +1,4 @@
-#include "trajopt/collision_avoidance.hpp"
+#include "trajopt/collision_terms.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/utils.hpp"
 #include "sco/expr_vec_ops.hpp"

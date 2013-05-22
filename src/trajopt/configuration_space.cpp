@@ -1,4 +1,4 @@
-#include "trajopt/robot_and_dof.hpp"
+#include "trajopt/configuration_space.hpp"
 #include <boost/foreach.hpp>
 #include "trajopt/rave_utils.hpp"
 #include "utils/math.hpp"

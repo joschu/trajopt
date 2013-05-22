@@ -2,7 +2,7 @@
 #include <openrave/openrave.h>
 
 #include "trajopt/problem_description.hpp"
-#include "trajopt/kinematic_constraints.hpp"
+#include "trajopt/kinematic_terms.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/utils.hpp"
 #include "utils/eigen_conversions.hpp"
