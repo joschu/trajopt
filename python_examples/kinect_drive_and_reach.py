@@ -8,8 +8,6 @@ args = parser.parse_args()
 import numpy as np, os.path as osp
 import cloudprocpy,trajoptpy,openravepy
 import json
-import trajoptpy.math_utils as mu
-import trajoptpy.kin_utils as ku
 import trajoptpy.make_kinbodies as mk
 from trajoptpy.check_traj import traj_is_safe
 
@@ -83,7 +81,7 @@ elif args.geom_type == "boxes":
     mk.create_boxes(env, get_xyz_world_frame(cloud_ds), .02)
     
 
-def full_body_drive_and_reach(robot, link_name, xyz_targ, quat_targ):
+def full_body_drive_and_reach(link_name, xyz_targ, quat_targ):
         
     request = {        
         "basic_info" : {
@@ -141,7 +139,7 @@ robot.SetActiveDOFs(np.r_[robot.GetManipulator("rightarm").GetArmIndices(),
     
 request = full_body_drive_and_reach(robot, "r_gripper_tool_frame", (px,py,pz), (qw,qx,qy,qz))
 s = json.dumps(request)
-trajoptpy.SetInteractive(args.interactive);
+trajoptpy.SetInteractive(args.interactive)
 prob = trajoptpy.ConstructProblem(s, env)
 result = trajoptpy.OptimizeProblem(prob)
 if check_result(result, robot):

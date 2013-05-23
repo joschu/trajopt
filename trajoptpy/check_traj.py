@@ -1,7 +1,6 @@
 import trajoptpy.math_utils as mu
 import openravepy as rave
 import numpy as np
-from time import time
 
 def traj_collisions(traj, robot, n=100):
     """
@@ -9,7 +8,7 @@ def traj_collisions(traj, robot, n=100):
     manip = Manipulator or list of indices
     """
     traj_up = mu.interp2d(np.linspace(0,1,n), np.linspace(0,1,len(traj)), traj)
-    ss = rave.RobotStateSaver(robot)
+    _ss = rave.RobotStateSaver(robot)
     
     env = robot.GetEnv()
     col_times = []

@@ -8,8 +8,6 @@ import trajoptpy
 import openravepy as rave
 import numpy as np
 import json
-import trajoptpy.math_utils as mu
-import trajoptpy.kin_utils as ku
 from trajoptpy.check_traj import traj_is_safe
 
 
@@ -114,7 +112,7 @@ success = False
 for i_try in xrange(100):
     request = position_base_request(robot, LINK_NAME, XYZ_TARGET, QUAT_TARGET)
     s = json.dumps(request)
-    trajoptpy.SetInteractive(args.interactive);
+    trajoptpy.SetInteractive(args.interactive)
     prob = trajoptpy.ConstructProblem(s, env)
     result = trajoptpy.OptimizeProblem(prob)
     if check_result(result, robot): 
