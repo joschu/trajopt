@@ -39,12 +39,11 @@ TEST(collision_checker, box_distance) {
   CollisionCheckerPtr checker = CreateCollisionChecker(env);
 
 #define EXPECT_NUM_COLLISIONS(n)\
-  vector<Collision> collisions;\
-  checker->AllVsAll(collisions);\
-  EXPECT_EQ(collisions.size(), n);\
-  collisions.clear();\
-  checker->BodyVsAll(*box0, collisions);\
-  EXPECT_EQ(collisions.size(), n);
+  vector<Collision> allvsall_collisions, bodyvsall_collisions;\
+  checker->AllVsAll(allvsall_collisions);\
+  EXPECT_EQ(n, allvsall_collisions.size());\
+  checker->BodyVsAll(*box0, bodyvsall_collisions);\
+  EXPECT_EQ(n, bodyvsall_collisions.size());
 
   {
     checker->SetContactDistance(0);

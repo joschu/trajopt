@@ -96,6 +96,10 @@ def plan(robot, manip, end_joints, end_pose = None):
             {
                 "type" : "collision",
                 "params" : {"coeffs" : [coll_coeff],"dist_pen" : [dist_pen]}
+            },
+            {
+                "type" : "collision",
+                "params" : {"continuous": False, "coeffs" : [coll_coeff],"dist_pen" : [dist_pen]}
             }
             ],
             "constraints" : [
@@ -147,6 +151,17 @@ loadsuccess = env.Load(osp.join(trajoptpy.data_dir, args.scenefile+".env.xml"))
 assert loadsuccess
 robot = env.GetRobots()[0]
 robot.SetDOFValues(dof_vals)
+
+
+# import xml.etree.ElementTree as ET
+# cc = trajoptpy.GetCollisionChecker(env)
+# root = ET.parse("/opt/ros/groovy/share/pr2_moveit_config/config/pr2.srdf").getroot()
+# disabled_elems=root.findall("disable_collisions")
+# for elem in disabled_elems:
+#     linki = robot.GetLink(elem.get("link1"))
+#     linkj = robot.GetLink(elem.get("link2"))
+#     if linki and linkj:
+#          cc.ExcludeCollisionPair(linki, linkj)
 
 
 

@@ -106,20 +106,23 @@ SingleTimestepCollisionEvaluator::SingleTimestepCollisionEvaluator(Configuration
   m_rad(rad),
   m_vars(vars),
   m_link2ind(),
-  m_links() {
+  m_links(),
+  m_filterMask(-1) {
   vector<KinBody::LinkPtr> links;
   vector<int> inds;
   rad->GetAffectedLinks(m_links, true, inds);
   for (int i=0; i < m_links.size(); ++i) {
     m_link2ind[m_links[i].get()] = inds[i];
   }
+  // TODO add argument
+  // m_filterMask = RobotFilter;
 }
 
 
 void SingleTimestepCollisionEvaluator::CalcCollisions(const DblVec& x, vector<Collision>& collisions) {
   DblVec dofvals = getDblVec(x, m_vars);
   m_rad->SetDOFValues(dofvals);
-  m_cc->LinksVsAll(m_links, collisions);
+  m_cc->LinksVsAll(m_links, collisions, m_filterMask);
 }
 
 void SingleTimestepCollisionEvaluator::CalcDists(const DblVec& x, DblVec& dists, DblVec& weights) {

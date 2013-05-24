@@ -20,6 +20,10 @@ struct Collision {
 };
 TRAJOPT_API std::ostream& operator<<(std::ostream&, const Collision&);
 
+enum CollisionFilterGroups {
+  RobotFilter = 1,
+  KinBodyFilter = 2,
+};
 
 /** 
 Each CollisionChecker object has a copy of the world, so for performance, don't make too many copies  
@@ -30,12 +34,12 @@ public:
   /** check everything vs everything else */
   virtual void AllVsAll(vector<Collision>& collisions)=0;
   /** check link vs everything else */
-  virtual void LinkVsAll(const KinBody::Link& link, vector<Collision>& collisions)=0;
-  virtual void LinksVsAll(const vector<KinBody::LinkPtr>& links, vector<Collision>& collisions)=0;
+  virtual void LinkVsAll(const KinBody::Link& link, vector<Collision>& collisions, short filterMask)=0;
+  virtual void LinksVsAll(const vector<KinBody::LinkPtr>& links, vector<Collision>& collisions, short filterMask)=0;
 
   /** check robot vs everything else. includes attached bodies */
-  void BodyVsAll(const KinBody& body, vector<Collision>& collisions) {
-    LinksVsAll(body.GetLinks(), collisions);
+  void BodyVsAll(const KinBody& body, vector<Collision>& collisions, short filterMask=-1) {
+    LinksVsAll(body.GetLinks(), collisions, filterMask);
   }
   /** contacts of distance < (arg) will be returned */
   virtual void SetContactDistance(float distance)  = 0;

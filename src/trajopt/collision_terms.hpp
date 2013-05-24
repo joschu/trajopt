@@ -47,7 +47,7 @@ public:
   VarVector m_vars;
   Link2Int m_link2ind;
   vector<OR::KinBody::LinkPtr> m_links;
-
+  short m_filterMask;
 };
 
 struct CastCollisionEvaluator : public CollisionEvaluator {
@@ -66,6 +66,7 @@ public:
   typedef std::map<const OR::KinBody::Link*, int> Link2Int;
   Link2Int m_link2ind;
   vector<OR::KinBody::LinkPtr> m_links;
+  short m_filterMask;
 
 };
 

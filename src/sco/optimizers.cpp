@@ -189,6 +189,7 @@ void BasicTrustRegionSQP::setTrustBoxConstraints(const DblVec& x) {
   DblVec& lb=prob_->getLowerBounds(), ub=prob_->getUpperBounds();
   DblVec lbtrust(x.size()), ubtrust(x.size());
   const vector<bool>& incmask = prob_->getIncrementMask();
+  if (incmask.empty()) prob_->setIncrementMask(vector<bool>(x.size(), false));
   for (size_t i=0; i < x.size(); ++i) {
     lbtrust[i] = fmax((incmask[i] ? 0 : x[i]) - trust_box_size_, lb[i]);
     ubtrust[i] = fmin((incmask[i] ? 0 : x[i]) + trust_box_size_, ub[i]);
