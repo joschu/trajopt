@@ -13,7 +13,7 @@ using namespace sco;
 
 
 TEST(solver_interface, setup_problem) {
-  ModelPtr solver = createModel(SOLVER_GUROBI);
+  ModelPtr solver = createModel();
   vector<Var> vars;
   for (int i=0; i < 3; ++i) {
     char namebuf[5];

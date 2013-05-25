@@ -88,25 +88,30 @@ GurobiModel::GurobiModel() {
       ENSURE_SUCCESS(GRBsetintparam(gEnv, "OutputFlag",0));
     }
   }
-  GRBnewmodel(gEnv, &model,"problem",0, NULL, NULL, NULL,NULL, NULL);
+  GRBnewmodel(gEnv, &m_model,"problem",0, NULL, NULL, NULL,NULL, NULL);
 }
 
-static vector<int> vars2inds(const vector<Var>& vars) {
+vector<int> vars2inds(const vector<Var>& vars) {
   vector<int> inds(vars.size());
   for (size_t i=0; i < inds.size(); ++i) inds[i] = vars[i].var_rep->index;
   return inds;
 }
+vector<int> cnts2inds(const vector<Cnt>& cnts) {
+  vector<int> inds(cnts.size());
+  for (size_t i=0; i < inds.size(); ++i) inds[i] = cnts[i].cnt_rep->index;
+  return inds;  
+}
 
 Var GurobiModel::addVar(const string& name) {
-  ENSURE_SUCCESS(GRBaddvar(model, 0, NULL, NULL, 0, -GRB_INFINITY, GRB_INFINITY, GRB_CONTINUOUS, const_cast<char*>(name.c_str())));
-  vars.push_back(new VarRep(vars.size(), name, this));
-  return vars.back();
+  ENSURE_SUCCESS(GRBaddvar(m_model, 0, NULL, NULL, 0, -GRB_INFINITY, GRB_INFINITY, GRB_CONTINUOUS, const_cast<char*>(name.c_str())));
+  m_vars.push_back(new VarRep(m_vars.size(), name, this));
+  return m_vars.back();
 }
 
 Var GurobiModel::addVar(const string& name, double lb, double ub) {
-  ENSURE_SUCCESS(GRBaddvar(model, 0, NULL, NULL, 0, lb, ub, GRB_CONTINUOUS, const_cast<char*>(name.c_str())));
-  vars.push_back(new VarRep(vars.size(), name, this));
-  return vars.back();
+  ENSURE_SUCCESS(GRBaddvar(m_model, 0, NULL, NULL, 0, lb, ub, GRB_CONTINUOUS, const_cast<char*>(name.c_str())));
+  m_vars.push_back(new VarRep(m_vars.size(), name, this));
+  return m_vars.back();
 }
 
 
@@ -115,20 +120,20 @@ Cnt GurobiModel::addEqCnt(const AffExpr& expr, const string& name) {
   vector<int> inds = vars2inds(expr.vars);
   vector<double> vals = expr.coeffs;
   simplify2(inds, vals);
-  ENSURE_SUCCESS(GRBaddconstr(model, inds.size(),
+  ENSURE_SUCCESS(GRBaddconstr(m_model, inds.size(),
        const_cast<int*>(inds.data()), const_cast<double*>(vals.data()), GRB_EQUAL, -expr.constant, const_cast<char*>(name.c_str())));
-  cnts.push_back(new CntRep(cnts.size(), this));
-  return cnts.back();
+  m_cnts.push_back(new CntRep(m_cnts.size(), this));
+  return m_cnts.back();
 }
 Cnt GurobiModel::addIneqCnt(const AffExpr& expr, const string& name) {
   LOG_TRACE("adding ineq: %s <= 0", CSTR(expr));
   vector<int> inds = vars2inds(expr.vars);
   vector<double> vals = expr.coeffs;
   simplify2(inds, vals);
-  ENSURE_SUCCESS(GRBaddconstr(model, inds.size(),
+  ENSURE_SUCCESS(GRBaddconstr(m_model, inds.size(),
       inds.data(), vals.data(), GRB_LESS_EQUAL, -expr.constant, const_cast<char*>(name.c_str())));
-  cnts.push_back(new CntRep(cnts.size(), this));
-  return cnts.back();
+  m_cnts.push_back(new CntRep(m_cnts.size(), this));
+  return m_cnts.back();
 }
 Cnt GurobiModel::addIneqCnt(const QuadExpr& qexpr, const string& name) {
   int numlnz = qexpr.affexpr.size();
@@ -136,7 +141,7 @@ Cnt GurobiModel::addIneqCnt(const QuadExpr& qexpr, const string& name) {
   vector<double> lvals = qexpr.affexpr.coeffs;
   vector<int> inds1 = vars2inds(qexpr.vars1);
   vector<int> inds2 = vars2inds(qexpr.vars2);  
-  ENSURE_SUCCESS(GRBaddqconstr(model, numlnz, linds.data(), lvals.data(), qexpr.size(), 
+  ENSURE_SUCCESS(GRBaddqconstr(m_model, numlnz, linds.data(), lvals.data(), qexpr.size(), 
     inds1.data(), inds2.data(), const_cast<double*>(qexpr.coeffs.data()), 
     GRB_LESS_EQUAL, -qexpr.affexpr.constant, const_cast<char*>(name.c_str())));
   return Cnt();
@@ -149,52 +154,56 @@ void resetIndices(vector<Cnt>& cnts) {
   for (size_t i=0; i < cnts.size(); ++i) cnts[i].cnt_rep[i].index = i;
 }
 
-void GurobiModel::removeVar(const Var& var) {
-  assert(var.var_rep->creator == this);
-  ENSURE_SUCCESS(GRBdelvars(model, 1, &var.var_rep->index));
-  var.var_rep->removed = true;
+void GurobiModel::removeVars(const vector<Var>& vars) {
+  vector<int>inds = vars2inds(vars);
+  ENSURE_SUCCESS(GRBdelvars(m_model, inds.size(), inds.data()));
+  for (int i=0; i < vars.size(); ++i) vars[i].var_rep->removed = true;
 }
 
-void GurobiModel::removeCnt(const Cnt& cnt) {
-  assert(cnt.cnt_rep->creator == this);
-  ENSURE_SUCCESS(GRBdelconstrs(model, 1, &cnt.cnt_rep->index));
-  cnt.cnt_rep->removed = true;
+void GurobiModel::removeCnts(const vector<Cnt>& cnts) {
+  vector<int>inds = cnts2inds(cnts);
+  ENSURE_SUCCESS(GRBdelconstrs(m_model, inds.size(), inds.data()));
+  for (int i=0; i < cnts.size(); ++i) cnts[i].cnt_rep->removed = true;
 }
 
-
+#if 0
 void GurobiModel::setVarBounds(const Var& var, double lower, double upper) {
   assert(var.var_rep->creator == this);
-  ENSURE_SUCCESS(GRBsetdblattrelement(model, GRB_DBL_ATTR_LB, var.var_rep->index, lower));
-  ENSURE_SUCCESS(GRBsetdblattrelement(model, GRB_DBL_ATTR_UB, var.var_rep->index, upper));
+  ENSURE_SUCCESS(GRBsetdblattrelement(m_model, GRB_DBL_ATTR_LB, var.var_rep->index, lower));
+  ENSURE_SUCCESS(GRBsetdblattrelement(m_model, GRB_DBL_ATTR_UB, var.var_rep->index, upper));
 }
+#endif
+
 
 void GurobiModel::setVarBounds(const VarVector& vars, const vector<double>& lower, const vector<double>& upper) {
   assert(vars.size() == lower.size() && vars.size() == upper.size());
-  ENSURE_SUCCESS(GRBsetdblattrarray(model, GRB_DBL_ATTR_LB, 0, vars.size(), const_cast<double*>(lower.data())));
-  ENSURE_SUCCESS(GRBsetdblattrarray(model, GRB_DBL_ATTR_UB, 0, vars.size(), const_cast<double*>(upper.data())));
+  ENSURE_SUCCESS(GRBsetdblattrarray(m_model, GRB_DBL_ATTR_LB, 0, vars.size(), const_cast<double*>(lower.data())));
+  ENSURE_SUCCESS(GRBsetdblattrarray(m_model, GRB_DBL_ATTR_UB, 0, vars.size(), const_cast<double*>(upper.data())));
 }
 
-
+#if 0
 double GurobiModel::getVarValue(const Var& var) const {
   assert(var.var_rep->creator == this);
   double out;
-  ENSURE_SUCCESS(GRBgetdblattrelement(model, GRB_DBL_ATTR_X, var.var_rep->index, &out));
+  ENSURE_SUCCESS(GRBgetdblattrelement(m_model, GRB_DBL_ATTR_X, var.var_rep->index, &out));
   return out;
 }
+#endif 
+
 vector<double> GurobiModel::getVarValues(const vector<Var>& vars) const {
   assert((vars.size() == 0) || (vars[0].var_rep->creator == this));
   vector<int> inds = vars2inds(vars);
   vector<double> out(inds.size());
-  ENSURE_SUCCESS(GRBgetdblattrlist(model, GRB_DBL_ATTR_X, inds.size(), inds.data(), out.data()));
+  ENSURE_SUCCESS(GRBgetdblattrlist(m_model, GRB_DBL_ATTR_X, inds.size(), inds.data(), out.data()));
   return out;
 }
 
 CvxOptStatus GurobiModel::optimize(){
-  ENSURE_SUCCESS(GRBoptimize(model));
+  ENSURE_SUCCESS(GRBoptimize(m_model));
   int status;
-  GRBgetintattr(model, GRB_INT_ATTR_STATUS, &status);
+  GRBgetintattr(m_model, GRB_INT_ATTR_STATUS, &status);
   if (status == GRB_OPTIMAL) {
-    double objval; GRBgetdblattr(model, GRB_DBL_ATTR_OBJVAL, &objval);
+    double objval; GRBgetdblattr(m_model, GRB_DBL_ATTR_OBJVAL, &objval);
     LOG_DEBUG("solver objective value: %.3e", objval);
     return CVX_SOLVED;
   }
@@ -203,73 +212,73 @@ CvxOptStatus GurobiModel::optimize(){
 }
 CvxOptStatus GurobiModel::optimizeFeasRelax(){
   double lbpen=GRB_INFINITY, ubpen = GRB_INFINITY,  rhspen=1;
-  ENSURE_SUCCESS(GRBfeasrelax(model, 0/*sum of viol*/, 0/*just minimize cost of viol*/, &lbpen, &ubpen, &rhspen, NULL));
+  ENSURE_SUCCESS(GRBfeasrelax(m_model, 0/*sum of viol*/, 0/*just minimize cost of viol*/, &lbpen, &ubpen, &rhspen, NULL));
   return optimize();
 }
 
 void GurobiModel::setObjective(const AffExpr& expr) {
-  GRBdelq(model);
+  GRBdelq(m_model);
 
   int nvars;
-  GRBgetintattr(model, GRB_INT_ATTR_NUMVARS, &nvars);
-  assert(nvars == (int)vars.size());
+  GRBgetintattr(m_model, GRB_INT_ATTR_NUMVARS, &nvars);
+  assert(nvars == m_vars.size());
 
   vector<double> obj(nvars, 0);
   for (size_t i=0; i < expr.size(); ++i) {
     obj[expr.vars[i].var_rep->index] += expr.coeffs[i];
   }
-  ENSURE_SUCCESS(GRBsetdblattrarray(model, "Obj", 0, nvars, obj.data()));
-  GRBsetdblattr(model, "ObjCon", expr.constant);
+  ENSURE_SUCCESS(GRBsetdblattrarray(m_model, "Obj", 0, nvars, obj.data()));
+  GRBsetdblattr(m_model, "ObjCon", expr.constant);
 }
 
 void GurobiModel::setObjective(const QuadExpr& quad_expr) {
   setObjective(quad_expr.affexpr);
   vector<int> inds1 = vars2inds(quad_expr.vars1);
   vector<int> inds2 = vars2inds(quad_expr.vars2);
-  GRBaddqpterms(model, quad_expr.coeffs.size(), const_cast<int*>(inds1.data()),
+  GRBaddqpterms(m_model, quad_expr.coeffs.size(), const_cast<int*>(inds1.data()),
       const_cast<int*>(inds2.data()), const_cast<double*>(quad_expr.coeffs.data()));
 }
 
 void GurobiModel::writeToFile(const string& fname) {
-  ENSURE_SUCCESS(GRBwrite(model, fname.c_str()));
+  ENSURE_SUCCESS(GRBwrite(m_model, fname.c_str()));
 }
 
 
 void GurobiModel::update() {
-  ENSURE_SUCCESS(GRBupdatemodel(model));
+  ENSURE_SUCCESS(GRBupdatemodel(m_model));
 
   {
   int inew = 0;
-  BOOST_FOREACH(const Var& var, vars) {
+  BOOST_FOREACH(const Var& var, m_vars) {
     if (!var.var_rep->removed) {
-      vars[inew] = var;
+      m_vars[inew] = var;
       var.var_rep->index = inew;
       ++inew;
     }
     else delete var.var_rep;
   }
-  vars.resize(inew);
+  m_vars.resize(inew);
   }
   {
   int inew = 0;
-  BOOST_FOREACH(const Cnt& cnt, cnts) {
+  BOOST_FOREACH(const Cnt& cnt, m_cnts) {
     if (!cnt.cnt_rep->removed) {
-      cnts[inew] = cnt;
+      m_cnts[inew] = cnt;
       cnt.cnt_rep->index = inew;
       ++inew;
     }
     else delete cnt.cnt_rep;
   }
-  cnts.resize(inew);
+  m_cnts.resize(inew);
   }
 }
 
 VarVector GurobiModel::getVars() const {
-  return vars;
+  return m_vars;
 }
 
 GurobiModel::~GurobiModel() {
-  ENSURE_SUCCESS(GRBfreemodel(model));
+  ENSURE_SUCCESS(GRBfreemodel(m_model));
 }
 
 }

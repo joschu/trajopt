@@ -137,7 +137,7 @@ double Constraint::violation(const DblVec& x) {
   return vecSum(violations(x));
 }
 
-OptProb::OptProb() : model_(createModel(SOLVER_GUROBI)) {}
+OptProb::OptProb() : model_(createModel()) {}
 
 void OptProb::createVariables(const vector<string>& var_names) {
   createVariables(var_names, DblVec(var_names.size(), -INFINITY), DblVec(var_names.size(), INFINITY));

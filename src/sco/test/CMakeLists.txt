@@ -16,6 +16,4 @@ target_link_libraries(sco-unit
   gtest gtest_main
 )
 
-add_test(sco-unit
-  ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/sco-unit
-)
+add_test(sco-unit ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/sco-unit)

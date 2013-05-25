@@ -52,16 +52,16 @@ public:
   virtual Cnt addIneqCnt(const AffExpr&, const string& name)=0; // expr <= 0
   virtual Cnt addIneqCnt(const QuadExpr&, const string& name)=0; // expr <= 0
 
-  virtual void removeVar(const Var& var) = 0;
-  virtual void removeCnt(const Cnt& cnt) = 0;
-  virtual void removeVars(const VarVector& vars);
-  virtual void removeCnts(const vector<Cnt>& cnts);
+  virtual void removeVar(const Var& var);
+  virtual void removeCnt(const Cnt& cnt);
+  virtual void removeVars(const VarVector& vars)=0;
+  virtual void removeCnts(const vector<Cnt>& cnts)=0;
 
   virtual void update() = 0; // call after adding/deleting stuff
-  virtual void setVarBounds(const Var& var, double lower, double upper)=0;
-  virtual void setVarBounds(const VarVector& vars, const vector<double>& lower, const vector<double>& upper);
-  virtual double getVarValue(const Var& var) const=0;
-  virtual vector<double> getVarValues(const VarVector& vars) const;
+  virtual void setVarBounds(const Var& var, double lower, double upper);
+  virtual void setVarBounds(const VarVector& vars, const vector<double>& lower, const vector<double>& upper)=0;
+  virtual double getVarValue(const Var& var) const;
+  virtual vector<double> getVarValues(const VarVector& vars) const=0;
   virtual CvxOptStatus optimize()=0;
 
   virtual void setObjective(const AffExpr&)=0;
@@ -142,10 +142,6 @@ ostream& operator<<(ostream&, const AffExpr&);
 ostream& operator<<(ostream&, const QuadExpr&);
 
 
-enum CvxSolverID {
-  SOLVER_GUROBI,
-  SOLVER_CUSTOM
-};
-ModelPtr createModel(CvxSolverID);
+ModelPtr createModel();
 
 }

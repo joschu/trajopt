@@ -15,9 +15,9 @@ namespace sco {
 
 class GurobiModel : public Model {
 public:
-  GRBmodel* model;
-  vector<Var> vars;
-  vector<Cnt> cnts;
+  GRBmodel* m_model;
+  vector<Var> m_vars;
+  vector<Cnt> m_cnts;
 
   GurobiModel();
 
@@ -28,16 +28,13 @@ public:
   Cnt addIneqCnt(const AffExpr&, const string& name);
   Cnt addIneqCnt(const QuadExpr&, const string& name);
 
-  void removeVar(const Var&);
-  void removeCnt(const Cnt&);
+  void removeVars(const vector<Var>&);
+  void removeCnts(const vector<Cnt>&);
 
   void update();
-
-  void setVarBounds(const Var&, double lower, double upper);
   void setVarBounds(const std::vector<Var>&, const std::vector<double>& lower, const std::vector<double>& upper);
-
-  double getVarValue(const Var&) const;
   vector<double> getVarValues(const vector<Var>&) const;
+
   CvxOptStatus optimize();
   /** Don't use this function, because it adds constraints that aren't tracked  */
   CvxOptStatus optimizeFeasRelax();
