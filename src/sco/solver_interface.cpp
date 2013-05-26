@@ -96,8 +96,9 @@ ModelPtr createModel() {
 #ifdef HAVE_GUROBI
   extern ModelPtr createGurobiModel();
 #endif
+#ifdef HAVE_BPMPD
   extern ModelPtr createBPMPDModel();
-
+#endif
   
   enum ConvexSolver {    
     GUROBI, 
@@ -118,6 +119,10 @@ ModelPtr createModel() {
 #ifndef HAVE_GUROBI
     if (solver == GUROBI) PRINT_AND_THROW("you didn't build with GUROBI support");
 #endif
+#ifndef HAVE_BPMPD
+    if (solver == BPMPD) PRINT_AND_THROW("you don't have BPMPD support on this platform");
+#endif
+    
   }
   else {
 #ifdef HAVE_GUROBI
@@ -130,10 +135,9 @@ ModelPtr createModel() {
 #ifdef HAVE_GUROBI
   if (solver == GUROBI) return createGurobiModel();
 #endif
-
+#ifdef HAVE_BPMPD
   if (solver == BPMPD) return createBPMPDModel();
-  
-  // should be unreachable
+#endif
   PRINT_AND_THROW("Failed to create solver");
   return ModelPtr();
   
