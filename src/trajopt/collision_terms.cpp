@@ -1,4 +1,5 @@
 #include "trajopt/collision_terms.hpp"
+#include "trajopt/collision_checker.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/utils.hpp"
 #include "sco/expr_vec_ops.hpp"
@@ -115,7 +116,6 @@ SingleTimestepCollisionEvaluator::SingleTimestepCollisionEvaluator(Configuration
     m_link2ind[m_links[i].get()] = inds[i];
   }
   // TODO add argument
-  // m_filterMask = RobotFilter;
 }
 
 
