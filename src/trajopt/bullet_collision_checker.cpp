@@ -861,7 +861,8 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
                 l01 = (ptWorld1 - ptWorld0).length();
           const float COLLINEARITY_TOLERANCE = .03 METERS;
           const float LENGTH_TOLERANCE = .001 METERS;
-          if ( l01 < LENGTH_TOLERANCE || fabs(l0c + l1c - l01) > COLLINEARITY_TOLERANCE ) {
+          // if ( l01 < LENGTH_TOLERANCE || fabs(l0c + l1c - l01) > COLLINEARITY_TOLERANCE ) {
+          if (0) {
 //            LOG_WARN("collin. viol: %f + %f != %f", l0c, l1c, l01);
 //            cerr << "tfWorld0 " << tfWorld0 << endl;
 //            cerr << "tfWorld1 " << tfWorld1 << endl;
@@ -872,7 +873,7 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
             m_collisions.back().time = .5;
           }
           else {
-            m_collisions.back().time = fmin(l0c/l01, 1);
+            m_collisions.back().time = l0c/(l0c + l1c);
           }
         }
           
