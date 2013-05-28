@@ -17,16 +17,25 @@ if (NOT APPLE)
   set (HAVE_BPMPD TRUE)
 endif()
 
+
 if (HAVE_BPMPD)
   add_executable(bpmpd_caller bpmpd_caller.cpp)
-  target_link_libraries(bpmpd_caller "${CMAKE_SOURCE_DIR}/3rdpartylib/bpmpd_linux64.a")
+  
+  if( CMAKE_SIZEOF_VOID_P EQUAL 8 ) # 64 bits
+  	set(BPMPD_LIBRARY "${CMAKE_SOURCE_DIR}/3rdpartylib/bpmpd_linux64.a")
+  else()
+  	set(BPMPD_LIBRARY "${CMAKE_SOURCE_DIR}/3rdpartylib/bpmpd_linux32.a")
+  endif()
+  
+  target_link_libraries(bpmpd_caller ${BPMPD_LIBRARY})
   list(APPEND SCO_SOURCE_FILES bpmpd_interface.cpp)  
-  set_source_files_properties( bpmpd_interface.cpp PROPERTIES COMPILE_FLAGS -DBPMPD_CALLER="\\\"${CMAKE_BINARY_DIR}/bin/bpmpd_caller\\\"") 
-  set_source_files_properties( solver_interface.cpp PROPERTIES COMPILE_FLAGS -DHAVE_BPMPD )
+  set_property(SOURCE bpmpd_interface.cpp APPEND PROPERTY COMPILE_DEFINITIONS BPMPD_CALLER="\\\"${CMAKE_BINARY_DIR}/bin/bpmpd_caller\\\"")
+ 
+  set_property(SOURCE solver_interface.cpp APPEND PROPERTY COMPILE_DEFINITIONS HAVE_BPMPD )
 endif()
 
 if (GUROBI_FOUND)
-  set_source_files_properties( solver_interface.cpp PROPERTIES COMPILE_FLAGS -DHAVE_GUROBI )
+  set_property(SOURCE solver_interface.cpp APPEND PROPERTY COMPILE_DEFINITIONS HAVE_GUROBI )
   list(APPEND SCO_SOURCE_FILES gurobi_interface.cpp)
 endif(GUROBI_FOUND)
 
