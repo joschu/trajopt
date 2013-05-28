@@ -857,12 +857,12 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
         else {
           const btVector3& ptOnCast = castShapeIsFirst ? cp.m_positionWorldOnA : cp.m_positionWorldOnB;
           float l0c = (ptOnCast - ptWorld0).length(), 
-                l1c = (ptOnCast - ptWorld1).length(), 
-                l01 = (ptWorld1 - ptWorld0).length();
-          const float COLLINEARITY_TOLERANCE = .03 METERS;
+                l1c = (ptOnCast - ptWorld1).length();
+                // l01 = (ptWorld1 - ptWorld0).length();
+          // const float COLLINEARITY_TOLERANCE = .03 METERS;
           const float LENGTH_TOLERANCE = .001 METERS;
           // if ( l01 < LENGTH_TOLERANCE || fabs(l0c + l1c - l01) > COLLINEARITY_TOLERANCE ) {
-          if ( l01 + l1c < LENGTH_TOLERANCE) {
+          if ( l0c + l1c < LENGTH_TOLERANCE) {
 //            LOG_WARN("collin. viol: %f + %f != %f", l0c, l1c, l01);
 //            cerr << "tfWorld0 " << tfWorld0 << endl;
 //            cerr << "tfWorld1 " << tfWorld1 << endl;

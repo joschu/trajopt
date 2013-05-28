@@ -33,6 +33,7 @@ void RegisterMakers() {
 
   TermInfo::RegisterMaker("joint", &JointConstraintInfo::create);
   TermInfo::RegisterMaker("cart_vel", &CartVelCntInfo::create);
+  TermInfo::RegisterMaker("joint_vel_limits", &JointVelConstraintInfo::create);
 
   gRegisteredMakers = true;
 }
@@ -417,6 +418,27 @@ void JointVelCostInfo::hatch(TrajOptProb& prob) {
   prob.getCosts().back()->setName(name);
 }
 
+
+void JointVelConstraintInfo::fromJson(const Value& v) {
+  FAIL_IF_FALSE(v.isMember("params"));
+  const Value& params = v["params"];
+  
+  int n_steps = gPCI->basic_info.n_steps;  
+  childFromJson(params, upper_bounds, "upper_bounds");
+  childFromJson(params, lower_bounds, "lower_bounds");
+  childFromJson(params, first_step, "first_step", 0);
+  childFromJson(params, last_step, "last_step", n_steps-1);
+}
+void JointVelConstraintInfo::hatch(TrajOptProb& prob) {
+  int n_dof = prob.GetNumDOF();
+  for (int i = first_step; i <= last_step; ++i) {
+    VarVector vars = prob.GetVarRow(i);
+    for (int j=0; j < n_dof; ++j) {
+      prob.setLowerBounds(lower_bounds, vars);    
+      prob.setUpperBounds(upper_bounds, vars);    
+    }    
+  }
+}
 
 void CollisionCostInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));

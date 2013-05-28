@@ -48,6 +48,9 @@ public:
   VarVector GetVarRow(int i) {
     return m_traj_vars.row(i);
   }
+  Var& GetVar(int i, int j) {
+    return m_traj_vars.at(i,j);
+  }
   VarArray& GetVars() {
     return m_traj_vars;
   }
@@ -210,6 +213,15 @@ struct JointVelCostInfo : public TermInfo, public MakesCost {
   void hatch(TrajOptProb& prob);
   DEFINE_CREATE(JointVelCostInfo)
 };
+
+struct JointVelConstraintInfo : public TermInfo, public MakesConstraint {
+  DblVec upper_bounds, lower_bounds;
+  int first_step, last_step;
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
+  DEFINE_CREATE(JointVelConstraintInfo)
+};
+
 /**
 \brief %Collision penalty
 
