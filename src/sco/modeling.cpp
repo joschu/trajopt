@@ -155,7 +155,7 @@ void OptProb::createVariables(const vector<string>& var_names, const DblVec& lb,
     upper_bounds_.push_back(ub[i]);
   }
   model_->update();
-  incmask_.resize(getNumVars(),false);  
+  incmask_.insert(incmask_.end(),n_add, false);  
 }
 void OptProb::setLowerBounds(const vector<double>& lb) {
   assert(lb.size() == vars_.size());
@@ -212,9 +212,7 @@ vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
   for (int i=0; i < x.size(); ++i) {
     exprInc(obj, exprSquare(exprSub(AffExpr(vars_[i]),x[i])));
   }
-  for (int i=0; i < x.size(); ++i) {
-    model_->setVarBounds(vars_[i], lower_bounds_[i], upper_bounds_[i]);
-  }  
+  model_->setVarBounds(vars_, lower_bounds_, upper_bounds_);
   model_->setObjective(obj);
   CvxOptStatus status = model_->optimize();
   if(status != CVX_SOLVED) {

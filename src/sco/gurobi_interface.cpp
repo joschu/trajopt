@@ -177,8 +177,9 @@ void GurobiModel::setVarBounds(const Var& var, double lower, double upper) {
 
 void GurobiModel::setVarBounds(const VarVector& vars, const vector<double>& lower, const vector<double>& upper) {
   assert(vars.size() == lower.size() && vars.size() == upper.size());
-  ENSURE_SUCCESS(GRBsetdblattrarray(m_model, GRB_DBL_ATTR_LB, 0, vars.size(), const_cast<double*>(lower.data())));
-  ENSURE_SUCCESS(GRBsetdblattrarray(m_model, GRB_DBL_ATTR_UB, 0, vars.size(), const_cast<double*>(upper.data())));
+  vector<int> inds = vars2inds(vars);
+  ENSURE_SUCCESS(GRBsetdblattrlist(m_model, GRB_DBL_ATTR_LB, inds.size(), inds.data(), const_cast<double*>(lower.data())));
+  ENSURE_SUCCESS(GRBsetdblattrlist(m_model, GRB_DBL_ATTR_UB, inds.size(), inds.data(), const_cast<double*>(upper.data())));
 }
 
 #if 0
