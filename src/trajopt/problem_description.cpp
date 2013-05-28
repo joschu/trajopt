@@ -3,6 +3,7 @@
 #include <boost/foreach.hpp>
 #include "utils/logging.hpp"
 #include "sco/expr_ops.hpp"
+#include "sco/expr_op_overloads.hpp"
 #include "trajopt/kinematic_terms.hpp"
 #include "trajopt/trajectory_costs.hpp"
 #include "trajopt/collision_terms.hpp"
@@ -139,7 +140,7 @@ TermInfoPtr TermInfo::fromName(const string& type) {
     return (*name2maker[type])();
   }
   else {
-    RAVELOG_ERROR("There is no cost of type%s\n", type.c_str());
+    RAVELOG_ERROR("There is no cost of type %s\n", type.c_str());
     return TermInfoPtr();
   }
 }
@@ -424,19 +425,21 @@ void JointVelConstraintInfo::fromJson(const Value& v) {
   const Value& params = v["params"];
   
   int n_steps = gPCI->basic_info.n_steps;  
-  childFromJson(params, upper_bounds, "upper_bounds");
-  childFromJson(params, lower_bounds, "lower_bounds");
+  int n_dof = gPCI->rad->GetDOF();  
+  FAIL_IF_FALSE(vals.size() == n_dof);
+  FAIL_IF_FALSE((first_step >= 0) && (first_step < n_steps));
+  FAIL_IF_FALSE((last_step >= first_step) && (last_step < n_steps));
+  childFromJson(params, vals, "vals");
   childFromJson(params, first_step, "first_step", 0);
   childFromJson(params, last_step, "last_step", n_steps-1);
 }
 void JointVelConstraintInfo::hatch(TrajOptProb& prob) {
-  int n_dof = prob.GetNumDOF();
-  for (int i = first_step; i <= last_step; ++i) {
-    VarVector vars = prob.GetVarRow(i);
-    for (int j=0; j < n_dof; ++j) {
-      prob.setLowerBounds(lower_bounds, vars);    
-      prob.setUpperBounds(upper_bounds, vars);    
-    }    
+  for (int i = first_step; i <= last_step-1; ++i) {
+    for (int j=0; j < vals.size(); ++j)  {
+      AffExpr vel = prob.GetVar(i+1,j) -  prob.GetVar(i,j);
+      prob.addLinearConstraint(vel - vals[j], INEQ);
+      prob.addLinearConstraint(-vel - vals[j], INEQ);
+    }
   }
 }
 

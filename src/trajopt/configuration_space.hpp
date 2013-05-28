@@ -46,7 +46,7 @@ Stores an OpenRAVE robot and the active degrees of freedom
 */
 class TRAJOPT_API RobotAndDOF : public Configuration {
 public:
-  RobotAndDOF(OR::KinBodyPtr _robot, const IntVec& _joint_inds, int _affinedofs=0, const OR::Vector _rotationaxis=OR::Vector()) :
+  RobotAndDOF(OR::KinBodyPtr _robot, const IntVec& _joint_inds, int _affinedofs=0, const OR::Vector _rotationaxis=OR::Vector(0,0,1)) :
     robot(_robot), joint_inds(_joint_inds), affinedofs(_affinedofs), rotationaxis(_rotationaxis) {}
 
   void SetDOFValues(const DblVec& dofs);

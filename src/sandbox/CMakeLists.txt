@@ -26,3 +26,6 @@ target_link_libraries(pushing trajopt humanoids)
 
 add_executable(compl_test compl_test.cpp complementarity.cpp)
 target_link_libraries(compl_test sco)
+
+add_executable(dubins_car dubins_car.cpp)
+target_link_libraries(dubins_car trajopt)

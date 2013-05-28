@@ -215,7 +215,7 @@ struct JointVelCostInfo : public TermInfo, public MakesCost {
 };
 
 struct JointVelConstraintInfo : public TermInfo, public MakesConstraint {
-  DblVec upper_bounds, lower_bounds;
+  DblVec vals;
   int first_step, last_step;
   void fromJson(const Value& v);
   void hatch(TrajOptProb& prob);
