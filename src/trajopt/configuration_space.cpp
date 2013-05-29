@@ -35,7 +35,7 @@ DblVec RobotAndDOF::GetDOFValues() {
 void RobotAndDOF::SetRobotActiveDOFs()  {
   RobotBasePtr robot1 = boost::dynamic_pointer_cast<RobotBase>(robot); // since robot is just a kinbody
   vector<int> current_active = robot1->GetActiveDOFIndices();
-  if (!std::equal(current_active.begin(), current_active.end(), joint_inds.begin()))
+  if (robot1->GetActiveDOF() != GetDOF() || !std::equal(current_active.begin(), current_active.end(), joint_inds.begin()))
     robot1->SetActiveDOFs(joint_inds, affinedofs);
 }
 
@@ -128,6 +128,13 @@ void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool on
   }
 
 }
+
+vector<KinBodyPtr> RobotAndDOF::GetBodies() {
+  std::set<KinBodyPtr> bodies;
+  robot->GetAttached(bodies);
+  return vector<KinBodyPtr> (bodies.begin(), bodies.end());
+} 
+
 
 DblVec RobotAndDOF::RandomDOFValues() {
   int ndof = GetDOF();

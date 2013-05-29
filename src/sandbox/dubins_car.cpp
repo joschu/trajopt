@@ -56,7 +56,7 @@ struct NormError : public VectorOfVector {
     return v;
   }
 };
-
+#if 0
 struct NeedleConfig : public Configuration {
   DblVec m_vals;
   RobotBasePtr m_robot;
@@ -132,29 +132,36 @@ struct NeedleConfig : public Configuration {
     PRINT_AND_THROW("not implemented");
   }
 };
-
-
-inline Vector3d rotVec(const OpenRAVE::Vector& q) {
-  return Vector3d(q[1], q[2], q[3]);
-}
+#endif
 
 
 struct NeedleError : public VectorOfVector {
-  IncrementalRBPtr rad0, rad1;
+  ConfigurationPtr rad0, rad1;
   double radius;
-  NeedleError(IncrementalRBPtr rad0, IncrementalRBPtr rad1, double radius) : rad0(rad0), rad1(rad1), radius(radius) {}
+  KinBodyPtr body;
+  NeedleError(ConfigurationPtr rad0, ConfigurationPtr rad1, double radius) : rad0(rad0), rad1(rad1), radius(radius), body(rad0->GetBodies()[0]) {}
   VectorXd operator()(const VectorXd& a) const {
     rad0->SetDOFValues(toDblVec(a.topRows(6)));
+    OR::Transform Tw0 = body->GetTransform();
     rad1->SetDOFValues(toDblVec(a.middleRows(6,6)));
-    OR::Transform Tw0 = rad0->m_body->GetTransform(), Tw1 = rad1->m_body->GetTransform();
+    OR::Transform Tw1 = body->GetTransform();
     double theta = a(12);
     OR::Transform Ttarg0(OR::geometry::quatFromAxisAngle(OR::Vector(0,0,1), theta),
         OR::Vector(radius*sin(theta), radius*(1-cos(theta)),0));
-    OR::Transform pose_err = Tw1.inverse() * Tw0 * Ttarg0;
-    VectorXd err = concat(rotVec(pose_err.rot), toVector3d(pose_err.trans));
-    return err;
+//    OR::Transform pose_err = Tw1.inverse() * Tw0 * Ttarg0;
+//    VectorXd err = concat(Vector2d(pose_err.rot.x, pose_err.rot.y), toVector3d(pose_err.trans));
+        
+    OR::Transform Ttargw = Tw0 * Ttarg0;
+    OR::Vector position_errA = Ttargw.trans - Tw1.trans;
+    // OR::Vector position_errB = (Tw1 * Ttarg0.inverse()).trans - Tw0.trans;
+    OR::Vector ori_err = Ttargw * OR::Vector(1,0,0) - Tw1 * OR::Vector(1,0,0);
+    // return concat(toVector3d(position_errA), toVector3d(position_errB));
+//    OR::Vector rot_err = geometry::quatMultiply(geometry::quatInverse(Tw1.rot), Ttargw.rot);
+    return concat(toVector3d(position_errA), toVector3d(ori_err));
+
   }
 };
+
 
 template <typename T> 
 vector<T> singleton(const T& x) {
@@ -168,13 +175,36 @@ struct ConfigUpdater {
   ConfigUpdater(const vector<IncrementalRBPtr>& rbs, const VarArray& vars) : rbs(rbs), vars(vars) {}
   void update(OptProb*, DblVec& x) {
     MatrixXd rvals = getTraj(x, vars);
-    cout << "rvals" << endl << rvals << endl;
+    cout << "rvas:" << rvals << endl;
     for (int i=0; i < rbs.size(); ++i) {
       rbs[i]->m_q = OR::geometry::quatMultiply(geometry::quatFromAxisAngle(OR::Vector(rvals(i,0), rvals(i,1), rvals(i,2))),rbs[i]->m_q);
       rbs[i]->m_r = OR::Vector(0,0,0);
+      cout << "newq" << i << ": " << rbs[i]->m_q << endl;
     }
 
     setVec(x, vars.flatten(), DblVec(vars.size(), 0));
+  }
+};
+
+struct TrajPlotter {
+  vector<IncrementalRBPtr> rbs;
+  VarArray vars;
+  OSGViewerPtr viewer;
+  TrajPlotter(const vector<IncrementalRBPtr>& rbs, const VarArray& vars) : rbs(rbs), vars(vars) {
+    viewer = boost::dynamic_pointer_cast<OSGViewer>(rbs[0]->GetEnv()->GetViewer("osg"));
+  }
+  void update(OptProb*, DblVec& x) {
+    vector<GraphHandlePtr> handles;
+    vector<KinBodyPtr> bodies = rbs[0]->GetBodies();
+    MatrixXd traj = getTraj(x,vars);
+    for (int i=0; i < traj.rows(); ++i) {
+      rbs[i]->SetDOFValues(toDblVec(traj.row(i)));
+      BOOST_FOREACH(const KinBodyPtr& body, bodies) {
+        handles.push_back(viewer->PlotKinBody(body));
+        SetTransparency(handles.back(), .35);
+      }
+    }
+    viewer->Idle();
   }
 };
 
@@ -290,30 +320,33 @@ int main(int argc, char** argv)
     
   }
   else if (problem == 1) {
+    // XXX don't constrain last coordinate
     env->Load(string(DATA_DIR) + "/needlebot.xml");
     RobotBasePtr robot = GetRobot(*env);
-    ConfigurationPtr rad(new NeedleConfig(robot));
+//    ConfigurationPtr rad(new NeedleConfig(robot));
+    RobotAndDOFPtr rad(new RobotAndDOF(robot, vector<int>(), DOF_X | DOF_Y | DOF_Z | DOF_Rotation3D));
 
     int n_steps = 19;
     int n_dof = 6;
 
     TrajOptProbPtr prob(new TrajOptProb(n_steps, rad));
-
+    double radius = 1;
     VectorXd start(n_dof); start << 0,0,0,0,0,0;
-    VectorXd goal(n_dof); goal <<  2,.1,.1,0,0,0;
+    VectorXd goal(n_dof); goal <<  4,.25,0, 0,0,0;
 
     vector<IncrementalRBPtr> incConfigs;
     for (int i=0; i < n_steps; ++i) {
+     prob->setIncremental(prob->GetVars().rblock(i, 3, 3));
       incConfigs.push_back(IncrementalRBPtr(new IncrementalRB(robot)));
-      prob->setIncremental(prob->GetVars().rblock(i, 3, 3));
     }
 
     VectorXd vel_coeffs = VectorXd::Ones(3);
     prob->addCost(CostPtr(new JointVelCost(prob->GetVars().block(0,0,n_steps, 3), vel_coeffs)));
-    prob->addCost(CostPtr(new AngVelCost(incConfigs, prob->GetVars().block(0,3,n_steps, 3), vel_coeffs[0])));
+   prob->addCost(CostPtr(new AngVelCost(incConfigs, prob->GetVars().block(0,3,n_steps, 3), vel_coeffs[0])));
   
-    double radius = 2;
-    double lb = 2./n_steps/radius;//(goal - start).norm() / (n_steps-1);
+
+//    double lb = 2./n_steps/radius;
+    double lb = (goal.topRows(3) - start.topRows(3)).norm() / (n_steps-1)/radius;
     prob->createVariables(singleton<string>("speed"), singleton<double>(lb),singleton<double>(INFINITY));
     Var lvar = prob->getVars().back();
   
@@ -321,7 +354,7 @@ int main(int argc, char** argv)
     for (int i=0; i < n_steps-1; ++i) {
       VarVector vars0 = prob->GetVarRow(i), vars1 = prob->GetVarRow(i+1);
       VectorOfVectorPtr f(new NeedleError(incConfigs[i], incConfigs[i+1], radius));
-      VectorXd coeffs = VectorXd::Ones(3);
+      VectorXd coeffs = VectorXd::Ones(6);
       VarVector vars = concat(vars0, vars1);  vars.push_back(lvar);
       assert(vars.size() == 13);
       prob->addConstraint(ConstraintPtr(new ConstraintFromFunc(f, vars, coeffs, EQ, (boost::format("neelde%i")%i).str())));
@@ -339,15 +372,19 @@ int main(int argc, char** argv)
     for (int j=0; j < n_dof; ++j) {
       prob->addLinearConstraint(exprSub(AffExpr(prob->GetVar(0,j)), start[j]), EQ);
     }
-    for (int j=0; j < n_dof; ++j) {
+    for (int j=0; j < 3; ++j) {
       prob->addLinearConstraint(exprSub(AffExpr(prob->GetVar(n_steps-1,j)), goal[j]), EQ);
     }
 
     BasicTrustRegionSQP opt(prob);
-    ConfigUpdater updater(incConfigs, prob->GetVars().block(0,3,n_steps,3));
-//    opt.addCallback(&Callback);
-    opt.addCallback(boost::bind(&ConfigUpdater::update, updater, _1, _2));
-    if (plotting) opt.addCallback(PlotCallback(*prob));
+    opt.max_iter_ = 500;
+    ConfigUpdater updater(incConfigs, prob->GetVars().block(0,3,n_steps,3));    
+   opt.addCallback(boost::bind(&ConfigUpdater::update, boost::ref(updater), _1, _2));
+   
+   TrajPlotter plotter(incConfigs, prob->GetVars());
+    if (plotting) {
+      opt.addCallback(boost::bind(&TrajPlotter::update, boost::ref(plotter), _1, _2));
+    }
 
 
     MatrixXd initTraj(n_steps, n_dof);  
@@ -360,6 +397,8 @@ int main(int argc, char** argv)
     
     opt.optimize();
     
+    cout << getTraj(opt.x(), prob->GetVars()) << endl;;
+    cout << CSTR(opt.x()) << endl;
   }
 
 

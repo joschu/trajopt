@@ -43,7 +43,7 @@ enum TermType {
 class TRAJOPT_API TrajOptProb : public OptProb {
 public:
   TrajOptProb();
-  TrajOptProb(int n_steps, RobotAndDOFPtr rad);
+  TrajOptProb(int n_steps, ConfigurationPtr rad);
   ~TrajOptProb() {}
   VarVector GetVarRow(int i) {
     return m_traj_vars.row(i);
@@ -56,8 +56,8 @@ public:
   }
   int GetNumSteps() {return m_traj_vars.rows();}
   int GetNumDOF() {return m_traj_vars.cols();}
-  RobotAndDOFPtr GetRAD() {return m_rad;}
-  OR::EnvironmentBasePtr GetEnv() {return m_rad->GetRobot()->GetEnv();}
+  ConfigurationPtr GetRAD() {return m_rad;}
+  OR::EnvironmentBasePtr GetEnv() {return m_rad->GetEnv();}
 
   void SetInitTraj(const TrajArray& x) {m_init_traj = x;}
   TrajArray GetInitTraj() {return m_init_traj;}
@@ -65,7 +65,7 @@ public:
   friend TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo&);
 private:
   VarArray m_traj_vars;
-  RobotAndDOFPtr m_rad;
+  ConfigurationPtr m_rad;
   TrajArray m_init_traj;
   typedef std::pair<string,string> StringPair;
 };

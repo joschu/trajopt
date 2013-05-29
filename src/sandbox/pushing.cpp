@@ -13,7 +13,7 @@
 #include "dynamics_utils.hpp"
 #include "sco/modeling_utils.hpp"
 #include "osgviewer/osgviewer.hpp"
-#include "trajopt/collision_avoidance.hpp"
+#include "trajopt/collision_terms.hpp"
 #include "utils/stl_to_string.hpp"
 #include "utils/config.hpp"
 using namespace boost::assign;
@@ -87,7 +87,7 @@ struct Contact {
   Face m_faceA, m_faceB;
   Contact(ContactType type, ConfigurationPtr config, const Face& faceA, const Face& faceB, const VarVector& dofvars, 
       const VarVector& ptA, const VarVector& ptB, const Var& fn, const VarVector& fr)
-  : m_type(type), m_dofvars(dofvars), m_config(config), m_faceA(faceA), m_faceB(faceB), m_ptA(ptA), m_ptB(ptB), m_fn(fn), m_fr(fr) {}
+  : m_type(type), m_dofvars(dofvars),m_ptA(ptA), m_ptB(ptB), m_fn(fn), m_fr(fr), m_config(config),  m_faceA(faceA), m_faceB(faceB) {}
   virtual ~Contact() {}
 };
 typedef boost::shared_ptr<Contact> ContactPtr;
@@ -135,7 +135,7 @@ struct FaceContactConstraint: public ConstraintFromFunc, public Plotter {
   FaceContactConstraint(ConfigurationPtr config, const VarVector& dofvars, const VarVector& ptAvars, const VarVector& ptBvars,
       const Face& faceA, const Face& faceB) :
       ConstraintFromFunc(VectorOfVectorPtr(new FaceContactErrorCalculator(config, faceA, faceB)),
-          concat(dofvars, ptAvars, ptBvars), EQ, faceA.link->GetName()+"_"+faceB.link->GetName()+"contact") {}
+          concat(dofvars, ptAvars, ptBvars), VectorXd::Zero(0), EQ, faceA.link->GetName()+"_"+faceB.link->GetName()+"contact") {}
 
   void Plot(const DblVec& xvec, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
 };
@@ -278,7 +278,7 @@ struct SlidingFrictionErrorCalc : public VectorOfVector {
   ConfigurationPtr m_config;
   
   SlidingFrictionErrorCalc(ConfigurationPtr config, double mu, const Face& face)
-    : m_nDof(config->GetDOF()), m_mu(mu), m_face(face), m_config(config), m_link(face.link) {
+    : m_nDof(config->GetDOF()), m_mu(mu), m_face(face), m_link(face.link),m_config(config) {
     }
   VectorXd operator()(const VectorXd& x) const;
   
@@ -950,7 +950,7 @@ int main(int argc, char** argv) {
   opt.max_iter_ = 1000;
   opt.addCallback(&Callback);
   
-  OptStatus status = opt.optimize();
+  opt.optimize();
 
   RaveDestroy();
 }

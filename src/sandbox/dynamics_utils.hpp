@@ -4,7 +4,9 @@
 #include "trajopt/utils.hpp"
 #include "sco/modeling.hpp"
 #include <boost/foreach.hpp>
+#include "sco/expr_op_overloads.hpp"
 using namespace Eigen;
+using namespace std;
 
 namespace trajopt {
 
@@ -171,7 +173,14 @@ public:
       link_inds.insert(link_inds.end(), part_link_inds.begin(), part_link_inds.end());
       ++i_part;
     }
-    
+  }
+  virtual vector<OpenRAVE::KinBodyPtr> GetBodies() {
+    vector<OpenRAVE::KinBodyPtr> out;
+    for (int i=0; i < m_configs.size(); ++i) {
+      vector<OpenRAVE::KinBodyPtr> newvec;
+      out.insert(out.end(), newvec.begin(), newvec.end());
+    }
+    return out;
   }
   virtual DblVec RandomDOFValues() {
     PRINT_AND_THROW("not implemented");
@@ -207,21 +216,6 @@ void extend(vector<T>& a, const vector<T>& b) {
   a.insert(a.end(), b.begin(), b.end());
 }
 
-VectorXd concat(const VectorXd& a, const VectorXd& b) {
-  VectorXd out(a.size() + b.size());
-  out.topRows(a.size()) = a;
-  out.middleRows(a.size(), b.size()) = b;
-  return out;
-}
-
-template<typename T>
-vector<T> concat(const vector<T>& a, const vector<T>& b) {
-  vector<T> out;
-  vector<int> x;
-  out.insert(out.end(), a.begin(), a.end());
-  out.insert(out.end(), b.begin(), b.end());
-  return out;
-}
 template<typename T>
 vector<T> concat(const vector<T>& a, const vector<T>& b, const vector<T>& c) {
   vector<T> out;
@@ -254,11 +248,11 @@ vector<T> concat(const vector<T>& a, const vector<T>& b, const vector<T>& c, con
 }
 struct IncrementalRB: public Configuration {
   OpenRAVE::KinBodyPtr m_body;
-  OpenRAVE::Vector m_q;
   OpenRAVE::Vector m_r;
+  OpenRAVE::Vector m_q;
 
   IncrementalRB(OpenRAVE::KinBodyPtr body) :
-      m_body(body), m_r(0, 0, 0) {
+      m_body(body), m_r(0, 0, 0), m_q(1,0,0,0) {
   }
   virtual void SetDOFValues(const DblVec& dofs) {
     OR::Transform T;
@@ -322,6 +316,9 @@ struct IncrementalRB: public Configuration {
   }
   virtual DblVec RandomDOFValues() {
     return toDblVec(VectorXd::Random(6));
+  }
+  virtual vector<OpenRAVE::KinBodyPtr> GetBodies() {
+    return vector<OpenRAVE::KinBodyPtr>(1, m_body);
   }
 };
 typedef boost::shared_ptr<IncrementalRB> IncrementalRBPtr;

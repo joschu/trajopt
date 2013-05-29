@@ -5,6 +5,10 @@
 #include <cstdio>
 #include "expr_ops.hpp"
 #include "sco_common.hpp"
+#include "macros.h"
+#include <iostream>
+#include <sstream>
+
 using namespace std;
 
 namespace sco {
@@ -217,7 +221,7 @@ vector<double> OptProb::getClosestFeasiblePoint(const vector<double>& x) {
   CvxOptStatus status = model_->optimize();
   if(status != CVX_SOLVED) {
     model_->writeToFile("/tmp/fail.lp");
-    throw std::runtime_error("couldn't find a feasible point. wrote to /tmp/fail.lp");
+    PRINT_AND_THROW("couldn't find a feasible point. there's probably a problem with variable bounds (e.g. joint limits). wrote to /tmp/fail.lp");
   }
   return model_->getVarValues(vars_);
 }

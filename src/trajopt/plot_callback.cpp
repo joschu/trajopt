@@ -7,13 +7,13 @@
 #include <set>
 using namespace OpenRAVE;
 using namespace util;
+using namespace std;
 namespace trajopt {
 
 
 
-void PlotTraj(OSGViewer& viewer, RobotAndDOF& rad, const TrajArray& x, vector<GraphHandlePtr>& handles) {
-  std::set<KinBodyPtr> bodies;
-  rad.GetRobot()->GetAttached(bodies);
+void PlotTraj(OSGViewer& viewer, Configuration& rad, const TrajArray& x, vector<GraphHandlePtr>& handles) {
+  vector<KinBodyPtr> bodies = rad.GetBodies();
   for (int i=0; i < x.rows(); ++i) {
     rad.SetDOFValues(toDblVec(x.row(i)));
     BOOST_FOREACH(const KinBodyPtr& body, bodies) {
@@ -23,17 +23,17 @@ void PlotTraj(OSGViewer& viewer, RobotAndDOF& rad, const TrajArray& x, vector<Gr
   }
 }
 
-void PlotCosts(OSGViewer& viewer, vector<CostPtr>& costs, vector<ConstraintPtr>& cnts, RobotAndDOF& rad, const VarArray& vars, const DblVec& x) {
+void PlotCosts(OSGViewer& viewer, vector<CostPtr>& costs, vector<ConstraintPtr>& cnts, Configuration& rad, const VarArray& vars, const DblVec& x) {
   vector<GraphHandlePtr> handles;
   handles.clear();
   BOOST_FOREACH(CostPtr& cost, costs) {
     if (Plotter* plotter = dynamic_cast<Plotter*>(cost.get())) {
-      plotter->Plot(x, *rad.GetRobot()->GetEnv(), handles);
+      plotter->Plot(x, *rad.GetEnv(), handles);
     }
   }
   BOOST_FOREACH(ConstraintPtr& cnt, cnts) {
     if (Plotter* plotter = dynamic_cast<Plotter*>(cnt.get())) {
-      plotter->Plot(x, *rad.GetRobot()->GetEnv(), handles);
+      plotter->Plot(x, *rad.GetEnv(), handles);
     }
   }
   TrajArray traj = getTraj(x, vars);

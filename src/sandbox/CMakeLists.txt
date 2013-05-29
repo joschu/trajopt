@@ -21,8 +21,8 @@ target_link_libraries(quaternion_optimization trajopt)
 # add_executable(rigid_body_simulation rigid_body_simulation.cpp)
 # target_link_libraries(rigid_body_simulation trajopt)
 
-add_executable(pushing pushing.cpp)
-target_link_libraries(pushing trajopt humanoids)
+#add_executable(pushing pushing.cpp)
+#target_link_libraries(pushing trajopt humanoids)
 
 add_executable(compl_test compl_test.cpp complementarity.cpp)
 target_link_libraries(compl_test sco)

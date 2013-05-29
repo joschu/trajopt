@@ -16,6 +16,7 @@ public:
   virtual DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const = 0;
   virtual DblMatrix RotationJacobian(int link_ind) const = 0;
   virtual bool DoesAffect(const KinBody::Link& link) = 0;
+  virtual vector<OpenRAVE::KinBodyPtr> GetBodies() = 0;
   virtual std::vector<KinBody::LinkPtr> GetAffectedLinks() = 0;
   virtual void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds) = 0;
   virtual DblVec RandomDOFValues() = 0;  
@@ -58,7 +59,7 @@ public:
   DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const;
   DblMatrix RotationJacobian(int link_ind) const;
   OR::RobotBasePtr GetRobot() const {return boost::dynamic_pointer_cast<RobotBase>(robot);}
-  OR::KinBodyPtr GetBody() const {return robot;}
+  virtual vector<OpenRAVE::KinBodyPtr> GetBodies();  
   bool DoesAffect(const KinBody::Link& link);
   std::vector<KinBody::LinkPtr> GetAffectedLinks();
   void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds);

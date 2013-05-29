@@ -1,3 +1,5 @@
+Add methods in Var class so we don't need to say var.var_rep everywhere
+
 Add unit tests for solver interface
 
 Linear vs nonlinear costs

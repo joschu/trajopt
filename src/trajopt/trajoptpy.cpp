@@ -42,11 +42,15 @@ public:
   TrajOptProbPtr m_prob;
   PyTrajOptProb(TrajOptProbPtr prob) : m_prob(prob) {}
   py::list GetDOFIndices() {
-    vector<int> inds = m_prob->GetRAD()->GetJointIndices();
+    RobotAndDOFPtr rad = boost::dynamic_pointer_cast<RobotAndDOF>(m_prob->GetRAD());
+    if (!rad) PRINT_AND_THROW("can only call GetDOFIndices on a robot");
+    vector<int> inds = rad->GetJointIndices();
     return toPyList(inds);
   }
   void SetRobotActiveDOFs() {
-    m_prob->GetRAD()->SetRobotActiveDOFs();
+    RobotAndDOFPtr rad = boost::dynamic_pointer_cast<RobotAndDOF>(m_prob->GetRAD());
+    if (!rad) PRINT_AND_THROW("can only call SetRobotActiveDOFs on a robot");
+    rad->SetRobotActiveDOFs();
   }
   void AddConstraint1(py::object f, py::list ijs, const string& typestr, const string& name);
   void AddConstraint2(py::object f, py::object dfdx, py::list ijs, const string& typestr, const string& name);

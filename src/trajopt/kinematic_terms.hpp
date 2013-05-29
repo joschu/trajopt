@@ -30,9 +30,9 @@ public:
 
 struct CartPoseErrCalculator : public VectorOfVector {
   OR::Transform pose_inv_;
-  RobotAndDOFPtr manip_;
+  ConfigurationPtr manip_;
   OR::KinBody::LinkPtr link_;
-  CartPoseErrCalculator(const OR::Transform& pose, RobotAndDOFPtr manip, OR::KinBody::LinkPtr link) :
+  CartPoseErrCalculator(const OR::Transform& pose, ConfigurationPtr manip, OR::KinBody::LinkPtr link) :
     pose_inv_(pose.inverse()),
     manip_(manip),
     link_(link) {}
@@ -48,20 +48,20 @@ class CartPoseErrorPlotter : public Plotter {
 
 
 struct CartVelJacCalculator : MatrixOfVector {
-  RobotAndDOFPtr manip_;
+  ConfigurationPtr manip_;
   KinBody::LinkPtr link_;
   double limit_;
-  CartVelJacCalculator(RobotAndDOFPtr manip, KinBody::LinkPtr link, double limit) :
+  CartVelJacCalculator(ConfigurationPtr manip, KinBody::LinkPtr link, double limit) :
     manip_(manip), link_(link), limit_(limit) {}
 
   MatrixXd operator()(const VectorXd& dof_vals) const;
 };
 
 struct CartVelCalculator : VectorOfVector {
-  RobotAndDOFPtr manip_;
+  ConfigurationPtr manip_;
   KinBody::LinkPtr link_;
   double limit_;
-  CartVelCalculator(RobotAndDOFPtr manip, KinBody::LinkPtr link, double limit) :
+  CartVelCalculator(ConfigurationPtr manip, KinBody::LinkPtr link, double limit) :
     manip_(manip), link_(link), limit_(limit) {}
 
   VectorXd operator()(const VectorXd& dof_vals) const;
