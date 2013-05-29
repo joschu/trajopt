@@ -376,7 +376,7 @@ boost::shared_ptr<OSGViewer> OSGViewer::GetOrCreate(OpenRAVE::EnvironmentBasePtr
 
 
 void throw_runtime_error(const osgGA::GUIEventAdapter&) {
-  throw std::runtime_error("pressed escape");
+  PRINT_AND_THROW("pressed escape");
 }
 
 OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false) {

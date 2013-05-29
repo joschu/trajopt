@@ -175,11 +175,9 @@ struct ConfigUpdater {
   ConfigUpdater(const vector<IncrementalRBPtr>& rbs, const VarArray& vars) : rbs(rbs), vars(vars) {}
   void update(OptProb*, DblVec& x) {
     MatrixXd rvals = getTraj(x, vars);
-    cout << "rvas:" << rvals << endl;
     for (int i=0; i < rbs.size(); ++i) {
       rbs[i]->m_q = OR::geometry::quatMultiply(geometry::quatFromAxisAngle(OR::Vector(rvals(i,0), rvals(i,1), rvals(i,2))),rbs[i]->m_q);
       rbs[i]->m_r = OR::Vector(0,0,0);
-      cout << "newq" << i << ": " << rbs[i]->m_q << endl;
     }
 
     setVec(x, vars.flatten(), DblVec(vars.size(), 0));
@@ -270,15 +268,15 @@ int main(int argc, char** argv)
   }
 
   if (problem == 0) {
-    env->Load(string(DATA_DIR) + "/carprob.env.xml");
+    env->Load(string(DATA_DIR) + "/jagged_narrow.xml");
     RobotBasePtr robot = GetRobot(*env);
     RobotAndDOFPtr rad(new RobotAndDOF(robot, vector<int>(), 11, OR::Vector(0,0,1)));
 
     int n_steps = 29;
     int n_dof = 3;
 
-    Vector3d start(0,0,0);
-    Vector3d goal(0,2,M_PI);
+    Vector3d start(-2,-2,0);
+    Vector3d goal(3,2,0);
 
     TrajOptProbPtr prob(new TrajOptProb(n_steps, rad));
     VectorXd vel_coeffs = VectorXd::Ones(3);
@@ -321,7 +319,7 @@ int main(int argc, char** argv)
   }
   else if (problem == 1) {
     // XXX don't constrain last coordinate
-    env->Load(string(DATA_DIR) + "/needlebot.xml");
+    env->Load(string(DATA_DIR) + "/needleprob.env.xml");
     RobotBasePtr robot = GetRobot(*env);
 //    ConfigurationPtr rad(new NeedleConfig(robot));
     RobotAndDOFPtr rad(new RobotAndDOF(robot, vector<int>(), DOF_X | DOF_Y | DOF_Z | DOF_Rotation3D));
