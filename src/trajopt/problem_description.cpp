@@ -119,10 +119,12 @@ void fromJson(const Json::Value& v, TermInfoPtr& term) {
   if (gReadingCosts) {
     if (!term) PRINT_AND_THROW( boost::format("failed to construct cost named %s")%type );    
     if (!dynamic_cast<MakesCost*>(term.get())) PRINT_AND_THROW( boost::format("%s is only a constraint, but you listed it as a cost")%type) ;
+    term->term_type = TT_COST;
   }
   else if (gReadingConstraints) {
     if (!term) PRINT_AND_THROW( boost::format("failed to construct constraint named %s")%type );        
     if (!dynamic_cast<MakesConstraint*>(term.get())) PRINT_AND_THROW( boost::format("%s is only a cost, but you listed it as a constraint")%type);
+    term->term_type = TT_CNT;
   }
   else assert(0 && "shouldnt happen");
   term->fromJson(v);

@@ -16,7 +16,7 @@ Dependencies
 - Eigen
 - Gurobi [#gurobi]_
 
-.. [#gurobi] We plan to eventually support a solver with a more permissive license.
+.. [#gurobi] Good news! Trajopt now works with the excellent free solver BPMPD. It's not very well-tested at the moment, but you can use it now by checking out the devel branch and setting TRAJOPT_CONVEX_SOLVER=BPMPD.
 
 Instructions
 -------------

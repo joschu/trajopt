@@ -70,12 +70,26 @@ robot.SetDOFValues([.2], [rgj.GetDOFIndex()])
 tlj = robot.GetJoint("torso_lift_joint")
 robot.SetDOFValues([tlj.GetLimits()[-1]], [tlj.GetDOFIndex()])
 
+def draw_ax(T, size, env, handles):
+    print T
+    p0 = T[:3,3]
+    xax, yax, zax = T[:3,:3].T*size
+    width = size/10.
+    handles.append(env.drawarrow(p0, p0+xax, width, [1,0,0]))
+    handles.append(env.drawarrow(p0, p0+yax, width, [0,1,0]))
+    handles.append(env.drawarrow(p0, p0+zax, width, [0,0,1]))
+
 import IPython
 viewer = trajoptpy.GetViewer(env)
 IPython.lib.inputhook.set_inputhook(viewer.Step)
 
+plot_handles = []
+
 door = env.GetKinBody("door")
 handle = door.GetLink("handle")
+
+draw_ax(handle.GetGlobalMassFrame(), .1, env, plot_handles)
+viewer.Idle()
 
 door.SetDOFValues([np.pi/3], [1])
 
