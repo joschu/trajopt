@@ -842,8 +842,8 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
         btTransform tfWorld1 = m_cow->getWorldTransform() * shape->m_t01;
         btVector3 normalLocal0 = normalWorldFromCast * tfWorld0.getBasis();
         btVector3 normalLocal1 = normalWorldFromCast * tfWorld1.getBasis();
-        btVector3 ptWorld0 = tfWorld0*shape->localGetSupportingVertex(normalLocal0);
-        btVector3 ptWorld1 = tfWorld1*shape->localGetSupportingVertex(normalLocal1);
+        btVector3 ptWorld0 = tfWorld0*shape->m_shape->localGetSupportingVertex(normalLocal0);
+        btVector3 ptWorld1 = tfWorld1*shape->m_shape->localGetSupportingVertex(normalLocal1);
         float sup0 = normalWorldFromCast.dot(ptWorld0);
         float sup1 = normalWorldFromCast.dot(ptWorld1);
         const float SUPPORT_FUNC_TOLERANCE = .03 METERS;
