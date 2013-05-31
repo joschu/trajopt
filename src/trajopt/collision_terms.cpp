@@ -88,7 +88,7 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Config
 }
 
 void CollisionEvaluator::GetCollisionsCached(const DblVec& x, vector<Collision>& collisions) {
-  double key = vecSum(x);
+  double key = getVec(x, GetVars()).sum();
   vector<Collision>* it = m_cache.get(key);
   if (it != NULL) {
     LOG_DEBUG("using cached collision check\n");

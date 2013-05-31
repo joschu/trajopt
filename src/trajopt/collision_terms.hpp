@@ -17,6 +17,7 @@ struct CollisionEvaluator {
   virtual void CalcCollisions(const DblVec& x, vector<Collision>& collisions) = 0;
   void GetCollisionsCached(const DblVec& x, vector<Collision>&);
   virtual ~CollisionEvaluator() {}
+  virtual VarVector GetVars()=0;
 
   Cache<double, vector<Collision>, 3> m_cache;
 };
@@ -40,6 +41,7 @@ public:
    */
   void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights); 
   void CalcCollisions(const DblVec& x, vector<Collision>& collisions);
+  VarVector GetVars() {return m_vars;}
 
   OR::EnvironmentBasePtr m_env;
   CollisionCheckerPtr m_cc;
@@ -56,6 +58,8 @@ public:
   void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights);
   void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights);
   void CalcCollisions(const DblVec& x, vector<Collision>& collisions);
+  VarVector GetVars() {return concat(m_vars0, m_vars1);}
+  
 
   // parameters:
   OR::EnvironmentBasePtr m_env;
