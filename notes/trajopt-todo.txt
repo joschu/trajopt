@@ -1,13 +1,13 @@
 Critical
 =========
 
-collision constraint
+unit test collision constraint
 setcontactdistance screws you up if you have multiple collision cost groups
-self-collisions in continuous collision cost
+try self-collisions in continuous collision cost
 
 RobotAndDOF is a mess now
 
-filtermask arguments
+filtermask arguments in collision_terms
 
 Eventually
 ===========
@@ -34,6 +34,8 @@ make optimization parameters settable
 
 make a function specifically for self-collision testing. or configure collision checker somehow.
 
+relate trust region to collision margin?
+
 Maybe
 =======
 
@@ -43,7 +45,6 @@ Partition links into groups and do broadphase filtering (?)
 Do some smarter self-collision filtering, e.g. with custom code for each robot.
 No need to do all the hulls every time you load up the robot.
 
-Modifying bttransformaabb is a bad hack. figure out a better way.
 
-collisionchecker segfaults if bullet world isn't updated
+collisionchecker segfaults if bullet world isn't updated (still?)
 

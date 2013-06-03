@@ -248,6 +248,8 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
 
   DblVec lower, upper;
   prob->m_rad->GetDOFLimits(lower, upper);
+  
+  
   vector<double> vlower, vupper;
   vector<string> names;
   for (int i=0; i < n_steps; ++i) {
@@ -257,8 +259,8 @@ TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
       names.push_back( (boost::format("j_%i_%i")%i%j).str() );
     }
   }
-  prob->createVariables(names, vlower, vupper);
-  prob->m_traj_vars = VarArray(n_steps, n_dof, prob->vars_.data());
+  VarVector trajvarvec = prob->createVariables(names, vlower, vupper);
+  prob->m_traj_vars = VarArray(n_steps, n_dof, trajvarvec.data());
 
   DblVec cur_dofvals = prob->m_rad->GetDOFValues();
 

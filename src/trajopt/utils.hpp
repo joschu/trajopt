@@ -7,7 +7,10 @@ namespace trajopt {
 /**
 Extract trajectory array from solution vector x using indices in array vars
 */
-TrajArray TRAJOPT_API getTraj(const vector<double>& x, const VarArray& vars);
+TrajArray TRAJOPT_API getTraj(const DblVec& x, const VarArray& vars);
+TrajArray TRAJOPT_API getTraj(const DblVec& x, const AffArray& arr);
+
+
 
 inline Vector3d toVector3d(const OR::Vector& v) {
   return Vector3d(v.x, v.y, v.z);
@@ -40,6 +43,17 @@ vector<T> concat(const vector<T>& a, const vector<T>& b) {
   out.insert(out.end(), b.begin(), b.end());
   return out;
 }
+
+template <typename T> 
+vector<T> singleton(const T& x) {
+  return vector<T>(1,x);
+} 
+
+
+void TRAJOPT_API AddVarArrays(OptProb& prob, int rows, const vector<int>& cols, const vector<string>& name_prefix, const vector<VarArray*>& newvars);
+
+void TRAJOPT_API AddVarArray(OptProb& prob, int rows, int cols, const string& name_prefix, VarArray& newvars);
+
 
 
 }

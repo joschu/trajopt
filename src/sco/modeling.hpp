@@ -151,9 +151,9 @@ class OptProb {
 public:
   OptProb();
   /** create variables with bounds [-INFINITY, INFINITY]  */
-  void createVariables(const vector<string>& names);
+  VarVector createVariables(const vector<string>& names);
   /** create variables with bounds [lb[i], ub[i] */
-  void createVariables(const vector<string>& names, const vector<double>& lb, const vector<double>& ub);
+  VarVector createVariables(const vector<string>& names, const vector<double>& lb, const vector<double>& ub);
   /** set the lower bounds of all the variables */
   void setLowerBounds(const vector<double>& lb);
   /** set the upper bounds of all the variables */

@@ -143,10 +143,10 @@ double Constraint::violation(const DblVec& x) {
 
 OptProb::OptProb() : model_(createModel()) {}
 
-void OptProb::createVariables(const vector<string>& var_names) {
-  createVariables(var_names, DblVec(var_names.size(), -INFINITY), DblVec(var_names.size(), INFINITY));
+VarVector OptProb::createVariables(const vector<string>& var_names) {
+  return createVariables(var_names, DblVec(var_names.size(), -INFINITY), DblVec(var_names.size(), INFINITY));
 }
-void OptProb::createVariables(const vector<string>& var_names, const DblVec& lb, const DblVec& ub) {
+VarVector OptProb::createVariables(const vector<string>& var_names, const DblVec& lb, const DblVec& ub) {
   size_t n_add = var_names.size(), n_cur = vars_.size();
   assert(lb.size() == n_add);
   assert(ub.size() == n_add);
@@ -159,7 +159,8 @@ void OptProb::createVariables(const vector<string>& var_names, const DblVec& lb,
     upper_bounds_.push_back(ub[i]);
   }
   model_->update();
-  incmask_.insert(incmask_.end(),n_add, false);  
+  incmask_.insert(incmask_.end(),n_add, false);
+  return VarVector(vars_.end()-n_add, vars_.end());
 }
 void OptProb::setLowerBounds(const vector<double>& lb) {
   assert(lb.size() == vars_.size());

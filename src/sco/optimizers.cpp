@@ -293,7 +293,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
         CvxOptStatus status = model_->optimize();
         ++results_.n_qp_solves;
         if (status != CVX_SOLVED) {
-          LOG_ERROR("convex solver failed! set LOG_DEBUG_LEVEL=DEBUG to see solver output. saving model to /tmp/fail.lp");
+          LOG_ERROR("convex solver failed! set TRAJOPT_LOG_THRESH=DEBUG to see solver output. saving model to /tmp/fail.lp");
           model_->writeToFile("/tmp/fail.lp");
           retval = OPT_FAILED;
           goto cleanup;
@@ -307,8 +307,11 @@ OptStatus BasicTrustRegionSQP::optimize() {
         DblVec new_x(model_var_vals.begin(), model_var_vals.begin() + x_.size());
 
         if (GetLogLevel() >= util::LevelDebug) {
-          DblVec model_cnt_viols2 = evaluateModelCosts(cnt_cost_models, model_var_vals);
-          LOG_DEBUG("SHOULD BE THE SAME: %s ?= %s", CSTR(model_cnt_viols), CSTR(model_cnt_viols2) );
+          DblVec cnt_costs1 = evaluateModelCosts(cnt_cost_models, model_var_vals);
+          DblVec cnt_costs2 = model_cnt_viols;
+          for (int i=0; i < cnt_costs2.size(); ++i) cnt_costs2[i] *= merit_error_coeff_;
+          LOG_DEBUG("SHOULD BE ALMOST THE SAME: %s ?= %s", CSTR(cnt_costs1), CSTR(cnt_costs2) );
+          // not exactly the same because cnt_costs1 is based on aux variables, but they might not be at EXACTLY the right value
         }
 
         DblVec new_cost_vals = evaluateCosts(prob_->getCosts(), new_x);

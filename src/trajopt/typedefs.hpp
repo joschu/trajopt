@@ -21,6 +21,10 @@ using namespace sco;
 using namespace util;
 
 typedef BasicArray<Var> VarArray;
+typedef BasicArray<AffExpr> AffArray;
+typedef BasicArray<Cnt> CntArray;
+
+
 
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> DblMatrix;
 
@@ -31,6 +35,8 @@ using Eigen::Vector3d;
 using Eigen::Vector4d;
 using Eigen::VectorXd;
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> TrajArray;
+using Eigen::MatrixXd;
+using Eigen::Matrix3d;
 
 /**
 Interface for objects that know how to plot themselves given solution vector x
