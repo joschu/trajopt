@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# To set up jenkins:
+# * Install openrave
+# * Install jenkins from the package manager
+# * Install jenkins git plugin from the jenkins web ui
+# * Log in as jenkins user (sudo -i -u jenkins)
+# * * git config --global user.name "Jenkins"
+# * * git config --global user.email "jenkins@localhost"
+# * * Load the gurobi environment vars, and set up a gurobi license
+# * Configure a jenkins job to pull from git, and run ./jenkins
+
+source `openrave-config --share-dir`/openrave.bash
+
+export GUROBI_HOME="/opt/gurobi510/linux64"
+export PATH="${PATH}:${GUROBI_HOME}/bin"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${GUROBI_HOME}/lib"
+
+mkdir -p build_trajopt
+cd build_trajopt
+cmake ..
+make -j2
+cd ..
+export PYTHONPATH="$PWD:$PWD/build_trajopt/lib:$PYTHONPATH"
+cd build_trajopt
+ctest -V
