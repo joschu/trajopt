@@ -33,6 +33,6 @@ public:
 };
 
 
-
+MatrixXd getW(const MatrixXd& qs, double dt);
 
 }

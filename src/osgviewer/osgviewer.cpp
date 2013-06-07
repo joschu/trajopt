@@ -414,7 +414,7 @@ void OSGViewer::Idle() {
   else { // start idling
     m_idling = true;
     m_request_stop_idling=false;
-    LOG_INFO("press p to stop idling");
+    printf("press p to stop idling\n");
     while (!m_viewer.done() && !m_request_stop_idling) {
       if (m_viewer.checkNeedToDoFrame()) m_viewer.frame();
       usleep(.03*1e6);

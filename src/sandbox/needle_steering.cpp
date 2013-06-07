@@ -44,10 +44,7 @@ struct NeedleError : public VectorOfVector {
         
     OR::Transform Ttargw = Tw0 * Ttarg0;
     OR::Vector position_errA = Ttargw.trans - Tw1.trans;
-    // OR::Vector position_errB = (Tw1 * Ttarg0.inverse()).trans - Tw0.trans;
     OR::Vector ori_err = Ttargw * OR::Vector(1,0,0) - Tw1 * OR::Vector(1,0,0);
-    // return concat(toVector3d(position_errA), toVector3d(position_errB));
-//    OR::Vector rot_err = geometry::quatMultiply(geometry::quatInverse(Tw1.rot), Ttargw.rot);
     return concat(toVector3d(position_errA), toVector3d(ori_err));
 
   }
@@ -152,7 +149,7 @@ int main(int argc, char** argv)
   helper.ConfigureOptimizer(opt);
   opt.max_iter_ = 500;    
 
- boost::shared_ptr<TrajPlotter> plotter;
+  boost::shared_ptr<TrajPlotter> plotter;
   if (plotting) {
     plotter.reset(new TrajPlotter(helper.m_rbs, trajvars));
     opt.addCallback(boost::bind(&TrajPlotter::OptimizerCallback, boost::ref(plotter), _1, _2));

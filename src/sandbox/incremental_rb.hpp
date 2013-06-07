@@ -1,6 +1,7 @@
 #pragma once
 #include "trajopt/common.hpp"
 #include "utils/eigen_conversions.hpp"
+#include <iostream>
 
 namespace trajopt {
 struct IncrementalRB: public Configuration {

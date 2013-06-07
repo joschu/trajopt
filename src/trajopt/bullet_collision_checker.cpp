@@ -401,6 +401,7 @@ void BulletCollisionChecker::SetContactDistance(float dist) {
 
 
 void BulletCollisionChecker::AllVsAll(vector<Collision>& collisions) {
+  LOG_WARN("WARNING: AllVsAll seems to be broken! (since a8f8da01)");
   UpdateBulletFromRave();
   LOG_DEBUG("AllVsAll");
   m_world->performDiscreteCollisionDetection();

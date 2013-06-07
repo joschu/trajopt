@@ -5,7 +5,8 @@
 using namespace OpenRAVE;
 using namespace Eigen;
 
-namespace {
+namespace trajopt {
+
 MatrixXd getW(const MatrixXd& qs, double dt) {
   MatrixXd out(qs.rows()-1, 3);
   for (int i=0; i < out.rows(); ++i) {
@@ -13,10 +14,7 @@ MatrixXd getW(const MatrixXd& qs, double dt) {
   }
   return out;
 }  
-}
 
-namespace trajopt {
-  
 
 AngVelCost::AngVelCost(vector<IncrementalRBPtr> rbs, const VarArray& r, double coeff) :
     m_rbs(rbs), m_r(r), m_coeff(coeff) {
