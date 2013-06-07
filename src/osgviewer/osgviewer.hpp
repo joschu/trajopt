@@ -23,7 +23,7 @@ public:
   void Idle(); // should be called ToggleIdle
   void UpdateSceneData();
   const std::string& GetName() const {return m_name;}
-  void SetBkgndColor(const RaveVectorf &) {printf("warning: SetBkgndColor not implemented");}
+  void SetBkgndColor(const RaveVectorf &) {printf("warning: SetBkgndColor not implemented\n");}
 
 
   // return false if you want to disable the default TrackballManipulator handling
@@ -43,6 +43,7 @@ public:
   OpenRAVE::GraphHandlePtr  _drawlines(osg::PrimitiveSet::Mode mode, const float *ppoints, int numPoints, int stride, float fwidth, const RaveVectorf &color);
 
   void SetAllTransparency(float alpha);
+  void SetTransparency(OpenRAVE::KinBodyPtr, float alpha);
 
   OpenRAVE::GraphHandlePtr PlotAxes(const OpenRAVE::Transform& T, float size);
   OpenRAVE::GraphHandlePtr PlotSphere(const OpenRAVE::Vector& x, float radius);

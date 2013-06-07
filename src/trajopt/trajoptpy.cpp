@@ -278,6 +278,9 @@ public:
   PyGraphHandle PlotKinBody(py::object py_kb) {
     return PyGraphHandle(m_viewer->PlotKinBody(GetCppKinBody(py_kb, m_viewer->GetEnv())));
   }
+  void SetTransparency(py::object py_kb, float alpha) {
+    m_viewer->SetTransparency(GetCppKinBody(py_kb, m_viewer->GetEnv()), alpha);
+  }
   void SetAllTransparency(float a) {
     m_viewer->SetAllTransparency(a);
   }
@@ -346,6 +349,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
      .def("UpdateSceneData", &PyOSGViewer::UpdateSceneData)
      .def("Step", &PyOSGViewer::Step)
      .def("PlotKinBody", &PyOSGViewer::PlotKinBody)
+     .def("SetTransparency", &PyOSGViewer::SetTransparency)
      .def("SetAllTransparency", &PyOSGViewer::SetAllTransparency)
      .def("Idle", &PyOSGViewer::Idle)
     ;

@@ -14,7 +14,7 @@
 #include <osg/io_utils>
 #include <iostream>
 #include "utils/logging.hpp"
-#include "openrave_userdata_utils.hpp"
+//#include "openrave_userdata_utils.hpp"
 #include "osgviewer.hpp"
 
 using namespace osg;
@@ -281,6 +281,10 @@ public:
   void apply( osg::Geode& geode ) {
     StateSet* ss = geode.getOrCreateStateSet();
     osg::Material* mat = static_cast<Material*>(ss->getAttribute(StateAttribute::MATERIAL));
+    if (!mat) {
+      mat = new osg::Material;
+      ss->setAttribute(mat);
+    }
     mat->setAmbient(osg::Material::FRONT_AND_BACK, color);
     mat->setDiffuse(osg::Material::FRONT_AND_BACK, color);
     if (color[3] < 1) {
@@ -299,6 +303,10 @@ public:
   void apply( osg::Geode& geode ) {
     StateSet* ss = geode.getOrCreateStateSet();
     osg::Material* mat = static_cast<Material*>(ss->getAttribute(StateAttribute::MATERIAL));
+    if (!mat) {
+      mat = new osg::Material;
+      ss->setAttribute(mat);
+    }
     // mat->setTransparency(osg::Material::FRONT_AND_BACK, alpha);
     // for some reason setTransparency doesn't work so well
     osg::Vec4 amb = mat->getAmbient(Material::FRONT_AND_BACK);
@@ -338,6 +346,20 @@ public:
   }
 };
 
+}
+
+KinBodyGroup* GetOsgGroup(KinBody& body) {
+  UserDataPtr rph = body.GetUserData("osg");
+  return rph ? static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get())
+      : NULL;
+}
+KinBodyGroup* CreateOsgGroup(KinBody& body) {
+//  assert(!GetUserData(body, "osg"));
+  LOG_DEBUG("creating graphics for kinbody %s", body.GetName().c_str());
+  osg::Node* node = osgNodeFromKinBody(body);
+  UserDataPtr rph = UserDataPtr(new RefPtrHolder(node));
+  body.SetUserData("osg", rph);
+  return static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get());
 }
 
 
@@ -428,24 +450,15 @@ void OSGViewer::Draw() {
   m_viewer.frame();
 }
 
-void OSGViewer::RemoveKinBody(OpenRAVE::KinBodyPtr pbody) {
-  KinBodyGroup* node = (KinBodyGroup*)::GetUserData(*pbody, "osg").get();
-  m_root->removeChild(node);
-  ::RemoveUserData(*pbody, "osg");
-}
-
-KinBodyGroup* GetOsgGroup(KinBody& body) {
-  UserDataPtr rph = GetUserData(body, "osg");
-  return rph ? static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get())
-      : NULL;
-}
-KinBodyGroup* CreateOsgGroup(KinBody& body) {
-  assert(!GetUserData(body, "osg"));
-  LOG_DEBUG("creating graphics for kinbody %s", body.GetName().c_str());
-  osg::Node* node = osgNodeFromKinBody(body);
-  UserDataPtr rph = UserDataPtr(new RefPtrHolder(node));
-  SetUserData(body, "osg", rph);
-  return static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get());
+void OSGViewer::RemoveKinBody(OpenRAVE::KinBodyPtr body) {
+  KinBodyGroup* node = GetOsgGroup(*body);
+  if (node) {
+    m_root->removeChild(node);
+    body->RemoveUserData("osg");
+  }
+  else {
+    LOG_ERROR("tried to remove kinbody that does not exist in osg");
+  }
 }
 
 
@@ -513,8 +526,20 @@ void SetTransparency(GraphHandlePtr handle, float alpha) {
 }
 
 void OSGViewer::SetAllTransparency(float alpha) {
+  UpdateSceneData();
   SetTransparencyVisitor visitor(alpha);
   m_root->accept(visitor);
+}
+void OSGViewer::SetTransparency(OpenRAVE::KinBodyPtr body, float alpha) {
+  UpdateSceneData();
+  KinBodyGroup* node = GetOsgGroup(*body);
+  if (node) {
+    SetTransparencyVisitor visitor(alpha);
+    node->accept(visitor);
+  }
+  else {
+    LOG_ERROR("SetTransparency: body doesn't exist in osg!");
+  }
 }
 
 OpenRAVE::GraphHandlePtr OSGViewer::drawarrow(const RaveVectorf& p1, const RaveVectorf& p2, float fwidth, const RaveVectorf& color) {
@@ -559,7 +584,7 @@ OpenRAVE::GraphHandlePtr OSGViewer::plot3(const float* ppoints, int numPoints, i
   if (colors != NULL) {
     Vec4Array* osgCols = new Vec4Array;
     for (int i=0; i < numPoints; ++i) {
-      const float* p = colors + i*4;
+      const float* p = colors + i*3;
       osgCols->push_back(osg::Vec4(p[0], p[1], p[2],1));
     }
     geom->setColorArray(osgCols);
