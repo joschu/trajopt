@@ -137,10 +137,10 @@ ConvexObjectivePtr CostFromErrFunc::convex(const vector<double>& xin, Model* mod
 
 
 ConstraintFromFunc::ConstraintFromFunc(VectorOfVectorPtr f, const VarVector& vars, const VectorXd& coeffs, ConstraintType type, const std::string& name) :
-    Constraint(name), f_(f), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON) {}
+    Constraint(name), f_(f), vars_(vars), coeffs_(coeffs), type_(type), epsilon_(DEFAULT_EPSILON) {}
 
 ConstraintFromFunc::ConstraintFromFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, const VectorXd& coeffs, ConstraintType type, const std::string& name) :
-    Constraint(name), f_(f), dfdx_(dfdx), vars_(vars), type_(type), epsilon_(DEFAULT_EPSILON) {}
+    Constraint(name), f_(f), dfdx_(dfdx), vars_(vars), coeffs_(coeffs), type_(type), epsilon_(DEFAULT_EPSILON) {}
 
 vector<double> ConstraintFromFunc::value(const vector<double>& xin) {
   VectorXd x = getVec(xin, vars_);

@@ -106,7 +106,7 @@ void printCostInfo(const vector<double>& old_cost_vals, const vector<double>& mo
     for (size_t i=0; i < old_cnt_vals.size(); ++i) {
       double approx_improve = old_cnt_vals[i] - model_cnt_vals[i];
       double exact_improve = old_cnt_vals[i] - new_cnt_vals[i];
-      if (fabs(approx_improve > 1e-8)) 
+      if (fabs(approx_improve) > 1e-8)
         printf("%15s | %10.3e | %10.3e | %10.3e | %10.3e\n", cnt_names[i].c_str(), merit_coeff*old_cnt_vals[i], merit_coeff*approx_improve, merit_coeff*exact_improve, exact_improve/approx_improve); 
       else 
         printf("%15s | %10.3e | %10.3e | %10.3e | %10s\n", cnt_names[i].c_str(), merit_coeff*old_cnt_vals[i], merit_coeff*approx_improve, merit_coeff*exact_improve, "  ------  "); 
@@ -381,7 +381,7 @@ OptStatus BasicTrustRegionSQP::optimize() {
     else {
       LOG_INFO("not all constraints are satisfied. increasing penalties");
       merit_error_coeff_ *= merit_coeff_increase_ratio_;
-      trust_box_size_ = fmax(trust_box_size_, min_trust_box_size_ * 5);
+      trust_box_size_ = fmax(trust_box_size_, min_trust_box_size_ * trust_shrink_ratio_ * 1.5);
     }
 
 

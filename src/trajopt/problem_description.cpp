@@ -227,7 +227,7 @@ TrajOptResultPtr OptimizeProblem(TrajOptProbPtr prob, bool plot) {
   Configuration::SaverPtr saver = prob->GetRAD()->Save();
   BasicTrustRegionSQP opt(prob);
   opt.max_iter_ = 40;
-  opt.min_approx_improve_frac_ = .001;
+//  opt.min_approx_improve_frac_ = .001;
   opt.merit_error_coeff_ = 20;
   if (plot) opt.addCallback(PlotCallback(*prob));
   //  opt.addCallback(boost::bind(&PlotCosts, boost::ref(prob->getCosts()),boost::ref(*prob->GetRAD()), boost::ref(prob->GetVars()), _1));
