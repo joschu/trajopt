@@ -143,7 +143,7 @@ void boost_register_cloud_type(const string& pyname) {
     .def("from3dArray", &PyCloudT::from3dArray)
     .def("save", &PyCloudT::save)
     ;
-  py::implicitly_convertible< boost::shared_ptr<CloudXYZ>, boost::shared_ptr<CloudXYZ const> >();
+  py::implicitly_convertible< boost::shared_ptr<PointCloudT>, boost::shared_ptr<PointCloudT const> >();
 }
 
 py::object pyConvexDecompHACD(const PolygonMesh& mesh, float concavity) {
@@ -193,6 +193,7 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
   boost_register_cloud_type<PointXYZ>("CloudXYZ");
   boost_register_cloud_type<PointXYZRGB>("CloudXYZRGB");
   boost_register_cloud_type<PointNormal>("CloudXYZN");
+  boost_register_cloud_type<Normal>("CloudN");
 
   py::def("readPCDXYZ", &readPCD<PointXYZ>);
   py::def("downsampleCloud", &downsampleCloud<PointXYZ>);
@@ -216,6 +217,7 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
   py::def("meshGP3", &meshGP3, (py::arg("cloud"), py::arg("search_radius")));
   py::def("meshOFM", &meshOFM, (py::arg("cloud"), py::arg("sigma_s")=15, py::arg("sigma_r") = .05));
   py::def("mlsAddNormals", &mlsAddNormals, (py::arg("cloud"), py::arg("search_radius")));
+  py::def("integralNormalEstimation", &integralNormalEstimation, (py::arg("cloud"), py::arg("maxDepthChangeFactor")=.02, py::arg("normalSmoothingSize")=10.0));
   py::def("loadMesh", &loadMesh, (py::arg("filename")));
   py::def("quadricSimplifyVTK", &quadricSimplifyVTK, (py::arg("cloud"), py::arg("decimation_frac")));
 

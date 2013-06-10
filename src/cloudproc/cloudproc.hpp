@@ -17,7 +17,7 @@ template <typename T>
 TRAJOPT_API typename pcl::PointCloud<T>::Ptr readPCD(const std::string& pcdfile);
 
 template <class T>
-TRAJOPT_API void saveCloud(const pcl::PointCloud<T>& cloud, const std::string& pcdfile);
+TRAJOPT_API void saveCloud(const pcl::PointCloud<T>& cloud, const std::string& pcdfile); // instantiate: pcl::PointXYZ pcl::PointXYZRGB pcl::PointNormal pcl::Normal
 
 TRAJOPT_API void saveMesh(const pcl::PolygonMesh& mesh, const std::string& fname);
 
@@ -36,6 +36,8 @@ TRAJOPT_API pcl::PointCloud<pcl::PointXYZ>::Ptr computeConvexHull(pcl::PointClou
 TRAJOPT_API pcl::PointCloud<pcl::PointXYZ>::Ptr computeAlphaShape(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in, float alpha, int dim, std::vector<pcl::Vertices>* polygons);
 
 TRAJOPT_API pcl::PointCloud<pcl::PointNormal>::Ptr mlsAddNormals(PointCloud<pcl::PointXYZ>::ConstPtr in, float searchRadius);
+
+TRAJOPT_API PointCloud<pcl::Normal>::Ptr integralNormalEstimation(PointCloud<pcl::PointXYZ>::ConstPtr in, float maxDepthChangeFactor, float normalSmoothingSize);
 
 template <class T>
 TRAJOPT_API typename pcl::PointCloud<pcl::PointXYZ>::Ptr toXYZ(typename pcl::PointCloud<T>::ConstPtr in);

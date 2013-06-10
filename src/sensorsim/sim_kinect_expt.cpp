@@ -11,7 +11,7 @@ int main() {
   RaveInitialize(true, OpenRAVE::Level_Debug);
   EnvironmentBasePtr env = RaveCreateEnvironment();
   bool success = env->Load("data/pr2test2.env.xml");
-  assert(success);
+  ALWAYS_ASSERT(success);
 
   vector<RobotBasePtr> robots;
   env->GetRobots(robots);
