@@ -8,11 +8,12 @@
 #include "trajopt/trajectory_costs.hpp"
 #include "trajopt/collision_terms.hpp"
 #include "trajopt/rave_utils.hpp"
-#include "trajopt/plot_callback.hpp"
 #include "trajopt/rave_utils.hpp"
+#include "trajopt/traj_plotter.hpp"
 #include "utils/eigen_conversions.hpp"
 #include "utils/eigen_slicing.hpp"
 #include <boost/algorithm/string.hpp>
+#include "sco/optimizers.hpp"
 using namespace Json;
 using namespace std;
 using namespace OpenRAVE;
@@ -229,38 +230,21 @@ TrajOptResultPtr OptimizeProblem(TrajOptProbPtr prob, bool plot) {
   opt.max_iter_ = 40;
 //  opt.min_approx_improve_frac_ = .001;
   opt.merit_error_coeff_ = 20;
-  if (plot) opt.addCallback(PlotCallback(*prob));
-  //  opt.addCallback(boost::bind(&PlotCosts, boost::ref(prob->getCosts()),boost::ref(*prob->GetRAD()), boost::ref(prob->GetVars()), _1));
+  if (plot) {
+    SetupPlotting(*prob, opt);
+  }
   opt.initialize(trajToDblVec(prob->GetInitTraj()));
   opt.optimize();
   return TrajOptResultPtr(new TrajOptResult(opt.results(), *prob));
 }
 
 TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo& pci) {
-  TrajOptProbPtr prob(new TrajOptProb());
 
   const BasicInfo& bi = pci.basic_info;
   int n_steps = bi.n_steps;
 
-  prob->m_rad = pci.rad;
+  TrajOptProbPtr prob(new TrajOptProb(n_steps, pci.rad));
   int n_dof = prob->m_rad->GetDOF();
-
-
-  DblVec lower, upper;
-  prob->m_rad->GetDOFLimits(lower, upper);
-  
-  
-  vector<double> vlower, vupper;
-  vector<string> names;
-  for (int i=0; i < n_steps; ++i) {
-    vlower.insert(vlower.end(), lower.data(), lower.data()+lower.size());
-    vupper.insert(vupper.end(), upper.data(), upper.data()+upper.size());
-    for (unsigned j=0; j < n_dof; ++j) {
-      names.push_back( (boost::format("j_%i_%i")%i%j).str() );
-    }
-  }
-  VarVector trajvarvec = prob->createVariables(names, vlower, vupper);
-  prob->m_traj_vars = VarArray(n_steps, n_dof, trajvarvec.data());
 
   DblVec cur_dofvals = prob->m_rad->GetDOFValues();
 
@@ -300,7 +284,7 @@ TrajOptProbPtr ConstructProblem(const Json::Value& root, OpenRAVE::EnvironmentBa
 }
 
 
-TrajOptProb::TrajOptProb(int n_steps, ConfigurationPtr rad) : m_rad(rad) {
+TrajOptProb::TrajOptProb(int n_steps, ConfigurationPtr rad) : m_rad(rad) {  
   DblVec lower, upper;
   m_rad->GetDOFLimits(lower, upper);
   int n_dof = m_rad->GetDOF();
@@ -321,10 +305,19 @@ TrajOptProb::TrajOptProb(int n_steps, ConfigurationPtr rad) : m_rad(rad) {
   createVariables(names, vlower, vupper);
   m_traj_vars = VarArray(n_steps, n_dof, getVars().data());
 
+  m_trajplotter.reset(new TrajPlotter(m_rad->GetEnv(), m_rad, m_traj_vars));
+
 }
 
 
 TrajOptProb::TrajOptProb() {
+}
+
+void SetupPlotting(TrajOptProb& prob, Optimizer& opt) {
+  TrajPlotterPtr plotter = prob.GetPlotter();
+  plotter->Add(prob.getCosts());
+  plotter->Add(prob.getConstraints());
+  opt.addCallback(boost::bind(&TrajPlotter::OptimizerCallback, *plotter, _1, _2));
 }
 
 
@@ -346,16 +339,17 @@ void PoseCostInfo::fromJson(const Value& v) {
 }
 
 void PoseCostInfo::hatch(TrajOptProb& prob) {
+  VectorOfVectorPtr f(new CartPoseErrCalculator(toRaveTransform(wxyz, xyz), prob.GetRAD(), link));
   if (term_type == TT_COST) {
-    prob.addCost(CostPtr(new CostFromErrFunc(
-      VectorOfVectorPtr(new CartPoseErrCalculator(toRaveTransform(wxyz, xyz), 
-      prob.GetRAD(), link)), prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), ABS, name)));
+    prob.addCost(CostPtr(new CostFromErrFunc(f, prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), ABS, name)));
   }
   else if (term_type == TT_CNT) {
-    prob.addConstraint(ConstraintPtr(new ConstraintFromFunc(
-      VectorOfVectorPtr(new CartPoseErrCalculator(toRaveTransform(wxyz, xyz), 
-      prob.GetRAD(), link)), prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), EQ, name)));
+    prob.addConstraint(ConstraintPtr(new ConstraintFromFunc(f, prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), EQ, name)));
   }
+
+  prob.GetPlotter()->Add(PlotterPtr(new CartPoseErrorPlotter(f, prob.GetVarRow(timestep))));
+  prob.GetPlotter()->AddLink(link);
+
 }
 
 

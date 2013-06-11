@@ -53,19 +53,19 @@ struct NeedleError : public VectorOfVector {
 
 
 
-struct TrajPlotter {
+struct TrajPlotter1 {
   vector<IncrementalRBPtr> rbs;
   VarArray vars;
   OSGViewerPtr viewer;
-  TrajPlotter(const vector<IncrementalRBPtr>& rbs, const VarArray& vars);
+  TrajPlotter1(const vector<IncrementalRBPtr>& rbs, const VarArray& vars);
   void OptimizerCallback(OptProb*, DblVec& x);
 
 };
 
-TrajPlotter::TrajPlotter(const vector<IncrementalRBPtr>& rbs, const VarArray& vars) : rbs(rbs), vars(vars) {
+TrajPlotter1::TrajPlotter1(const vector<IncrementalRBPtr>& rbs, const VarArray& vars) : rbs(rbs), vars(vars) {
   viewer = OSGViewer::GetOrCreate(rbs[0]->GetEnv());
 }
-void TrajPlotter::OptimizerCallback(OptProb*, DblVec& x) {
+void TrajPlotter1::OptimizerCallback(OptProb*, DblVec& x) {
   vector<GraphHandlePtr> handles;
   vector<KinBodyPtr> bodies = rbs[0]->GetBodies();
   MatrixXd traj = getTraj(x,vars);
@@ -149,10 +149,10 @@ int main(int argc, char** argv)
   helper.ConfigureOptimizer(opt);
   opt.max_iter_ = 500;    
 
-  boost::shared_ptr<TrajPlotter> plotter;
+  boost::shared_ptr<TrajPlotter1> plotter;
   if (plotting) {
-    plotter.reset(new TrajPlotter(helper.m_rbs, trajvars));
-    opt.addCallback(boost::bind(&TrajPlotter::OptimizerCallback, boost::ref(plotter), _1, _2));
+    plotter.reset(new TrajPlotter1(helper.m_rbs, trajvars));
+    opt.addCallback(boost::bind(&TrajPlotter1::OptimizerCallback, boost::ref(plotter), _1, _2));
   }
 
   MatrixXd initTraj(n_steps, n_dof);  

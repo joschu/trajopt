@@ -39,7 +39,7 @@ struct CartPoseErrCalculator : public VectorOfVector {
   VectorXd operator()(const VectorXd& dof_vals) const;
 };
 
-class CartPoseErrorPlotter : public Plotter {
+struct CartPoseErrorPlotter : public Plotter {
   boost::shared_ptr<void> m_calc; //actually points to a CartPoseErrCalculator = CartPoseCost::f_
   VarVector m_vars;
   CartPoseErrorPlotter(boost::shared_ptr<void> calc, const VarVector& vars) : m_calc(calc), m_vars(vars) {}

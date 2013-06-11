@@ -223,13 +223,11 @@ double CollisionCost::value(const vector<double>& x) {
   return out;
 }
 
-#if 0
 void CollisionCost::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles) {
   vector<Collision> collisions;
   m_calc->GetCollisionsCached(x, collisions);
   PlotCollisions(collisions, env, handles, m_dist_pen);
 }
-#endif
 
 // ALMOST EXACTLY COPIED FROM CollisionCost
 

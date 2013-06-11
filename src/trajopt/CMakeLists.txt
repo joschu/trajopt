@@ -9,6 +9,7 @@ include_directories(
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
 
 add_library(trajopt
+	traj_plotter.cpp
   trajectory_costs.cpp
 	kinematic_terms.cpp 
 	collision_terms.cpp

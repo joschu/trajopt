@@ -1,6 +1,8 @@
 #include "trajopt/common.hpp"
 #include "json_marshal.hpp"
 #include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
+#include "traj_plotter.hpp"
 
 namespace sco{struct OptResults;}
 
@@ -62,13 +64,18 @@ public:
   void SetInitTraj(const TrajArray& x) {m_init_traj = x;}
   TrajArray GetInitTraj() {return m_init_traj;}
 
+  TrajPlotterPtr GetPlotter() {return m_trajplotter;}
+
   friend TrajOptProbPtr ConstructProblem(const ProblemConstructionInfo&);
+
 private:
   VarArray m_traj_vars;
   ConfigurationPtr m_rad;
   TrajArray m_init_traj;
-  typedef std::pair<string,string> StringPair;
+  TrajPlotterPtr m_trajplotter;
 };
+
+void TRAJOPT_API SetupPlotting(TrajOptProb& prob, Optimizer& opt);
 
 struct TRAJOPT_API TrajOptResult {
   vector<string> cost_names, cnt_names;

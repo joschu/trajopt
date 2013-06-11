@@ -70,7 +70,6 @@ TEST(cast, boxes) {
   if (plotting) opt.addCallback(PlotCallback(*prob));
   opt.initialize(trajToDblVec(prob->GetInitTraj()));
   opt.optimize();
-  if (plotting) PlotCallback(*prob)(NULL, opt.x());
 
 
 

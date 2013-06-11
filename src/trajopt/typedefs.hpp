@@ -46,5 +46,6 @@ public:
   virtual void Plot(const DblVec& x, OR::EnvironmentBase&, std::vector<OR::GraphHandlePtr>& handles) = 0;
   virtual ~Plotter() {}
 };
+typedef boost::shared_ptr<Plotter> PlotterPtr;
 
 }
