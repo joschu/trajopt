@@ -832,11 +832,10 @@ struct CastCollisionCollector : public CollisionCollector {
 
 btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
     const btCollisionObjectWrapper* colObj0Wrap,int partId0,int index0,
-    const btCollisionObjectWrapper* colObj1Wrap,int partId1,int index1) {
+    const btCollisionObjectWrapper* colObj1Wrap,int partId1,int index1) {      
       float retval = CollisionCollector::addSingleResult(cp, colObj0Wrap,partId0,index0, colObj1Wrap,partId1,index1); // call base class func
       if (retval == 1) { // if contact was added
         bool castShapeIsFirst =  (colObj0Wrap->getCollisionObject() == m_cow);
-        ALWAYS_ASSERT(!castShapeIsFirst);
         btVector3 normalWorldFromCast = -(castShapeIsFirst ? 1 : -1) * cp.m_normalWorldOnB;
         const CastHullShape* shape = dynamic_cast<const CastHullShape*>((castShapeIsFirst ? colObj0Wrap : colObj1Wrap)->getCollisionObject()->getCollisionShape());
         assert(!!shape);

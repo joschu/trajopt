@@ -450,6 +450,8 @@ void CollisionCostInfo::fromJson(const Value& v) {
   childFromJson(params, continuous, "continuous", true);
   childFromJson(params, first_step, "first_step", 0);
   childFromJson(params, last_step, "last_step", n_steps-1);
+  childFromJson(params, gap, "gap", 1);
+  FAIL_IF_FALSE(gap >= 0);
   FAIL_IF_FALSE((first_step >= 0) && (first_step < n_steps));
   FAIL_IF_FALSE((last_step >= first_step) && (last_step < n_steps));
   childFromJson(params, coeffs, "coeffs");
@@ -467,8 +469,8 @@ void CollisionCostInfo::fromJson(const Value& v) {
 void CollisionCostInfo::hatch(TrajOptProb& prob) {
   if (term_type == TT_COST) {
     if (continuous) {
-      for (int i=first_step; i < last_step; ++i) {
-        prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+1))));
+      for (int i=first_step; i <= last_step - gap; ++i) {
+        prob.addCost(CostPtr(new CollisionCost(dist_pen[i-first_step], coeffs[i-first_step], prob.GetRAD(), prob.GetVarRow(i), prob.GetVarRow(i+gap))));
         prob.getCosts().back()->setName( (boost::format("%s_%i")%name%i).str() );
       }
     }
