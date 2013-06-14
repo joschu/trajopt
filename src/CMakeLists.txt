@@ -8,8 +8,9 @@ add_definitions(-DEIGEN_DEFAULT_TO_ROW_MAJOR)
 
 find_package(GUROBI)
 if (NOT GUROBI_FOUND)
-  message(FATAL_ERROR "Gurobi not found. Set GUROBI_HOME variabe")
+  message("Gurobi not found. If you want to use Gurobi, set the GUROBI_HOME variable")
 else()
+  message("Gurobi found")
   include_directories(${GUROBI_INCLUDE_DIRS})
 endif()
 
