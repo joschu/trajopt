@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <iostream>
 #include "utils/stl_to_string.hpp"
+#include <errno.h>
+#include <string.h>
 using namespace bpmpd_io;
 using namespace std;
 
@@ -12,6 +14,13 @@ extern "C" {
 }
 
 int main(int argc, char** argv) {
+  string working_dir = BPMPD_WORKING_DIR;
+  int err = chdir(working_dir.c_str());  
+  if (err != 0) {
+    cerr << "error going to BPMPD working dir\n";
+    cerr << strerror(err) << endl;
+    abort();
+  }
   // int counter=0;
   while (true) {
     bpmpd_input bi;

@@ -30,7 +30,12 @@ if (HAVE_BPMPD)
   target_link_libraries(bpmpd_caller ${BPMPD_LIBRARY})
   list(APPEND SCO_SOURCE_FILES bpmpd_interface.cpp)  
   set_property(SOURCE bpmpd_interface.cpp APPEND PROPERTY COMPILE_DEFINITIONS BPMPD_CALLER="\\\"${CMAKE_BINARY_DIR}/bin/bpmpd_caller\\\"")
- 
+
+
+  set(BPMPD_WORKING_DIR ${CMAKE_CURRENT_BINARY_DIR})
+  set_property(SOURCE bpmpd_caller.cpp APPEND PROPERTY COMPILE_DEFINITIONS BPMPD_WORKING_DIR="${BPMPD_WORKING_DIR}")
+  file(COPY bpmpd.par ${CMAKE_CURRENT_SOURCE_DIR} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
   set_property(SOURCE solver_interface.cpp APPEND PROPERTY COMPILE_DEFINITIONS HAVE_BPMPD )
 endif()
 
