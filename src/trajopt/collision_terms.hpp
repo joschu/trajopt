@@ -12,8 +12,8 @@ typedef std::map<const OR::KinBody::Link*, int> Link2Int;
 
 
 struct CollisionEvaluator {
-  virtual void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights) = 0;
-  virtual void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights) = 0;
+  virtual void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs) = 0;
+  virtual void CalcDists(const DblVec& x, DblVec& exprs) = 0;
   virtual void CalcCollisions(const DblVec& x, vector<Collision>& collisions) = 0;
   void GetCollisionsCached(const DblVec& x, vector<Collision>&);
   virtual ~CollisionEvaluator() {}
@@ -31,15 +31,12 @@ public:
   
   Do a collision check between robot and environment.
   For each contact generated, return a linearization of the signed distance function
-  Since the collision checker may return multiple contact points for a given pair of links,
-  the contacts are associated with weights so that each pair of links are associated with a single cost term.
-  In particular, if a pair of bodies have k contacts, then the contacts each have weight 1/k.
   */
-  void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights); 
+  void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs);
   /**
    * Same as CalcDistExpressions, but just the distances--not the expressions
    */
-  void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights); 
+  void CalcDists(const DblVec& x, DblVec& exprs);
   void CalcCollisions(const DblVec& x, vector<Collision>& collisions);
   VarVector GetVars() {return m_vars;}
 
@@ -55,8 +52,8 @@ public:
 struct CastCollisionEvaluator : public CollisionEvaluator {
 public:
   CastCollisionEvaluator(ConfigurationPtr rad, const VarVector& vars0, const VarVector& vars1);
-  void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights);
-  void CalcDists(const DblVec& x, DblVec& exprs, DblVec& weights);
+  void CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs);
+  void CalcDists(const DblVec& x, DblVec& exprs);
   void CalcCollisions(const DblVec& x, vector<Collision>& collisions);
   VarVector GetVars() {return concat(m_vars0, m_vars1);}
   

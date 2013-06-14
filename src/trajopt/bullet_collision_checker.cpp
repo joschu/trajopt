@@ -836,6 +836,7 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
       float retval = CollisionCollector::addSingleResult(cp, colObj0Wrap,partId0,index0, colObj1Wrap,partId1,index1); // call base class func
       if (retval == 1) { // if contact was added
         bool castShapeIsFirst =  (colObj0Wrap->getCollisionObject() == m_cow);
+        ALWAYS_ASSERT(!castShapeIsFirst);
         btVector3 normalWorldFromCast = -(castShapeIsFirst ? 1 : -1) * cp.m_normalWorldOnB;
         const CastHullShape* shape = dynamic_cast<const CastHullShape*>((castShapeIsFirst ? colObj0Wrap : colObj1Wrap)->getCollisionObject()->getCollisionShape());
         assert(!!shape);
@@ -845,38 +846,39 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
         btVector3 normalLocal1 = normalWorldFromCast * tfWorld1.getBasis();
         btVector3 ptWorld0 = tfWorld0*shape->m_shape->localGetSupportingVertex(normalLocal0);
         btVector3 ptWorld1 = tfWorld1*shape->m_shape->localGetSupportingVertex(normalLocal1);
+        
+        Collision& col = m_collisions.back();
         float sup0 = normalWorldFromCast.dot(ptWorld0);
         float sup1 = normalWorldFromCast.dot(ptWorld1);
         const float SUPPORT_FUNC_TOLERANCE = .03 METERS;
         // TODO: this section is potentially problematic. think hard about the math
         if (sup0 - sup1 > SUPPORT_FUNC_TOLERANCE) {
-          m_collisions.back().time = 0;
+          col.time = 0;
+          col.cctype = CCType_Time0;
         }
         else if (sup1 - sup0 > SUPPORT_FUNC_TOLERANCE) {
-          m_collisions.back().time = 1;
+          col.time = 1;
+          col.cctype = CCType_Time1;
         }
         else {
           const btVector3& ptOnCast = castShapeIsFirst ? cp.m_positionWorldOnA : cp.m_positionWorldOnB;
           float l0c = (ptOnCast - ptWorld0).length(), 
                 l1c = (ptOnCast - ptWorld1).length();
-                // l01 = (ptWorld1 - ptWorld0).length();
-          // const float COLLINEARITY_TOLERANCE = .03 METERS;
-          const float LENGTH_TOLERANCE = .001 METERS;
-          // if ( l01 < LENGTH_TOLERANCE || fabs(l0c + l1c - l01) > COLLINEARITY_TOLERANCE ) {
-          if ( l0c + l1c < LENGTH_TOLERANCE) {
-//            LOG_WARN("collin. viol: %f + %f != %f", l0c, l1c, l01);
-//            cerr << "tfWorld0 " << tfWorld0 << endl;
-//            cerr << "tfWorld1 " << tfWorld1 << endl;
-//            cerr << "ptWorld0 " << ptWorld0 << endl;
-//            cerr << "ptWorld1 " << ptWorld1 << endl;
-//             cout << ptWorld0 << " / " << ptWorld1 << " / " << ptOnCast << endl;
 
-            m_collisions.back().time = .5;
+          col.ptB = toOR(ptWorld0);
+          col.ptB1 = toOR(ptWorld1);
+          col.cctype = CCType_Between;
+
+          const float LENGTH_TOLERANCE = .001 METERS;
+
+          if ( l0c + l1c < LENGTH_TOLERANCE) {
+
+            col.time = .5;
           }
           else {
-            m_collisions.back().time = l1c/(l0c + l1c);
-//            cout << l0c << " " << l1c << " " << l01 << " " <<  m_collisions.back().time << endl;
+            col.time = l1c/(l0c + l1c);
           }
+
         }
           
       }

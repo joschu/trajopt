@@ -229,6 +229,7 @@ TrajOptResultPtr OptimizeProblem(TrajOptProbPtr prob, bool plot) {
   BasicTrustRegionSQP opt(prob);
   opt.max_iter_ = 40;
   opt.min_approx_improve_frac_ = .001;
+  opt.improve_ratio_threshold_ = .2;
   opt.merit_error_coeff_ = 20;
   if (plot) {
     SetupPlotting(*prob, opt);

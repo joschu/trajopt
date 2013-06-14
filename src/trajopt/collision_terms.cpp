@@ -19,30 +19,25 @@ namespace trajopt {
 
 
 void CollisionsToDistances(const vector<Collision>& collisions, const Link2Int& m_link2ind,
-    DblVec& dists, DblVec& weights) {
+    DblVec& dists) {
   // Note: this checking (that the links are in the list we care about) is probably unnecessary
   // since we're using LinksVsAll
   dists.clear();
-  weights.clear();
   dists.reserve(collisions.size());
-  weights.reserve(collisions.size());
   BOOST_FOREACH(const Collision& col, collisions) {
     Link2Int::const_iterator itA = m_link2ind.find(col.linkA);
     Link2Int::const_iterator itB = m_link2ind.find(col.linkB);
     if (itA != m_link2ind.end() || itB != m_link2ind.end()) {
       dists.push_back(col.distance);
-      weights.push_back(col.weight);
     }
   }
 }
 
 void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Configuration& rad,
-    const Link2Int& link2ind, const VarVector& vars, const DblVec& dofvals, vector<AffExpr>& exprs, DblVec& weights) {
+    const Link2Int& link2ind, const VarVector& vars, const DblVec& dofvals, vector<AffExpr>& exprs, bool isTimestep1) {
 
   exprs.clear();
-  weights.clear();
   exprs.reserve(collisions.size());
-  weights.reserve(collisions.size());
   rad.SetDOFValues(dofvals); // since we'll be calculating jacobians
   BOOST_FOREACH(const Collision& col, collisions) {
     AffExpr dist(col.distance);
@@ -54,13 +49,12 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Config
     }
     Link2Int::const_iterator itB = link2ind.find(col.linkB);
     if (itB != link2ind.end()) {
-      VectorXd dist_grad = -toVector3d(col.normalB2A).transpose()*rad.PositionJacobian(itB->second, col.ptB);
+      VectorXd dist_grad = -toVector3d(col.normalB2A).transpose()*rad.PositionJacobian(itB->second, (isTimestep1 && (col.cctype == CCType_Between)) ? col.ptB1 : col.ptB);
       exprInc(dist, varDot(dist_grad, vars));
       exprInc(dist, -dist_grad.dot(toVectorXd(dofvals)));
     }
     if (itA != link2ind.end() || itB != link2ind.end()) {
       exprs.push_back(dist);
-      weights.push_back(col.weight);
     }
   }
   LOG_DEBUG("%ld distance expressions\n", exprs.size());
@@ -68,14 +62,12 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Config
 
 void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Configuration& rad, const Link2Int& link2ind,
     const VarVector& vars0, const VarVector& vars1, const DblVec& vals0, const DblVec& vals1,
-    vector<AffExpr>& exprs, DblVec& weights) {
+    vector<AffExpr>& exprs) {
   vector<AffExpr> exprs0, exprs1;
-  DblVec weights0, weights1;
-  CollisionsToDistanceExpressions(collisions, rad, link2ind, vars0, vals0, exprs0, weights0);
-  CollisionsToDistanceExpressions(collisions, rad, link2ind, vars1, vals1, exprs1, weights1);
+  CollisionsToDistanceExpressions(collisions, rad, link2ind, vars0, vals0, exprs0, false);
+  CollisionsToDistanceExpressions(collisions, rad, link2ind, vars1, vals1, exprs1,true);
 
   exprs.resize(exprs0.size());
-  weights.resize(exprs0.size());
 
   for (int i=0; i < exprs0.size(); ++i) {
     exprScale(exprs0[i], (1-collisions[i].time));
@@ -83,7 +75,7 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Config
     exprs[i] = AffExpr(0);
     exprInc(exprs[i], exprs0[i]);
     exprInc(exprs[i], exprs1[i]);
-    weights[i] = (weights0[i] + weights1[i])/2;
+    cleanupAff(exprs[i]);
   }
 }
 
@@ -125,18 +117,18 @@ void SingleTimestepCollisionEvaluator::CalcCollisions(const DblVec& x, vector<Co
   m_cc->LinksVsAll(m_links, collisions, m_filterMask);
 }
 
-void SingleTimestepCollisionEvaluator::CalcDists(const DblVec& x, DblVec& dists, DblVec& weights) {
+void SingleTimestepCollisionEvaluator::CalcDists(const DblVec& x, DblVec& dists) {
   vector<Collision> collisions;
   GetCollisionsCached(x, collisions);
-  CollisionsToDistances(collisions, m_link2ind, dists, weights);
+  CollisionsToDistances(collisions, m_link2ind, dists);
 }
 
 
-void SingleTimestepCollisionEvaluator::CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights) {
+void SingleTimestepCollisionEvaluator::CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs) {
   vector<Collision> collisions;
   GetCollisionsCached(x, collisions);
   DblVec dofvals = getDblVec(x, m_vars);
-  CollisionsToDistanceExpressions(collisions, *m_rad, m_link2ind, m_vars, dofvals, exprs, weights);
+  CollisionsToDistanceExpressions(collisions, *m_rad, m_link2ind, m_vars, dofvals, exprs, false);
 }
 
 ////////////////////////////////////////
@@ -163,17 +155,17 @@ void CastCollisionEvaluator::CalcCollisions(const DblVec& x, vector<Collision>& 
   m_rad->SetDOFValues(dofvals0);
   m_cc->CastVsAll(*m_rad, m_links, dofvals0, dofvals1, collisions);
 }
-void CastCollisionEvaluator::CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs, DblVec& weights) {
+void CastCollisionEvaluator::CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs) {
   vector<Collision> collisions;
   GetCollisionsCached(x, collisions);
   DblVec dofvals0 = getDblVec(x, m_vars0);
   DblVec dofvals1 = getDblVec(x, m_vars1);
-  CollisionsToDistanceExpressions(collisions, *m_rad, m_link2ind, m_vars0, m_vars1, dofvals0, dofvals1, exprs, weights);
+  CollisionsToDistanceExpressions(collisions, *m_rad, m_link2ind, m_vars0, m_vars1, dofvals0, dofvals1, exprs);
 }
-void CastCollisionEvaluator::CalcDists(const DblVec& x, DblVec& dists, DblVec& weights) {
+void CastCollisionEvaluator::CalcDists(const DblVec& x, DblVec& dists) {
   vector<Collision> collisions;
   GetCollisionsCached(x, collisions);
-  CollisionsToDistances(collisions, m_link2ind, dists, weights);
+  CollisionsToDistances(collisions, m_link2ind, dists);
 }
 
 
@@ -205,20 +197,19 @@ CollisionCost::CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad
 ConvexObjectivePtr CollisionCost::convex(const vector<double>& x, Model* model) {
   ConvexObjectivePtr out(new ConvexObjective(model));
   vector<AffExpr> exprs;
-  DblVec weights;
-  m_calc->CalcDistExpressions(x, exprs, weights);
+  m_calc->CalcDistExpressions(x, exprs);
   for (int i=0; i < exprs.size(); ++i) {
     AffExpr viol = exprSub(AffExpr(m_dist_pen), exprs[i]);
-    out->addHinge(viol, m_coeff*weights[i]);
+    out->addHinge(viol, m_coeff);
   }
   return out;
 }
 double CollisionCost::value(const vector<double>& x) {
-  DblVec dists, weights;
-  m_calc->CalcDists(x, dists, weights);
+  DblVec dists;
+  m_calc->CalcDists(x, dists);
   double out = 0;
   for (int i=0; i < dists.size(); ++i) {
-    out += pospart(m_dist_pen - dists[i]) * m_coeff * weights[i];
+    out += pospart(m_dist_pen - dists[i]) * m_coeff;
   }
   return out;
 }
@@ -245,20 +236,19 @@ CollisionConstraint::CollisionConstraint(double dist_pen, double coeff, Configur
 ConvexConstraintsPtr CollisionConstraint::convex(const vector<double>& x, Model* model) {
   ConvexConstraintsPtr out(new ConvexConstraints(model));
   vector<AffExpr> exprs;
-  DblVec weights;
-  m_calc->CalcDistExpressions(x, exprs, weights);
+  m_calc->CalcDistExpressions(x, exprs);
   for (int i=0; i < exprs.size(); ++i) {
     AffExpr viol = exprSub(AffExpr(m_dist_pen), exprs[i]);
-    out->addIneqCnt(exprMult(viol,m_coeff*weights[i]));
+    out->addIneqCnt(exprMult(viol,m_coeff));
   }
   return out;
 }
 DblVec CollisionConstraint::value(const vector<double>& x) {
-  DblVec dists, weights;
-  m_calc->CalcDists(x, dists, weights);
+  DblVec dists;
+  m_calc->CalcDists(x, dists);
   DblVec out(dists.size());
   for (int i=0; i < dists.size(); ++i) {
-    out[i] = pospart(m_dist_pen - dists[i]) * m_coeff * weights[i];
+    out[i] = pospart(m_dist_pen - dists[i]) * m_coeff;
   }
   return out;
 }
