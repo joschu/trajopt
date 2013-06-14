@@ -451,7 +451,7 @@ void CollisionCostInfo::fromJson(const Value& v) {
   childFromJson(params, first_step, "first_step", 0);
   childFromJson(params, last_step, "last_step", n_steps-1);
   childFromJson(params, gap, "gap", 1);
-  FAIL_IF_FALSE(gap >= 0);
+  FAIL_IF_FALSE( gap >= 0 );
   FAIL_IF_FALSE((first_step >= 0) && (first_step < n_steps));
   FAIL_IF_FALSE((last_step >= first_step) && (last_step < n_steps));
   childFromJson(params, coeffs, "coeffs");

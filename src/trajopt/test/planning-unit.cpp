@@ -89,7 +89,6 @@ TEST_F(PlanningTest, numerical_ik1) {
   double tStart = GetClock();
   opt.optimize();
   RAVELOG_INFO("planning time: %.3f\n", GetClock()-tStart);
-  printf("finally:\n");
   if (plotting) PlotCallback(*prob)(NULL, opt.x());
 }
 

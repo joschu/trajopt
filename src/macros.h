@@ -46,7 +46,7 @@
   ss << s;\
   throw std::runtime_error(ss.str());\
 } while (0)
-#define FAIL_IF_FALSE(expr) if (!expr) {\
+#define FAIL_IF_FALSE(expr) if (!(expr)) {\
     PRINT_AND_THROW( "expected true: " #expr);\
   }
 

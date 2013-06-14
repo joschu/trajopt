@@ -21,9 +21,9 @@ struct Collision {
   const OR::KinBody::Link* linkB;
   OR::Vector ptA, ptB, normalB2A; /* normal points from 2 to 1 */
   OR::Vector ptB1;
-  CastCollisionType cctype;
   double distance; /* pt1 = pt2 + normal*dist */
   float weight, time;
+  CastCollisionType cctype;
   Collision(const KinBody::Link* linkA, const KinBody::Link* linkB, const OR::Vector& ptA, const OR::Vector& ptB, const OR::Vector& normalB2A, double distance, float weight=1, float time=0) :
     linkA(linkA), linkB(linkB), ptA(ptA), ptB(ptB), normalB2A(normalB2A), distance(distance), weight(weight), time(0), cctype(CCType_None) {}
 };
