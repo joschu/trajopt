@@ -7,6 +7,8 @@
 
 class UserMap : public std::map<std::string, OpenRAVE::UserDataPtr>, public OpenRAVE::UserData {};
 
+namespace trajopt {
+
 template <typename T>
 OpenRAVE::UserDataPtr GetUserData(const T& env, const std::string& key) {
   OpenRAVE::UserDataPtr ud = env.GetUserData();
@@ -43,3 +45,4 @@ void RemoveUserData(T& body, const std::string& key) {
 }
 
 
+}

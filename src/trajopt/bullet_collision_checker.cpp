@@ -98,6 +98,14 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
 
   btCollisionShape* subshape=0;
 
+#if __OPENRAVE_VERSION_MINOR__ <= 8
+    #define GT_Box KinBody::Link::GEOMPROPERTIES::GeomBox 
+    #define GT_Sphere KinBody::Link::GEOMPROPERTIES::GeomSphere 
+    #define GT_Cylinder KinBody::Link::GEOMPROPERTIES::GeomCylinder 
+    #define GT_TriMesh KinBody::Link::GEOMPROPERTIES::GeomTrimesh 
+    #define TriMesh KinBody::Link::TRIMESH
+#endif
+
   switch (geom->GetType()) {
   case OpenRAVE::GT_Box:
     subshape = new btBoxShape(toBt(geom->GetBoxExtents()));

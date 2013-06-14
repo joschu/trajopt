@@ -14,7 +14,7 @@
 #include <osg/io_utils>
 #include <iostream>
 #include "utils/logging.hpp"
-//#include "openrave_userdata_utils.hpp"
+#include "openrave_userdata_utils.hpp"
 #include "osgviewer.hpp"
 
 using namespace osg;
@@ -349,7 +349,7 @@ public:
 }
 
 KinBodyGroup* GetOsgGroup(KinBody& body) {
-  UserDataPtr rph = body.GetUserData("osg");
+  UserDataPtr rph = trajopt::GetUserData(body, "osg");
   return rph ? static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get())
       : NULL;
 }
@@ -358,7 +358,7 @@ KinBodyGroup* CreateOsgGroup(KinBody& body) {
   LOG_DEBUG("creating graphics for kinbody %s", body.GetName().c_str());
   osg::Node* node = osgNodeFromKinBody(body);
   UserDataPtr rph = UserDataPtr(new RefPtrHolder(node));
-  body.SetUserData("osg", rph);
+  trajopt::SetUserData(body, "osg", rph);
   return static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get());
 }
 
@@ -454,7 +454,7 @@ void OSGViewer::RemoveKinBody(OpenRAVE::KinBodyPtr body) {
   KinBodyGroup* node = GetOsgGroup(*body);
   if (node) {
     m_root->removeChild(node);
-    body->RemoveUserData("osg");
+    trajopt::RemoveUserData(*body, "osg");
   }
   else {
     LOG_ERROR("tried to remove kinbody that does not exist in osg");
