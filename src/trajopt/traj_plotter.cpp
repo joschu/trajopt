@@ -42,8 +42,8 @@ void TrajPlotter::OptimizerCallback(OptProb*, DblVec& x) {
   OSGViewerPtr viewer = OSGViewer::GetOrCreate(m_env);
   vector<GraphHandlePtr> handles;
 
-  vector<KinBodyPtr> bodies = m_config->GetBodies();
   MatrixXd traj = getTraj(x,m_trajvars);
+  vector<KinBodyPtr> bodies = m_config->GetBodies();
   vector<Eigen::MatrixXf> linktrajs(m_links.size(), Eigen::MatrixXf(traj.rows(),3));
   for (int i=0; i < traj.rows(); ++i) {
     m_config->SetDOFValues(toDblVec(traj.row(i)));
