@@ -18,23 +18,14 @@ using namespace std;
 
 namespace sco {
 
+
+extern void simplify2(vector<int>& inds, vector<double>& vals);
+extern vector<int> vars2inds(const vector<Var>& vars);
+extern vector<int> cnts2inds(const vector<Cnt>& cnts);
+
 GRBenv* gEnv;
 
-void simplify2(vector<int>& inds, vector<double>& vals) {
-  typedef std::map<int, double> Int2Double;
-  Int2Double ind2val;
-  for (unsigned i=0; i < inds.size(); ++i) {
-    if (vals[i] != 0) ind2val[inds[i]] += vals[i];
-  }
-  inds.resize(ind2val.size());
-  vals.resize(ind2val.size());
-  int i_new = 0;
-  BOOST_FOREACH(Int2Double::value_type& iv, ind2val) {
-    inds[i_new] = iv.first;
-    vals[i_new] = iv.second;
-    ++i_new;
-  }
-}
+
 #if 0
 void simplify(vector<int>& inds, vector<double>& vals) {
   // first find the largest element of inds
@@ -89,17 +80,6 @@ GurobiModel::GurobiModel() {
     }
   }
   GRBnewmodel(gEnv, &m_model,"problem",0, NULL, NULL, NULL,NULL, NULL);
-}
-
-vector<int> vars2inds(const vector<Var>& vars) {
-  vector<int> inds(vars.size());
-  for (size_t i=0; i < inds.size(); ++i) inds[i] = vars[i].var_rep->index;
-  return inds;
-}
-vector<int> cnts2inds(const vector<Cnt>& cnts) {
-  vector<int> inds(cnts.size());
-  for (size_t i=0; i < inds.size(); ++i) inds[i] = cnts[i].cnt_rep->index;
-  return inds;  
 }
 
 Var GurobiModel::addVar(const string& name) {

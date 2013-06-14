@@ -46,12 +46,13 @@ add_library(sco
 
 set (SCO_LINK_LIBS utils)
 if (GUROBI_FOUND)  
-list(APPEND SCO_LINK_LIBS GUROBI_LIBRARIES) 
+  list(APPEND SCO_LINK_LIBS ${GUROBI_LIBRARIES}) 
 endif()
 if (HAVE_BPMPD) 
-list(APPEND SCO_LINK_LIBS BPMPD_LIBRARY)
+  list(APPEND SCO_LINK_LIBS ${BPMPD_LIBRARY})
+endif()
 
-target_link_libraries(sco ${SCO_LINK_LIBS} utils )
+target_link_libraries(sco ${SCO_LINK_LIBS})
 
 
 add_subdirectory(test)
