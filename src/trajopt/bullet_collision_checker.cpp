@@ -486,9 +486,9 @@ void BulletCollisionChecker::AddKinBody(const OR::KinBodyPtr& body) {
   int filterGroup = body->IsRobot() ? RobotFilter : KinBodyFilter;
   const vector<OR::KinBody::LinkPtr> links = body->GetLinks();
 
-  SetUserData(*body, "bt", cd);
+  trajopt::SetUserData(*body, "bt", cd);
   
-  bool useTrimesh = GetUserData(*body, "bt_use_trimesh");
+  bool useTrimesh = trajopt::GetUserData(*body, "bt_use_trimesh");
   BOOST_FOREACH(const OR::KinBody::LinkPtr& link, links) {
     if (link->GetGeometries().size() > 0) {
       COWPtr new_cow = CollisionObjectFromLink(link, useTrimesh); 
@@ -516,7 +516,7 @@ void BulletCollisionChecker::RemoveKinBody(const OR::KinBodyPtr& body) {
       m_link2cow.erase(link.get());      
     }
   }
-  RemoveUserData(*body, "bt");
+  trajopt::RemoveUserData(*body, "bt");
 }
 
 template <typename T>
@@ -542,7 +542,7 @@ void BulletCollisionChecker::AddAndRemoveBodies(const vector<KinBodyPtr>& curVec
   vector<KinBodyPtr> toRemove;
   SetDifferences(curVec, prevVec, toAdd, toRemove);
   BOOST_FOREACH(const KinBodyPtr& body, toAdd) {
-    assert(!GetUserData(*body, "bt"));
+    assert(!trajopt::GetUserData(*body, "bt"));
     AddKinBody(body);
   }
   BOOST_FOREACH(const KinBodyPtr& body, toRemove) {
