@@ -291,8 +291,10 @@ TrajOptProb::TrajOptProb(int n_steps, ConfigurationPtr rad) : m_rad(rad) {
   int n_dof = m_rad->GetDOF();
   // put optimization joint limits a little inside robot joint limits
   // so numerical derivs work
+  #if __OPENRAVE_VERSION_MINOR__ > 8
   for (int i=0; i < n_dof; ++i) lower[i] += 1e-4;
   for (int i=0; i < n_dof; ++i) upper[i] -= 1e-4;
+  #endif
 
   vector<double> vlower, vupper;
   vector<string> names;
@@ -303,8 +305,8 @@ TrajOptProb::TrajOptProb(int n_steps, ConfigurationPtr rad) : m_rad(rad) {
       names.push_back( (boost::format("j_%i_%i")%i%j).str() );
     }
   }
-  createVariables(names, vlower, vupper);
-  m_traj_vars = VarArray(n_steps, n_dof, getVars().data());
+  VarVector trajvarvec = createVariables(names, vlower, vupper);
+  m_traj_vars = VarArray(n_steps, n_dof, trajvarvec.data());
 
   m_trajplotter.reset(new TrajPlotter(m_rad->GetEnv(), m_rad, m_traj_vars));
 
