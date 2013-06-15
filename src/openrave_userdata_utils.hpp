@@ -2,6 +2,7 @@
 #include "macros.h"
 #include <openrave/openrave.h>
 #include <map>
+#include "utils/logging.hpp"
 
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -55,6 +56,9 @@ void RemoveUserData(T& body, const std::string& key) {
   if (UserMap* um = dynamic_cast<UserMap*>(ud.get())) {
     if (um->find(key) == um->end()) LOG_WARN("tried to erase key %s but it's not in the userdata map!", key.c_str());
     (*um).erase(key);
+  }
+  else {
+    LOG_ERROR("body %s has no userdata map", body.GetName().c_str());
   }
 }
 
