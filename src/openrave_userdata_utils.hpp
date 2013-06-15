@@ -40,7 +40,8 @@ void SetUserData(T& env, const std::string& key, OpenRAVE::UserDataPtr val) {
 }
 template <typename T>
 void RemoveUserData(T& body, const std::string& key) {
-  if (UserMap* um = dynamic_cast<UserMap*>(GetUserData(body, key).get())) {
+  OpenRAVE::UserDataPtr ud = body.GetUserData();
+  if (UserMap* um = dynamic_cast<UserMap*>(ud.get())) {
     (*um).erase(key);
   }
   else {
