@@ -117,7 +117,7 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
     // cylinder axis aligned to Y
   {
     float r = geom->GetCylinderRadius(), h = geom->GetCylinderHeight() / 2;
-    subshape = new btCylinderShapeZ(btVector3(r, r, h / 2));
+    subshape = new btCylinderShapeZ(btVector3(r, r, h));
     break;
   }
   case OpenRAVE::GT_TriMesh: {
