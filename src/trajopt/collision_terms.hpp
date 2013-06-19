@@ -19,7 +19,7 @@ struct CollisionEvaluator {
   virtual ~CollisionEvaluator() {}
   virtual VarVector GetVars()=0;
 
-  Cache<double, vector<Collision>, 3> m_cache;
+  Cache<size_t, vector<Collision>, 3> m_cache;
 };
 typedef boost::shared_ptr<CollisionEvaluator> CollisionEvaluatorPtr;
 

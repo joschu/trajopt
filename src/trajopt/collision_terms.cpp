@@ -10,6 +10,7 @@
 #include "sco/modeling_utils.hpp"
 #include "utils/stl_to_string.hpp"
 #include "utils/logging.hpp"
+#include <boost/functional/hash.hpp>
 using namespace OpenRAVE;
 using namespace sco;
 using namespace util;
@@ -68,7 +69,6 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Config
   CollisionsToDistanceExpressions(collisions, rad, link2ind, vars1, vals1, exprs1,true);
 
   exprs.resize(exprs0.size());
-
   for (int i=0; i < exprs0.size(); ++i) {
     exprScale(exprs0[i], (1-collisions[i].time));
     exprScale(exprs1[i], collisions[i].time);
@@ -79,8 +79,12 @@ void CollisionsToDistanceExpressions(const vector<Collision>& collisions, Config
   }
 }
 
+inline size_t hash(const DblVec& x) {
+  return boost::hash_range(x.begin(), x.end());
+}
+
 void CollisionEvaluator::GetCollisionsCached(const DblVec& x, vector<Collision>& collisions) {
-  double key = getVec(x, GetVars()).sum();
+  double key = hash(getDblVec(x, GetVars()));
   vector<Collision>* it = m_cache.get(key);
   if (it != NULL) {
     LOG_DEBUG("using cached collision check\n");
@@ -181,7 +185,11 @@ void PlotCollisions(const std::vector<Collision>& collisions, OR::EnvironmentBas
     if (col.distance < 0) color = RaveVectorf(1,0,0,1);
     else if (col.distance < safe_dist) color = RaveVectorf(1,1,0,1);
     else color = RaveVectorf(0,1,0,1);
-    handles.push_back(env.drawarrow(col.ptA, col.ptB, .0025, color));
+    if (col.cctype == CCType_Between) {
+      handles.push_back(env.drawarrow(col.ptB, col.ptB1, .002, RaveVectorf(0,0,0,1)));
+    }
+    OR::Vector ptB = (col.cctype == CCType_Between)  ? ((1-col.time)* col.ptB +col.time*col.ptB1) : col.ptB;
+    handles.push_back(env.drawarrow(col.ptA, ptB, .0025, color));
   }
 }
 
