@@ -36,8 +36,8 @@ bool plotting=false, verbose=false;
 
 TEST(cast, boxes) {
   EnvironmentBasePtr env = RaveCreateEnvironment();
-  ASSERT_TRUE(env->Load(data_dir() + "/box.xml"));
   ASSERT_TRUE(env->Load(data_dir() + "/boxbot.xml"));
+  ASSERT_TRUE(env->Load(data_dir() + "/box.xml"));
   KinBodyPtr box = env->GetKinBody("box");
   RobotBasePtr boxbot = env->GetRobot("boxbot");
   RobotAndDOFPtr rad(new RobotAndDOF(boxbot, IntVec(), DOF_X | DOF_Y, Vector()));
@@ -71,6 +71,10 @@ TEST(cast, boxes) {
   opt.initialize(trajToDblVec(prob->GetInitTraj()));
   opt.optimize();
 
+  vector<Collision> collisions;
+  CollisionChecker::GetOrCreate(*env)->ContinuousCheckTrajectory(getTraj(opt.x(), prob->GetVars()), *rad, collisions);
+  RAVELOG_INFO("number of continuous collisions: %i\n", collisions.size());
+  ASSERT_EQ(collisions.size(), 0);
 
 
 
