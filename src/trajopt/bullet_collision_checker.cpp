@@ -22,7 +22,9 @@ namespace {
 // there's some scale-dependent parameters. By convention I'll put METERS to mark it
 const float MARGIN = 0;
 
-#if 0
+#if 1
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
 ostream &operator<<(ostream &stream, const btVector3& v) {
   stream << v.x() << " " << v.y() << " " << v.z();
   return stream;
@@ -35,6 +37,7 @@ ostream &operator<<(ostream &stream, const btTransform& v) {
   stream << v.getOrigin() << " " << v.getRotation();
   return stream;
 }
+#pragma GCC diagnostic pop
 #endif
 
 class CollisionObjectWrapper : public btCollisionObject {
@@ -92,6 +95,40 @@ bool isIdentity(const OpenRAVE::Transform& T) {
 }
 
 
+void GetAverageSupport(const btConvexShape* shape, const btVector3& localNormal, float& outsupport, btVector3& outpt) {
+  btVector3 ptSum(0,0,0);
+  float ptCount = 0;
+  float maxSupport=-1000;
+  const float EPSILON = 1e-3;
+  const btPolyhedralConvexShape* pshape = dynamic_cast<const btPolyhedralConvexShape*>(shape);
+  if (pshape) {
+    int nPts = pshape->getNumVertices();
+
+    for (int i=0; i < nPts; ++i) {
+      btVector3 pt;
+      pshape->getVertex(i, pt);
+//      cout << "pt: " << pt << endl;
+      float sup  = pt.dot(localNormal);
+      if (sup > maxSupport + EPSILON) {
+        ptCount=1;
+        ptSum = pt;
+        maxSupport = sup;
+      }
+      else if (sup < maxSupport - EPSILON) {
+      }
+      else {
+        ptCount += 1;
+        ptSum += pt;
+      }
+    }
+    outsupport = maxSupport;
+    outpt = ptSum / ptCount;
+  }
+  else  {
+    outpt = shape->localGetSupportingVertexWithoutMargin(localNormal);
+    outsupport = localNormal.dot(outpt);
+  }
+}
 
 
 btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool useTrimesh, CollisionObjectWrapper* cow) {
@@ -117,7 +154,7 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
     // cylinder axis aligned to Y
   {
     float r = geom->GetCylinderRadius(), h = geom->GetCylinderHeight() / 2;
-    subshape = new btCylinderShapeZ(btVector3(r, r, h / 2));
+    subshape = new btCylinderShapeZ(btVector3(r, r, h));
     break;
   }
   case OpenRAVE::GT_TriMesh: {
@@ -851,13 +888,39 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
         btTransform tfWorld1 = m_cow->getWorldTransform() * shape->m_t01;
         btVector3 normalLocal0 = normalWorldFromCast * tfWorld0.getBasis();
         btVector3 normalLocal1 = normalWorldFromCast * tfWorld1.getBasis();
+
+        Collision& col = m_collisions.back();
+        const float SUPPORT_FUNC_TOLERANCE = .01 METERS;
+
+//        cout << normalWorldFromCast << endl;
+
+        if (castShapeIsFirst) {
+          swap(col.ptA, col.ptB);
+          swap(col.linkA, col.linkB);
+          col.normalB2A *= -1;
+        }
+
+#if 0
         btVector3 ptWorld0 = tfWorld0*shape->m_shape->localGetSupportingVertex(normalLocal0);
         btVector3 ptWorld1 = tfWorld1*shape->m_shape->localGetSupportingVertex(normalLocal1);
-        
-        Collision& col = m_collisions.back();
+#else
+        btVector3 ptLocal0;
+        float localsup0;
+        GetAverageSupport(shape->m_shape, normalLocal0, localsup0, ptLocal0);
+        btVector3 ptWorld0 = tfWorld0 * ptLocal0;
+        btVector3 ptLocal1;
+        float localsup1;
+        GetAverageSupport(shape->m_shape, normalLocal1, localsup1, ptLocal1);
+        btVector3 ptWorld1 = tfWorld1 * ptLocal1;
+
+
+
+#endif
         float sup0 = normalWorldFromCast.dot(ptWorld0);
         float sup1 = normalWorldFromCast.dot(ptWorld1);
-        const float SUPPORT_FUNC_TOLERANCE = .03 METERS;
+
+
+
         // TODO: this section is potentially problematic. think hard about the math
         if (sup0 - sup1 > SUPPORT_FUNC_TOLERANCE) {
           col.time = 0;
@@ -883,7 +946,7 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
             col.time = .5;
           }
           else {
-            col.time = l1c/(l0c + l1c);
+            col.time = l0c/(l0c + l1c); 
           }
 
         }
