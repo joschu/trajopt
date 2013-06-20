@@ -517,6 +517,7 @@ void BulletCollisionChecker::RemoveKinBody(const OR::KinBodyPtr& body) {
     }
   }
   trajopt::RemoveUserData(*body, "bt");
+  cout << "removed " << body->GetName() << endl;
 }
 
 template <typename T>
@@ -541,7 +542,15 @@ void SetDifferences(const vector<T>& A, const vector<T>& B, vector<T>& AMinusB, 
 void BulletCollisionChecker::AddAndRemoveBodies(const vector<KinBodyPtr>& curVec, const vector<KinBodyPtr>& prevVec, vector<KinBodyPtr>& toAdd) {
   vector<KinBodyPtr> toRemove;
   SetDifferences(curVec, prevVec, toAdd, toRemove);
+  cout << "current:  " << endl;
+  BOOST_FOREACH(const KinBodyPtr& body, curVec) cout << body->GetName() << ", ";
+  cout << endl;
+  cout << "prev: " << endl;
+  BOOST_FOREACH(const KinBodyPtr& body, prevVec) cout << body->GetName() << ", ";
+  cout << endl;
+
   BOOST_FOREACH(const KinBodyPtr& body, toAdd) {
+    cout << "adding " << body->GetName() << endl;
     assert(!trajopt::GetUserData(*body, "bt"));
     AddKinBody(body);
   }
@@ -567,9 +576,10 @@ void BulletCollisionChecker::UpdateAllowedCollisionMatrix() {
     const KinBody::Link* linkB = pair.second;
     const CollisionObjectWrapper* cowA = GetCow(linkA);
     const CollisionObjectWrapper* cowB = GetCow(linkB);
-    assert(cowA != NULL && cowB != NULL);
-    m_allowedCollisionMatrix(cowA->m_index, cowB->m_index) = 0;
-    m_allowedCollisionMatrix(cowB->m_index, cowA->m_index) = 0;
+    if (cowA != NULL && cowB != NULL) {
+        m_allowedCollisionMatrix(cowA->m_index, cowB->m_index) = 0;
+        m_allowedCollisionMatrix(cowB->m_index, cowA->m_index) = 0;
+    }
   }
 }
 
@@ -902,7 +912,7 @@ void BulletCollisionChecker::CheckShapeCast(btCollisionShape* shape, const btTra
     obj->m_index = cow->m_index;
     CastCollisionCollector cc(collisions, obj, this);
     cc.m_collisionFilterMask = KinBodyFilter;
-    // cc.m_collisionFilterGroup = cow->m_collisionFilterGroup;
+    cc.m_collisionFilterGroup = -1;//cow->m_collisionFilterGroup;
     world->contactTest(obj, cc);
     delete obj;
     delete shape;

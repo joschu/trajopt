@@ -121,6 +121,7 @@ void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool on
     assert(grabberLink);
     BOOST_FOREACH(const KinBody::LinkPtr& link, body->GetLinks()) {
       if (link->GetGeometries().size() > 0) {
+        std::cout << "Adding grabbed link" << link->GetName() << std::endl;
         links.push_back(link);
         link_inds.push_back(grabberLink->GetIndex());
       }
