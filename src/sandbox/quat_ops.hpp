@@ -47,7 +47,7 @@ inline Vector4d quatInv(const Vector4d& q) {
 }
 
 
-VectorXd quatRotate(const Vector4d& q, const Vector3d& p) {
+inline VectorXd quatRotate(const Vector4d& q, const Vector3d& p) {
   Vector4d pquat;
   pquat(0) = 0;
   pquat.bottomRows(3) = p;

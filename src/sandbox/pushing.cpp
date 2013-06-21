@@ -1,21 +1,26 @@
 #include <openrave-core.h>
 #include <openrave/openrave.h>
+#include <boost/assign.hpp>
 
 #include "trajopt/problem_description.hpp"
 #include "trajopt/kinematic_terms.hpp"
 #include "trajopt/rave_utils.hpp"
 #include "trajopt/utils.hpp"
+#include "trajopt/trajectory_costs.hpp"
 #include "utils/eigen_conversions.hpp"
 #include "sco/expr_op_overloads.hpp"
 #include "sco/optimizers.hpp"
 #include "quat_ops.hpp"
-#include <boost/assign.hpp>
 #include "dynamics_utils.hpp"
 #include "sco/modeling_utils.hpp"
 #include "osgviewer/osgviewer.hpp"
 #include "trajopt/collision_terms.hpp"
 #include "utils/stl_to_string.hpp"
 #include "utils/config.hpp"
+#include "o3.hpp"
+#include "static_object.hpp"
+#include "incremental_rb.hpp"
+#include "composite_config.hpp"
 using namespace boost::assign;
 using namespace OpenRAVE;
 using namespace trajopt;
@@ -32,35 +37,6 @@ bool idle = false;
 bool constrain_all_poses = true;
 
 
-
-class AngVelCost: public Cost {
-public:
-  AngVelCost(const MatrixXd& q, const VarArray& r, double coeff) :
-      q_(q), r_(r), coeff_(coeff) {
-  }
-  double value(const DblVec& x) {
-    MatrixXd rvals = getTraj(x, r_);
-    MatrixXd qnew(q_.rows(), q_.cols());
-    for (int i = 0; i < qnew.rows(); ++i) {
-      qnew.row(i) = quatMult(quatExp(rvals.row(i)), q_.row(i));
-    }
-    MatrixXd wvals = getW(qnew, 1);
-    return wvals.array().square().sum()*coeff_;
-  }
-  ConvexObjectivePtr convex(const DblVec& x, Model* model) {
-    ConvexObjectivePtr out(new ConvexObjective(model));
-    MatrixXd wvals = getW(q_, 1);
-    for (int i = 0; i < wvals.rows(); ++i) {
-      for (int j = 0; j < wvals.cols(); ++j) {
-        out->addQuadExpr(exprMult(exprSquare(r_(i + 1, j) - r_(i, j) + wvals(i, j)), coeff_));
-      }
-    }
-    return out;
-  }
-  const MatrixXd& q_;
-  VarArray r_;
-  double coeff_;
-};
 
 
 enum ContactType {
@@ -125,7 +101,7 @@ struct FaceContactErrorCalculator: public VectorOfVector {
     m_config->SetDOFValues(toDblVec(x.topRows(m_nDof)));
     OR::Vector ptWorldA, ptWorldB, nWorldA, nWorldB;
     CalcWorldPoints(x, ptWorldA, ptWorldB);
-     return toVector3d(ptWorldA - ptWorldB);
+     return 100*toVector3d(ptWorldA - ptWorldB);
 
   }
 
@@ -306,7 +282,7 @@ VectorXd SlidingFrictionErrorCalc::operator()(const VectorXd& x) const {
                            geometry::quatInverse(m_link->GetTransform().rot)), 
               (p1world - p0world));
   double normvel = sqrtf(localvel0.lengthsqr2());
-  double normf = sqrtf(ffrx*ffrx + ffry*ffry);
+  // double normf = sqrtf(ffrx*ffrx + ffry*ffry);
   Vector2d err;
   err(0) = normvel * ffrx + m_mu * fn * localvel0[0] ;
   err(1) = normvel * ffry + m_mu * fn * localvel0[1] ;
@@ -378,9 +354,9 @@ VarVector MechanicsProblem::GetDOFVars(KinBody::LinkPtr link, int timestep) {
 
 MechanicsProblem::MechanicsProblem(int nSteps, const vector<KinBodyPtr>& dynBodies, const vector<KinBodyPtr>& staticBodies, RobotAndDOFPtr robotConfig) :
     m_nSteps(nSteps),
+    m_robotConfig(robotConfig),
     m_dynBodies(dynBodies),
-    m_staticBodies(staticBodies),
-    m_robotConfig(robotConfig)
+    m_staticBodies(staticBodies)
 {
   m_dynObjConfigs.resize(m_nSteps, dynBodies.size());
   for (int iStep = 0; iStep  < m_nSteps; ++iStep) {
@@ -443,7 +419,7 @@ void MechanicsProblem::AddContacts(ContactType ctype, int iFirst, int iLast, con
       VarVector compositeDOFVars1 = concat(GetDOFVars(faceA.link, iStep+1), GetDOFVars(faceB.link, iStep+1));
       VarVector vars = concat(compositeDOFVars0, compositeDOFVars1, ptAVars.row(iStep), ffrVars.row(iStep), fnVars.row(iStep));
       VectorOfVectorPtr f(new SlidingFrictionErrorCalc(GetConfig(faceA.link, iStep), mu, faceA));
-      addConstraint(ConstraintPtr(new ConstraintFromFunc(f, vars, INEQ, "slipfric")));
+      addConstraint(ConstraintPtr(new ConstraintFromFunc(f, vars, VectorXd::Ones(2), INEQ, "slipfric")));
     }    
   }
 
@@ -521,7 +497,7 @@ void MechanicsProblem::AddMotionCosts(float jointvel_coeff, float obj_linvel_coe
   for (int i=0; i < m_dynBodies.size(); ++i) {
     // xxx if this is the only usage of m_obj2r, then don't make it
     if (obj_linvel_coeff > 0) addCost(CostPtr(new JointVelCost(m_obj2posvars[i].block(0,0,m_nSteps,3), obj_linvel_coeff*VectorXd::Ones(3) )));
-    if (obj_angvel_coeff > 0) addCost(CostPtr(new AngVelCost(m_obj2q[i], m_obj2r[i], obj_angvel_coeff )));
+    if (obj_angvel_coeff > 0) addCost(CostPtr(new AngVelCost(m_dynObjConfigs.col(i), m_obj2r[i], obj_angvel_coeff )));
   }
 
 }
@@ -761,7 +737,7 @@ Face GetFace(KinBody::LinkPtr link, const OR::Vector& dir) {
   OR::Vector extents = bb.extents;
   double lens[2];
   int i=-1;
-  int sgn;
+  int sgn=0;
   for (int j=0; j < 3; ++j) if (fabs(dir[j]) > 1e-5) {
     i = j;
     sgn = dir[j];
@@ -789,13 +765,13 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
   KinBodyPtr table = GetBodyByName(*env, "table");
   assert(robot && box && table);
 
-  int nSteps = 10;
+  int nSteps = 3;
 
   RobotAndDOFPtr robotConfig(new RobotAndDOF(robot, GetManipulatorByName(*robot,"rightarm")->GetArmIndices()));
 
 
-  Face finger0 = GetFace(robot->GetLink("r_gripper_l_finger_link"), OR::Vector(0,1,0));
-  Face finger1 = GetFace(robot->GetLink("r_gripper_r_finger_link"), OR::Vector(0,1,0));
+  Face finger0 = GetFace(robot->GetLink("r_gripper_l_finger_link"), OR::Vector(0,0,1));
+  Face finger1 = GetFace(robot->GetLink("r_gripper_r_finger_link"), OR::Vector(0,0,1));
     
   Face boxfront = GetFace(box->GetLinks()[0], OR::Vector(-1,0,0));
   Face boxbottom = GetFace(box->GetLinks()[0], OR::Vector(0,0,-1));
@@ -818,6 +794,12 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
   startPt.topRows(3) = toVector3d(box->GetTransform().trans);
   VectorXd endPt = startPt;
   endPt[0] += .1;
+
+  DblVec dofvals = robotConfig->GetDOFValues();
+  for (int j=0; j < robotConfig->GetDOF(); ++j) {
+    setVec(xinit, prob->m_th.col(j), VectorXd::Ones(nSteps)*dofvals[j]);    
+  }
+  
 
   VarArray& posvars = prob->m_obj2posvars[0];
   for (int i=0; i < nSteps; ++i) {

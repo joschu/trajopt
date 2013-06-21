@@ -1,4 +1,4 @@
-#include "trajopt/configuration.hpp"
+#include "trajopt/configuration_space.hpp"
 
 namespace trajopt {
 
@@ -40,6 +40,7 @@ struct StaticObject: public Configuration {
   virtual DblVec RandomDOFValues() {
     return toDblVec(VectorXd::Random(0));
   }
+  virtual vector<OpenRAVE::KinBodyPtr> GetBodies() {return vector<OpenRAVE::KinBodyPtr>(1, m_body);}
 };
 typedef boost::shared_ptr<StaticObject> StaticObjectPtr;
 

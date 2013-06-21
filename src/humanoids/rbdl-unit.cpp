@@ -52,12 +52,6 @@ DblVec toRaveOrder(const VectorXd& x) {
   return toDblVec(y);
 }
 
-VectorXd concat(const VectorXd& a, const VectorXd& b) {
-  VectorXd out(a.size()+b.size());
-  out.topRows(a.size()) = a;
-  out.middleRows(a.size(), b.size()) = b;
-  return out;
-}
 
 #define EXPECT_MATRIX_NEAR(_mat0, _mat1, abstol) do {\
     Eigen::MatrixXd mat0=_mat0, mat1=_mat1;\

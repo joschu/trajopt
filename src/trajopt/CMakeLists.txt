@@ -6,7 +6,10 @@ include_directories(
   ${OpenRAVE_INCLUDE_DIRS}
   ${JSON_INCLUDE_DIRS}
 )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+
+if (NOT APPLE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+endif()
 
 add_library(trajopt
 	traj_plotter.cpp
