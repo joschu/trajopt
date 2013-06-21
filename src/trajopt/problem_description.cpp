@@ -291,7 +291,7 @@ TrajOptProb::TrajOptProb(int n_steps, ConfigurationPtr rad) : m_rad(rad) {
   int n_dof = m_rad->GetDOF();
   // put optimization joint limits a little inside robot joint limits
   // so numerical derivs work
-  #if __OPENRAVE_VERSION_MINOR__ > 8
+  #if OPENRAVE_VERSION_MINOR <= 8
   for (int i=0; i < n_dof; ++i) lower[i] += 1e-4;
   for (int i=0; i < n_dof; ++i) upper[i] -= 1e-4;
   #endif

@@ -135,7 +135,7 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
 
   btCollisionShape* subshape=0;
 
-#if __OPENRAVE_VERSION_MINOR__ <= 8
+#if OPENRAVE_VERSION_MINOR <= 8
     #define GT_Box KinBody::Link::GEOMPROPERTIES::GeomBox 
     #define GT_Sphere KinBody::Link::GEOMPROPERTIES::GeomSphere 
     #define GT_Cylinder KinBody::Link::GEOMPROPERTIES::GeomCylinder 

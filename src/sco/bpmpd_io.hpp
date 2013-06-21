@@ -5,6 +5,7 @@ using std::vector;
 #include <iostream>
 #include <assert.h>
 #include <stdlib.h>
+#include <unistd.h>
 using namespace std;
 
 namespace bpmpd_io {
@@ -14,6 +15,7 @@ enum SerMode {
   SER
 };
 
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 
 template <typename T>
@@ -131,5 +133,9 @@ void ser(int fp, bpmpd_output & bo, SerMode mode)
 
 
 }
+
+
+#pragma GCC diagnostic pop
+
 
 }

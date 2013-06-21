@@ -1,6 +1,10 @@
 Critical
 =========
 
+documentation on colllision costs, stationary initialization
+
+warning on unused arguments
+
 unit test collision constraint
 setcontactdistance screws you up if you have multiple collision cost groups
 try self-collisions in continuous collision cost

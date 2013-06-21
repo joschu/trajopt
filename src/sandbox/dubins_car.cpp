@@ -76,7 +76,6 @@ int main(int argc, char** argv)
   RobotBasePtr robot = GetRobot(*env);
   RobotAndDOFPtr rad(new RobotAndDOF(robot, vector<int>(), 11, OR::Vector(0,0,1)));
 
-
 //  viewer->SetAllTransparency(.3);
 
   int n_dof = 3;
@@ -91,6 +90,17 @@ int main(int argc, char** argv)
     start = Vector3d(-2.5,0,0);
     goal = Vector3d(6.5,0,-M_PI);
     n_steps = 55;
+    vector<KinBodyPtr> bodies; env->GetBodies(bodies);
+//    for (int i=0; i < bodies.size(); ++i) if (bodies[i]->GetName() == "obstacle") viewer->SetTransparency(bodies[i], .5);
+        for (int i=0; i < bodies.size(); ++i) if (bodies[i]->GetName() == "ground") CollisionChecker::GetOrCreate(*env)->ExcludeCollisionPair(*bodies[i]->GetLinks()[0], *robot->GetLinks()[0]);
+    vector<GraphHandlePtr> handles;
+    rad->SetDOFValues(toDblVec(start));
+    handles.push_back(viewer->PlotKinBody(robot));
+    rad->SetDOFValues(toDblVec(goal));
+    handles.push_back(viewer->PlotKinBody(robot));
+    Vector3d away(100,100,100);
+    rad->SetDOFValues(toDblVec(away));
+    viewer->Idle();
   }
   else {
     throw runtime_error("asdf");

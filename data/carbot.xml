@@ -9,11 +9,9 @@
  
     <Geom type="box">
       <Extents>.5 .25 .25</Extents>
+			<render>/home/joschu/Downloads/L200-VRML/L200-VRML2.wrl</render>
    	</Geom>
-    <Geom type="sphere">
-      <radius>.25</radius>
-      <translation>.5</translation>
-   	</Geom>
+
  </Body>
 </KinBody>
 </Robot>

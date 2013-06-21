@@ -14,7 +14,6 @@
 #include <boost/foreach.hpp>
 #include <boost/assign.hpp>
 #include "utils/config.hpp"
-#include "trajopt/plot_callback.hpp"
 #include "trajopt_test_utils.hpp"
 using namespace trajopt;
 using namespace std;
@@ -89,7 +88,7 @@ TEST_F(PlanningTest, numerical_ik1) {
   double tStart = GetClock();
   opt.optimize();
   RAVELOG_INFO("planning time: %.3f\n", GetClock()-tStart);
-  if (plotting) PlotCallback(*prob)(NULL, opt.x());
+
 }
 
 TEST_F(PlanningTest, arm_around_table) {
@@ -106,7 +105,12 @@ TEST_F(PlanningTest, arm_around_table) {
 
 
   BasicTrustRegionSQP opt(prob);
-  if (plotting) opt.addCallback(PlotCallback(*prob));
+  TrajPlotter plotter(env, pci.rad, prob->GetVars());
+  if (plotting) {
+    plotter.Add(prob->getCosts());
+    if (plotting) opt.addCallback(boost::bind(&TrajPlotter::OptimizerCallback, boost::ref(plotter), _1, _2));
+    plotter.AddLink(pr2->GetLink("r_gripper_tool_frame"));
+  }
   opt.initialize(trajToDblVec(prob->GetInitTraj()));
   double tStart = GetClock();
   opt.optimize();
@@ -117,7 +121,6 @@ TEST_F(PlanningTest, arm_around_table) {
   RAVELOG_INFO("number of continuous collisions: %i\n", collisions.size());
   ASSERT_EQ(collisions.size(), 0);
 
-  if (plotting) PlotCallback(*prob)(NULL, opt.x());
 
 }
 

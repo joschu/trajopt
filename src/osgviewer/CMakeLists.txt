@@ -14,8 +14,13 @@ include_directories(
   ${OpenRAVE_INCLUDE_DIRS}
   ${OSG_INCLUDE_DIRS}
 )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations -fvisibility=hidden")
 
+if (APPLE) 
+# see http://forum.openscenegraph.org/viewtopic.php?t=11097
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+else()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations -fvisibility=hidden")
+endif()
 
                     
 add_library(osgviewer
