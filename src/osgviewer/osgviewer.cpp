@@ -1,3 +1,4 @@
+#include "osgviewer.hpp"
 #include <boost/foreach.hpp>
 #include <osg/MatrixTransform>
 #include <osg/ShapeDrawable>
@@ -13,9 +14,9 @@
 #include <osg/BlendFunc>
 #include <osg/io_utils>
 #include <iostream>
+#include <osgDB/ReadFile>
 #include "utils/logging.hpp"
 #include "openrave_userdata_utils.hpp"
-#include "osgviewer.hpp"
 
 using namespace osg;
 using namespace OpenRAVE;
@@ -64,7 +65,9 @@ osg::Drawable* toOsgDrawable(const KinBody::Link::TRIMESH& mesh) {
   return geom;
 }
 
-Node* osgNodeFromGeom(const KinBody::Link::Geometry& geom) {
+osg::Node* osgNodeFromGeom(const KinBody::Link::Geometry& geom) {
+
+
   osg::Geode* geode = new osg::Geode;
 
   switch(geom.GetType()) {
@@ -124,7 +127,24 @@ Node* osgNodeFromGeom(const KinBody::Link::Geometry& geom) {
   osgUtil::SmoothingVisitor sv;
   geode->accept(sv);
 
-  return geode;
+  if (!geom.GetRenderFilename().empty()) {
+    osg::Node* node = osgDB::readNodeFile(geom.GetRenderFilename());
+    if (!node) LOG_ERROR("failed to load graphics mesh %s", geom.GetRenderFilename().c_str());
+#if 0 // show both Graphics AND collision geom
+    osg::Group* group = new osg::Group;
+    group->addChild(node);
+    group->addChild(geode);
+    return group;
+#else
+    return node;
+#endif
+  }
+  else {
+    return geode;
+  }
+
+
+
 }
 MatrixTransform* osgNodeFromLink(const KinBody::Link& link) {
   /* each geom is a child */

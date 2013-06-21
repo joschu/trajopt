@@ -2,12 +2,14 @@
 #include <boost/foreach.hpp>
 #include "osgviewer/osgviewer.hpp"
 #include "utils/eigen_conversions.hpp"
+#include <iostream>
 using namespace OpenRAVE;
+using namespace std;
 
 namespace trajopt {
 
 TrajPlotter::TrajPlotter(OR::EnvironmentBasePtr env, ConfigurationPtr config, const VarArray& trajvars)
-  : m_env(env), m_config(config), m_trajvars(trajvars)
+  : m_env(env), m_config(config), m_trajvars(trajvars), m_decimation(1)
 {
 }
 
@@ -47,9 +49,11 @@ void TrajPlotter::OptimizerCallback(OptProb*, DblVec& x) {
   vector<Eigen::MatrixXf> linktrajs(m_links.size(), Eigen::MatrixXf(traj.rows(),3));
   for (int i=0; i < traj.rows(); ++i) {
     m_config->SetDOFValues(toDblVec(traj.row(i)));
-    BOOST_FOREACH(const KinBodyPtr& body, bodies) {
-      handles.push_back(viewer->PlotKinBody(body));
-      SetTransparency(handles.back(), .35);
+    if (i % m_decimation == 0) {
+      BOOST_FOREACH(const KinBodyPtr& body, bodies) {
+        handles.push_back(viewer->PlotKinBody(body));
+        SetTransparency(handles.back(), .35);
+      }
     }
     int iLink=0;
     BOOST_FOREACH(const KinBody::LinkPtr& link, m_links) {

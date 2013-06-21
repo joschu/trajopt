@@ -17,8 +17,8 @@
     "name" : "cc",
     "params" : {
       "continuous":true,
-      "coeffs" : [1],
-      "dist_pen" : [0.01]
+      "coeffs" : [10],
+      "dist_pen" : [0.2]
     }
   }
   ],
