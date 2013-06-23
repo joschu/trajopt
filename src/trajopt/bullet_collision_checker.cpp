@@ -523,9 +523,9 @@ void BulletCollisionChecker::AddKinBody(const OR::KinBodyPtr& body) {
   int filterGroup = body->IsRobot() ? RobotFilter : KinBodyFilter;
   const vector<OR::KinBody::LinkPtr> links = body->GetLinks();
 
-  SetUserData(*body, "bt", cd);
+  trajopt::SetUserData(*body, "bt", cd);
   
-  bool useTrimesh = GetUserData(*body, "bt_use_trimesh");
+  bool useTrimesh = trajopt::GetUserData(*body, "bt_use_trimesh");
   BOOST_FOREACH(const OR::KinBody::LinkPtr& link, links) {
     if (link->GetGeometries().size() > 0) {
       COWPtr new_cow = CollisionObjectFromLink(link, useTrimesh); 
@@ -553,7 +553,8 @@ void BulletCollisionChecker::RemoveKinBody(const OR::KinBodyPtr& body) {
       m_link2cow.erase(link.get());      
     }
   }
-  RemoveUserData(*body, "bt");
+  trajopt::RemoveUserData(*body, "bt");
+  cout << "removed " << body->GetName() << endl;
 }
 
 template <typename T>
@@ -578,8 +579,16 @@ void SetDifferences(const vector<T>& A, const vector<T>& B, vector<T>& AMinusB, 
 void BulletCollisionChecker::AddAndRemoveBodies(const vector<KinBodyPtr>& curVec, const vector<KinBodyPtr>& prevVec, vector<KinBodyPtr>& toAdd) {
   vector<KinBodyPtr> toRemove;
   SetDifferences(curVec, prevVec, toAdd, toRemove);
+  cout << "current:  " << endl;
+  BOOST_FOREACH(const KinBodyPtr& body, curVec) cout << body->GetName() << ", ";
+  cout << endl;
+  cout << "prev: " << endl;
+  BOOST_FOREACH(const KinBodyPtr& body, prevVec) cout << body->GetName() << ", ";
+  cout << endl;
+
   BOOST_FOREACH(const KinBodyPtr& body, toAdd) {
-    assert(!GetUserData(*body, "bt"));
+    cout << "adding " << body->GetName() << endl;
+    assert(!trajopt::GetUserData(*body, "bt"));
     AddKinBody(body);
   }
   BOOST_FOREACH(const KinBodyPtr& body, toRemove) {
@@ -604,9 +613,10 @@ void BulletCollisionChecker::UpdateAllowedCollisionMatrix() {
     const KinBody::Link* linkB = pair.second;
     const CollisionObjectWrapper* cowA = GetCow(linkA);
     const CollisionObjectWrapper* cowB = GetCow(linkB);
-    assert(cowA != NULL && cowB != NULL);
-    m_allowedCollisionMatrix(cowA->m_index, cowB->m_index) = 0;
-    m_allowedCollisionMatrix(cowB->m_index, cowA->m_index) = 0;
+    if (cowA != NULL && cowB != NULL) {
+        m_allowedCollisionMatrix(cowA->m_index, cowB->m_index) = 0;
+        m_allowedCollisionMatrix(cowB->m_index, cowA->m_index) = 0;
+    }
   }
 }
 
@@ -965,7 +975,7 @@ void BulletCollisionChecker::CheckShapeCast(btCollisionShape* shape, const btTra
     obj->m_index = cow->m_index;
     CastCollisionCollector cc(collisions, obj, this);
     cc.m_collisionFilterMask = KinBodyFilter;
-    // cc.m_collisionFilterGroup = cow->m_collisionFilterGroup;
+    cc.m_collisionFilterGroup = -1;//cow->m_collisionFilterGroup;
     world->contactTest(obj, cc);
     delete obj;
     delete shape;
