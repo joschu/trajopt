@@ -17,7 +17,7 @@
 #include "pcl/impl/instantiate.hpp"
 #include <boost/filesystem.hpp>
 #include <pcl/features/integral_image_normal.h>
-#if 0
+#if PCL_MINOR_VERSION > 1.6
 #include <pcl/filters/median_filter.h>
 #include <pcl/filters/fast_bilateral.h>
 #endif
@@ -302,7 +302,7 @@ typename pcl::PointCloud<T>::Ptr medianFilter(typename pcl::PointCloud<T>::Const
 
 template <class T>
 typename pcl::PointCloud<T>::Ptr fastBilateralFilter(typename pcl::PointCloud<T>::ConstPtr in, float sigmaS, float sigmaR) {
-#if 0
+#if PCL_MINOR_VERSION > 6
   pcl::FastBilateralFilter<T> mf;
   mf.setSigmaS(sigmaS);
   mf.setSigmaR(sigmaR);

@@ -11,7 +11,7 @@ import json
 import trajoptpy.make_kinbodies as mk
 from trajoptpy.check_traj import traj_is_safe
 
-raise Exception("this example was recently made non-functional by a recent code change for openrave 0.8 compatibility. you can check out revision fc7f9d8a839ceb627fae53847627a961c48ad08c")
+# raise Exception("this example was recently made non-functional by a recent code change for openrave 0.8 compatibility. you can check out revision fc7f9d8a839ceb627fae53847627a961c48ad08c")
 
 def remove_floor(cloud):
     notfloor = get_xyz_world_frame(cloud)[:,2] > .1
@@ -32,7 +32,6 @@ def get_xyz_world_frame(cloud):
     xyz1[:,3] = 1
     return xyz1.dot(T_w_k.T)[:,:3]
 
-
 cloud_orig = cloudprocpy.readPCDXYZ(osp.join(trajoptpy.bigdata_dir,args.scene_name,"cloud.pcd"))
 dof_vals = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "dof_vals.txt"))
 T_w_k = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_name, "kinect_frame.txt"))
@@ -41,10 +40,20 @@ qw,qx,qy,qz,px,py,pz = np.loadtxt(osp.join(trajoptpy.bigdata_dir, args.scene_nam
 env = openravepy.Environment()
 env.StopSimulation()
 env.Load("robots/pr2-beta-static.zae")
+
 robot = env.GetRobots()[0]
 robot.SetDOFValues(dof_vals)
 
 viewer = trajoptpy.GetViewer(env)
+
+cloud_orig_colored = cloudprocpy.readPCDXYZRGB(osp.join(trajoptpy.bigdata_dir,args.scene_name,"cloud.pcd"))
+rgbfloats = cloud_orig_colored.to2dArray()[:,4]
+rgb0 = np.ndarray(buffer=rgbfloats.copy(),shape=(480*640,4),dtype='uint8')
+xyz=get_xyz_world_frame(cloud_orig)
+goodinds = np.isfinite(xyz[:,0])
+cloud_handle = env.plot3(xyz[goodinds,:], 2,(rgb0[goodinds,:3][:,::-1])/255. )
+viewer.Idle()
+del cloud_handle
 
 handles = []
 
@@ -137,7 +146,7 @@ robot.SetActiveDOFs(np.r_[robot.GetManipulator("rightarm").GetArmIndices(),
                           robot.GetJoint("torso_lift_joint").GetDOFIndex()], 
                     openravepy.DOFAffine.X + openravepy.DOFAffine.Y + openravepy.DOFAffine.RotationAxis, [0,0,1])
     
-request = full_body_drive_and_reach(robot, "r_gripper_tool_frame", (px,py,pz), (qw,qx,qy,qz))
+request = full_body_drive_and_reach("r_gripper_tool_frame", (px,py,pz), (qw,qx,qy,qz))
 s = json.dumps(request)
 trajoptpy.SetInteractive(args.interactive)
 prob = trajoptpy.ConstructProblem(s, env)
