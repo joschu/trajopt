@@ -13,7 +13,7 @@ if (APPLE)
 	include_directories("/usr/local/Cellar/vtk/5.10.0/include/vtk-5.10")
 endif()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -Wno-deprecated")
 
 
 # add_custom_command(

@@ -196,6 +196,7 @@ BOOST_PYTHON_MODULE(cloudprocpy) {
   boost_register_cloud_type<Normal>("CloudN");
 
   py::def("readPCDXYZ", &readPCD<PointXYZ>);
+  py::def("readPCDXYZRGB", &readPCD<PointXYZRGB>);
   py::def("downsampleCloud", &downsampleCloud<PointXYZ>);
   py::def("boxFilter", &boxFilter<PointXYZ>);
   py::def("boxFilterNegative", &boxFilterNegative<PointXYZ>);

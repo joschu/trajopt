@@ -50,7 +50,7 @@ doxygen:
 	doxygen Doxyfile
 
 upload:
-	rsync -azvu --delete  ./ pabbeel@rll.berkeley.edu:/var/www/trajopt/doc/
+	rsync -azvu --delete --progress  ./ pabbeel@rll.berkeley.edu:/var/www/trajopt/doc/
 
 rsspaper: $(RSSPAPERLOCAL)
 
