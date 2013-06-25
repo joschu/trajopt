@@ -604,7 +604,6 @@ void BulletCollisionChecker::UpdateAllowedCollisionMatrix() {
     const KinBody::Link* linkB = pair.second;
     const CollisionObjectWrapper* cowA = GetCow(linkA);
     const CollisionObjectWrapper* cowB = GetCow(linkB);
-    assert(cowA != NULL && cowB != NULL);
     if (cowA != NULL && cowB != NULL) {
       m_allowedCollisionMatrix(cowA->m_index, cowB->m_index) = 0;
       m_allowedCollisionMatrix(cowB->m_index, cowA->m_index) = 0;
