@@ -17,7 +17,7 @@
 #include "pcl/impl/instantiate.hpp"
 #include <boost/filesystem.hpp>
 #include <pcl/features/integral_image_normal.h>
-#if PCL_MINOR_VERSION > 1.6
+#if PCL_MINOR_VERSION > 6
 #include <pcl/filters/median_filter.h>
 #include <pcl/filters/fast_bilateral.h>
 #endif
@@ -287,7 +287,7 @@ typename pcl::PointCloud<T>::Ptr maskFilter(typename pcl::PointCloud<T>::ConstPt
 
 template <class T>
 typename pcl::PointCloud<T>::Ptr medianFilter(typename pcl::PointCloud<T>::ConstPtr in, int windowSize, float maxAllowedMovement) {
-#if 0
+#if PCL_MINOR_VERSION > 6
   pcl::MedianFilter<T> mf;
   mf.setWindowSize(windowSize);
   mf.setMaxAllowedMovement(maxAllowedMovement);
