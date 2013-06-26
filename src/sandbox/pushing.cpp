@@ -22,6 +22,7 @@
 #include "incremental_rb.hpp"
 #include "utils/logging.hpp"
 #include "composite_config.hpp"
+#include "sco/expr_ops.hpp"
 using namespace boost::assign;
 using namespace OpenRAVE;
 using namespace trajopt;
@@ -178,12 +179,12 @@ AffExprVector ForceBalanceConstraint::CalcWrenchExpr(const DblVec& x, Contact& c
   AffExprVector rExprLink = transformExpr(Tlf, rExprFace);  
 
   AffExprVector tExprLink = linearizedCrossProduct(x, rExprLink, fExprLink);
-  cout << c.m_faceA.link->GetName() << c.m_faceB.link->GetName() << endl;
-  cout << "rexprlink" << rExprLink[0].value(x) << " " << rExprLink[1].value(x)<< " "<<rExprLink[2].value(x)<< endl;
-  cout << "rexprface" << rExprFace[0].value(x) << " " << rExprFace[1].value(x)<< " "<<rExprFace[2].value(x)<< endl;
-  cout << "fexprlink" << fExprLink[0].value(x) << " " << fExprLink[1].value(x)<< " "<<fExprLink[2].value(x)<< endl;
-  cout << "fexprface" << fExprFace[0].value(x) << " " << fExprFace[1].value(x)<< " "<<fExprFace[2].value(x)<< endl;
-  cout << "Tlf" << c.m_faceA.Tlf << endl;
+  // cout << c.m_faceA.link->GetName() << c.m_faceB.link->GetName() << endl;
+  // cout << "rexprlink" << rExprLink[0].value(x) << " " << rExprLink[1].value(x)<< " "<<rExprLink[2].value(x)<< endl;
+  // cout << "rexprface" << rExprFace[0].value(x) << " " << rExprFace[1].value(x)<< " "<<rExprFace[2].value(x)<< endl;
+  // cout << "fexprlink" << fExprLink[0].value(x) << " " << fExprLink[1].value(x)<< " "<<fExprLink[2].value(x)<< endl;
+  // cout << "fexprface" << fExprFace[0].value(x) << " " << fExprFace[1].value(x)<< " "<<fExprFace[2].value(x)<< endl;
+  // cout << "Tlf" << c.m_faceA.Tlf << endl;
 
   return concat(fExprLink, tExprLink);
 }
@@ -283,7 +284,7 @@ VectorXd SlidingFrictionErrorCalc::operator()(const VectorXd& x) const {
   OR::Vector p1world = m_link->GetTransform().trans;
   m_config->SetDOFValues(toDblVec(x.topRows(m_nDof)));
   OR::Vector p0world = m_link->GetTransform().trans;
-  // cout << p1world << " | " <<  p0world << endl;
+  // pppp << p1world << " | " <<  p0world << endl;
   OR::Vector localvel0 = geometry::quatRotate(
     geometry::quatMultiply(geometry::quatInverse(m_face.Tlf.rot), 
                            geometry::quatInverse(m_link->GetTransform().rot)), 
@@ -296,7 +297,17 @@ VectorXd SlidingFrictionErrorCalc::operator()(const VectorXd& x) const {
   return err;  
 }
 
-
+struct QuadraticCost : public Cost {
+  QuadExpr m_expr;
+  QuadraticCost(const QuadExpr& expr) : m_expr(expr) {}
+  double value(const DblVec& x) {return m_expr.value(x);}
+  ConvexObjectivePtr convex(const DblVec& x, Model* model)  {
+    ConvexObjectivePtr out(new ConvexObjective(model));
+    exprInc(out->quad_, m_expr);
+    return out;
+  }
+  
+};
 
 struct MechanicsProblem: public OptProb {
   int m_nSteps;
@@ -434,8 +445,9 @@ void MechanicsProblem::AddContacts(ContactType ctype, int iFirst, int iLast, con
     }    
   }
 
-  
-  
+  QuadExpr forcesquared;
+  for (int i=0; i < fnVars.size(); ++i) exprInc(forcesquared, exprSquare(fnVars.m_data[i]));
+  addCost(CostPtr(new QuadraticCost(exprMult(forcesquared,.1))));
 }
 
 
@@ -648,7 +660,7 @@ void MechanicsProblem::Callback(const DblVec& x) {
 
   BOOST_FOREACH(const ConstraintPtr& cnt, getConstraints()) {
     if (cnt->name()=="slipfric") {
-      cout << "slipfric val: " << CSTR(cnt->value(x)) << endl;
+      // cout << "slipfric val: " << CSTR(cnt->value(x)) << endl;
     }
   }
 
@@ -808,8 +820,8 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
   robot->Grab(fingerbox1, fingerlink1);    
   
   
-  Face finger0 = GetFace(fingerbox0->GetLinks()[0], OR::Vector(0,0,1));
-  Face finger1 = GetFace(fingerbox1->GetLinks()[0], OR::Vector(0,0,1));
+  Face finger0 = GetFace(fingerbox0->GetLinks()[0], OR::Vector(1,0,0));
+  Face finger1 = GetFace(fingerbox1->GetLinks()[0], OR::Vector(1,0,0));
   // finger0.poly /= 2;
   // finger1.poly /= 2;
     
@@ -828,7 +840,7 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
   prob->AddContacts(SLIDING, 0, nSteps-1, boxbottom, tabletop);
   prob->AddDynamicsConstraints();
   prob->AddMotionCosts(10,10,10);
-   prob->AddCollisionCosts(1);
+   prob->AddCollisionCosts(200);
   BasicTrustRegionSQP opt(prob);
 
   xinit = DblVec(prob->getNumVars(), 0);
@@ -856,6 +868,94 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
   }
   
 }
+
+void SetupPR2Lift(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& prob, DblVec& xinit) {
+
+
+  env->Load(string(DATA_DIR) + "/pr2_lifting.env.xml");
+
+  RobotBasePtr robot = GetRobotByName(*env, "pr2");  
+  
+  KinBodyPtr box = GetBodyByName(*env, "box");
+  KinBodyPtr table = GetBodyByName(*env, "table");
+  assert(robot && box && table);
+  
+  vector<int> arminds = concat( GetManipulatorByName(*robot,"rightarm")->GetArmIndices(),
+                                GetManipulatorByName(*robot,"leftarm")->GetArmIndices());
+
+  RobotAndDOFPtr robotConfig(new RobotAndDOF(robot, arminds));
+
+  KinBody::LinkPtr rfingerlink0 = robot->GetLink("r_gripper_l_finger_tip_link");
+  KinBody::LinkPtr rfingerlink1 = robot->GetLink("r_gripper_r_finger_tip_link");
+  KinBody::LinkPtr lfingerlink0 = robot->GetLink("l_gripper_l_finger_tip_link");
+  KinBody::LinkPtr lfingerlink1 = robot->GetLink("l_gripper_r_finger_tip_link");
+  
+  KinBodyPtr rfingerbox0 = GetBodyByName(*env, "rfingerbox0");
+  KinBodyPtr rfingerbox1 = GetBodyByName(*env, "rfingerbox1");
+  KinBodyPtr lfingerbox0 = GetBodyByName(*env, "lfingerbox0");
+  KinBodyPtr lfingerbox1 = GetBodyByName(*env, "lfingerbox1");
+  
+  rfingerbox0->SetTransform(rfingerlink0->GetTransform());
+  rfingerbox1->SetTransform(rfingerlink1->GetTransform());
+  robot->Grab(rfingerbox0, rfingerlink0);
+  robot->Grab(rfingerbox1, rfingerlink1);    
+
+  lfingerbox0->SetTransform(lfingerlink0->GetTransform());
+  lfingerbox1->SetTransform(lfingerlink1->GetTransform());
+  robot->Grab(lfingerbox0, lfingerlink0);
+  robot->Grab(lfingerbox1, lfingerlink1);    
+  
+  
+  Face rfinger0 = GetFace(rfingerbox0->GetLinks()[0], OR::Vector(1,0,0));
+  Face rfinger1 = GetFace(rfingerbox1->GetLinks()[0], OR::Vector(1,0,0));
+  Face lfinger0 = GetFace(lfingerbox0->GetLinks()[0], OR::Vector(1,0,0));
+  Face lfinger1 = GetFace(lfingerbox1->GetLinks()[0], OR::Vector(1,0,0));
+  // finger0.poly /= 2;
+  // finger1.poly /= 2;
+    
+  Face boxleft = GetFace(box->GetLinks()[0], OR::Vector(0,1,0));
+  Face boxright = GetFace(box->GetLinks()[0], OR::Vector(0,-1,0));
+
+  vector<KinBodyPtr> staticBodies = list_of(table), dynamicBodies = list_of(box);
+
+  prob.reset(new MechanicsProblem(nSteps, dynamicBodies, staticBodies, robotConfig));
+
+  prob->AddContacts(STICKING, 0, nSteps-1, boxleft, lfinger0);
+  prob->AddContacts(STICKING, 0, nSteps-1, boxleft, lfinger1);
+  prob->AddContacts(STICKING, 0, nSteps-1, boxright, rfinger0);
+  prob->AddContacts(STICKING, 0, nSteps-1, boxright, rfinger1);
+  prob->AddDynamicsConstraints();
+  prob->AddMotionCosts(10,10,10);
+   prob->AddCollisionCosts(200);
+  BasicTrustRegionSQP opt(prob);
+
+  xinit = DblVec(prob->getNumVars(), 0);
+  VectorXd startPt = VectorXd::Zero(6);
+  startPt.topRows(3) = toVector3d(box->GetTransform().trans);
+  VectorXd endPt = startPt;
+  endPt[2] += .1;
+
+  cout << "box start: " << startPt.transpose() << endl;
+  cout << "table transform" << table->GetLinks()[0]->GetTransform() << endl;
+
+  DblVec dofvals = robotConfig->GetDOFValues();
+  for (int j=0; j < robotConfig->GetDOF(); ++j) {
+    setVec(xinit, prob->m_th.col(j), VectorXd::Ones(nSteps)*dofvals[j]);    
+  }
+  
+
+  VarArray& posvars = prob->m_obj2posvars[0];
+  for (int i=0; i < nSteps; ++i) {
+    for (int j=0; j < 6; ++j) {
+      double ptarg = (startPt(j) * (nSteps-1-i) + endPt(j) * i) / (nSteps-1);
+      xinit[posvars(i,j).var_rep->index] = ptarg;
+      if (constrain_all_poses || (i==0) || (i==nSteps-1)) prob->addLinearConstraint(exprSub(AffExpr(posvars(i, j)), ptarg), EQ);
+    }
+  }
+  
+}
+
+
 
 #if 0
 void SetupPR2Pickup(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& prob, DblVec& xinit) {
@@ -938,7 +1038,7 @@ Then a later generation will accommodate non-faces
 
 int main(int argc, char** argv) {
 
-  vector<string> validProblems; validProblems += "3linkpush", "pr2push";
+  vector<string> validProblems; validProblems += "3linkpush", "pr2push", "pr2lift";
   string problem = validProblems[0];
   
   Config config;
@@ -968,6 +1068,9 @@ int main(int argc, char** argv) {
   }
   else if (problem == "pr2push") {
     SetupPR2Push(env, prob, xinit);
+  }
+  else if (problem == "pr2lift") {
+    SetupPR2Lift(env, prob, xinit);
   }
   
   OSGViewerPtr viewer(new OSGViewer(env));
