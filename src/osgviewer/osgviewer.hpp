@@ -41,6 +41,7 @@ public:
   OpenRAVE::GraphHandlePtr  drawlinelist(const float *ppoints, int numPoints, int stride, float fwidth, const RaveVectorf &color);
   OpenRAVE::GraphHandlePtr  drawlinestrip(const float *ppoints, int numPoints, int stride, float fwidth, const RaveVectorf &color);
   OpenRAVE::GraphHandlePtr  _drawlines(osg::PrimitiveSet::Mode mode, const float *ppoints, int numPoints, int stride, float fwidth, const RaveVectorf &color);
+  OpenRAVE::GraphHandlePtr drawtext(const std::string& text, float x, float y, float fontsize, const OpenRAVE::Vector& color);
 
   void SetAllTransparency(float alpha);
   void SetTransparency(OpenRAVE::KinBodyPtr, float alpha);
@@ -67,7 +68,7 @@ public:
   private:
 
 //  osg::ref_ptr<osgViewer::Viewer> m_viewer;
-  osg::ref_ptr<osg::Camera> m_cam;
+  osg::ref_ptr<osg::Camera> m_cam, m_hudcam;
   osgViewer::Viewer m_viewer;
   bool m_idling, m_request_stop_idling;
   std::string m_name;

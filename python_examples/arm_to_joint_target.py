@@ -35,7 +35,6 @@ request = {
   },
   {
     "type" : "collision",
-    "name" :"collision", # Shorten name so printed table will be prettier
     "params" : {
       "continuous": True, 
       "coeffs" : [20], # penalty coefficients. list of length one is automatically expanded to a list of length n_timesteps

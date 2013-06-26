@@ -6,7 +6,7 @@ find_package( osgUtil )
 find_package( osgViewer )
 find_package(osgGA)       
        
-set(OSG_LIBRARIES osg osgViewer OpenThreads osgDB osgGA osgUtil)       
+set(OSG_LIBRARIES osg osgViewer OpenThreads osgDB osgGA osgUtil osgText)       
        
 include_directories(
   SYSTEM  

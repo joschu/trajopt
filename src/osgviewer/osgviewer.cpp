@@ -17,6 +17,8 @@
 #include <osgDB/ReadFile>
 #include "utils/logging.hpp"
 #include "openrave_userdata_utils.hpp"
+#include <osgText/Font>
+#include <osgText/Text>
 
 using namespace osg;
 using namespace OpenRAVE;
@@ -371,8 +373,6 @@ public:
   }
 };
 
-}
-
 KinBodyGroup* GetOsgGroup(KinBody& body) {
   UserDataPtr rph = trajopt::GetUserData(body, "osg");
   return rph ? static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get())
@@ -387,7 +387,29 @@ KinBodyGroup* CreateOsgGroup(KinBody& body) {
   return static_cast<KinBodyGroup*>(static_cast<RefPtrHolder*>(rph.get())->rp.get());
 }
 
+osg::ref_ptr<osg::Camera> createHUDCamera( double left, double right, double bottom, double top ) {
+  osg::ref_ptr<osg::Camera> camera = new osg::Camera;
+  camera->setReferenceFrame( osg::Transform::ABSOLUTE_RF );
+  camera->setClearMask( GL_DEPTH_BUFFER_BIT );
+  camera->setRenderOrder( osg::Camera::POST_RENDER );
+  camera->setAllowEventFocus( false );
+  camera->setProjectionMatrix(osg::Matrix::ortho2D(left, right, bottom, top) );
+  camera->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF );
+  return camera;
+}
+osg::ref_ptr<osgText::Text> createText( const osg::Vec3& pos, const std::string& content, float size, const osg::Vec4& color ) {
+  // static osg::ref_ptr<osgText::Font> g_font = osgText::readFontFile("fonts/arial.ttf");
+  osg::ref_ptr<osgText::Text> text = new osgText::Text;
+  // text->setFont( g_font.get() );
+  text->setColor(color);
+  text->setCharacterSize( size );
+  text->setAxisAlignment( osgText::TextBase::XY_PLANE );
+  text->setPosition( pos );
+  text->setText( content );
+  return text;
+}
 
+}
 
 bool OSGViewer::EventHandler::handle(const osgGA::GUIEventAdapter &ea, osgGA::GUIActionAdapter &aa) {
     bool suppressDefault = false;
@@ -783,4 +805,17 @@ OpenRAVE::GraphHandlePtr  OSGViewer::drawlinestrip(const float *ppoints,  int nu
 }
 OpenRAVE::GraphHandlePtr  OSGViewer::drawlinelist(const float *ppoints,  int numPoints, int stride, float fwidth, const RaveVectorf &color) {
   return _drawlines(osg::PrimitiveSet::LINES, ppoints, numPoints, stride, fwidth, color);
+}
+
+
+OpenRAVE::GraphHandlePtr OSGViewer::drawtext(const std::string& text, float x, float y, float fontsize, const OpenRAVE::Vector& color) {
+  osg::ref_ptr<osg::Geode> textGeode = new osg::Geode;
+  textGeode->addDrawable( createText(osg::Vec3(x, y, 0.0f),text,fontsize, toOsgVec4(color)));
+  if (!m_hudcam) {
+    m_hudcam = createHUDCamera(0, 1024, 0, 768);
+    m_root->addChild(m_hudcam);
+  }
+  return GraphHandlePtr(new OsgGraphHandle(textGeode, m_hudcam.get()));
+
+    
 }

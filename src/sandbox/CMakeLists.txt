@@ -32,6 +32,3 @@ target_link_libraries(dubins_car trajopt)
 
 add_executable(needle_steering needle_steering.cpp o3.cpp)
 target_link_libraries(needle_steering trajopt)
-
-# add_executable(osgshape osgshape.cpp)
-# target_link_libraries(osgshape osg osgViewer OpenThreads osgDB osgGA osgUtil osgText)
