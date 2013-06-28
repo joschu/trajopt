@@ -408,7 +408,7 @@ void CartVelCntInfo::fromJson(const Value& v) {
   const Value& params = v["params"];
   childFromJson(params, first_step, "first_step");
   childFromJson(params, last_step, "last_step");
-  childFromJson(params, distance_limit,"distance_limit");
+  childFromJson(params, max_displacement,"max_displacement");
 
   FAIL_IF_FALSE((first_step >= 0) && (first_step <= gPCI->basic_info.n_steps-1) && (first_step < last_step));
   FAIL_IF_FALSE((last_step > 0) && (last_step <= gPCI->basic_info.n_steps-1));
@@ -420,7 +420,7 @@ void CartVelCntInfo::fromJson(const Value& v) {
     PRINT_AND_THROW( boost::format("invalid link name: %s")%linkstr);
   }
   
-  const char* all_fields[] = {"first_step", "last_step", "distance_limit"};
+  const char* all_fields[] = {"first_step", "last_step", "max_displacement"};
   ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));
   
   
@@ -429,8 +429,8 @@ void CartVelCntInfo::fromJson(const Value& v) {
 void CartVelCntInfo::hatch(TrajOptProb& prob) {
   for (int iStep = first_step; iStep < last_step; ++iStep) {
     prob.addConstraint(ConstraintPtr(new ConstraintFromFunc(
-      VectorOfVectorPtr(new CartVelCalculator(prob.GetRAD(), link, distance_limit)),
-       MatrixOfVectorPtr(new CartVelJacCalculator(prob.GetRAD(), link, distance_limit)), 
+      VectorOfVectorPtr(new CartVelCalculator(prob.GetRAD(), link, max_displacement)),
+       MatrixOfVectorPtr(new CartVelJacCalculator(prob.GetRAD(), link, max_displacement)), 
       concat(prob.GetVarRow(iStep), prob.GetVarRow(iStep+1)), VectorXd::Ones(0), INEQ, "CartVel")));     
   }
 }

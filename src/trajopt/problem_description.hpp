@@ -195,12 +195,12 @@ struct JointPosCostInfo : public TermInfo, public MakesCost {
 /**
  \brief Motion constraint on link
 
- Constrains the change in position of the link in each timestep to be less than distance_limit
+ Constrains the change in position of the link in each timestep to be less than max_displacement
  */
 struct CartVelCntInfo : public TermInfo, public MakesConstraint {
   int first_step, last_step;
   KinBody::LinkPtr link;
-  double distance_limit;
+  double max_displacement;
   void fromJson(const Value& v);
   void hatch(TrajOptProb& prob);
   DEFINE_CREATE(CartVelCntInfo)

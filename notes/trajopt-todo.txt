@@ -1,7 +1,10 @@
 Critical
 =========
 
+create examples of costs in python
+
 documentation on colllision costs, stationary initialization
+documentation on terminal output
 
 unit test collision constraint
 setcontactdistance screws you up if you have multiple collision cost groups

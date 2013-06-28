@@ -6,6 +6,7 @@ args = parser.parse_args()
 import openravepy
 import trajoptpy
 import json
+import time
 
 env = openravepy.Environment()
 env.StopSimulation()
@@ -36,10 +37,9 @@ request = {
   {
     "type" : "collision",
     "params" : {
-      "continuous": True, 
       "coeffs" : [20], # penalty coefficients. list of length one is automatically expanded to a list of length n_timesteps
       "dist_pen" : [0.025] # robot-obstacle distance that penalty kicks in. expands to length n_timesteps
-    }
+    },    
   }
   ],
   "constraints" : [
@@ -55,8 +55,11 @@ request = {
 }
 s = json.dumps(request) # convert dictionary into json-formatted string
 prob = trajoptpy.ConstructProblem(s, env) # create object that stores optimization problem
+t_start = time.time()
 result = trajoptpy.OptimizeProblem(prob) # do optimization
+t_elapsed = time.time() - t_start
 print result
+print "optimization took %.3f seconds"%t_elapsed
 
 from trajoptpy.check_traj import traj_is_safe
 prob.SetRobotActiveDOFs() # set robot DOFs to DOFs in optimization problem

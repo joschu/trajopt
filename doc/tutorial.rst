@@ -23,38 +23,7 @@ Every problem description contains four sections: basic_info, costs, constraints
 
 Here, there are two cost components: joint-space velocity, and the collision penalty. There is one constraint: the final joint state. 
 
-Let's inspect the terminal output after running the script. The following lines should appear at the end of the output.
-
-::
-
-  [INFO optimizers.cpp:225] iteration 9
-  [INFO optimizers.cpp:294] 
-                  |   oldexact |    dapprox |     dexact |      ratio
-            COSTS | -------------------------------------------------
-        joint_vel |  1.776e+00 |  2.249e-05 |  2.249e-05 |  1.000e+00
-   cont_collision |  0.000e+00 |  0.000e+00 |  0.000e+00 | (     nan)
-   cont_collision |  0.000e+00 |  0.000e+00 |  0.000e+00 | (     nan)
-   cont_collision |  0.000e+00 |  0.000e+00 |  0.000e+00 | (     nan)
-   cont_collision |  0.000e+00 | -3.796e-10 |  0.000e+00 | (-0.000e+00)
-   cont_collision |  0.000e+00 | -3.801e-10 |  0.000e+00 | (-0.000e+00)
-   cont_collision |  0.000e+00 | -3.947e-10 | -5.022e-04 | (1.272e+06)
-   cont_collision |  0.000e+00 | -7.592e-10 |  0.000e+00 | (-0.000e+00)
-   cont_collision |  0.000e+00 | -1.139e-09 |  0.000e+00 | (-0.000e+00)
-   cont_collision |  0.000e+00 | -7.592e-10 |  0.000e+00 | (-0.000e+00)
-            TOTAL |  1.776e+00 |  2.249e-05 | -4.797e-04 | -2.133e+01
-  [INFO optimizers.cpp:305] converged because improvement was small (2.249e-05 < 1.000e-04)
-  [INFO optimizers.cpp:343] woo-hoo! constraints are satisfied (to tolerance 1.00e-04)
-
-Here, the optimization converged in 9 iterations. Each line in the table shows a cost or constraint term and it's value and improvement in the latest iteration.
-The "joint_vel" line refers to the joint velocity cost.
-The "cont_collision" lines each refer to the collision cost for a time interval [t,t+1].
-As you can see, all of the collision costs are zero, meaning the trajectory is safely out of collision, with a safety margin of `dist_pen` meters.
-Note that there's no term for the "joint" constraint. That's because this constraint is a linear constraint in the optimization problem, and the table only shows nonlinear constraints which must be approximated at each iteration.
-As you can see, there's not a 1-1 correspondence between the "cost" and "constraint" items in the json file and the costs and constraints that the optimization algorithm sees.
-(If you're digging into the C++ API, note that the table rows correspond to `Cost <../../dox_build/classsco_1_1_cost.html>`_ and `Constraint <../../dox_build/classsco_1_1_constraint.html>`_ objects).
-
 .. note:: Why do we use a collision cost, rather than a constraint? In the sequential convex optimization procedure, constraints get converted into costs--specifically, :math:`\ell_1` penalties (see the paper). So the difference between a constraint and an :math:`\ell_1` cost is that for a constraint, the optimizer checks to see if it is satisfied (to some tolerance), and if not, it jacks up the penalty coefficient. The thing about collisions is that it's often necessary to violate the safety margin, e.g. when you need to contact an object. So you're best off handling the logic yourself of adjusting penalties and safety margins, based on your specific problem.
-
 
 
 Move arm to pose target
@@ -81,16 +50,6 @@ Initialize using collision-free IK:
 .. literalinclude:: ../python_examples/arm_to_cart_target.py
   :start-after: BEGIN init
   :end-before: END init
-
-Now you'll notice an extra couple lines of the optimizer output::
-
-                |   oldexact |    dapprox |     dexact |      ratio
-          COSTS | -------------------------------------------------
-    ...
-    CONSTRAINTS | -------------------------------------------------
-           pose |  4.326e-05 |  4.326e-05 |  3.953e-05 |  9.138e-01
-
-As you can see, the pose constraint is satisfied at convergence
 
 
 .. _benchmark:
@@ -126,7 +85,7 @@ We also add a constraint on the end-effector displacement at each step:
   :start-after: BEGIN vel
   :end-before: END vel
 
-The parameter :code:`"distance_limit : .05"` means the position of the link (r_gripper_tool_frame) moves by less than .05 in each timestep, for each component (x,y,z).
+The parameter :code:`"max_displacement : .05"` means the position of the link (r_gripper_tool_frame) moves by less than .05 in each timestep, for each component (x,y,z).
 
 Now, let's look at the user-defined costs and constraints. We define an vector-valued error function :code:`f(x)`, and the Jacobian of this function :code:`dfdx(x)`. f(x) returns the x and y components of the transformed vector (which both equal zero if the vector points up).
 
