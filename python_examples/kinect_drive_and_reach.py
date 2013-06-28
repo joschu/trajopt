@@ -1,5 +1,5 @@
 import argparse
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="e.g. python kinect_drive_and_reach.py green_table cd --interactive")
 parser.add_argument("scene_name")
 parser.add_argument("geom_type", choices=["mesh","cd","spheres", "boxes"])
 parser.add_argument("--interactive", action="store_true")
@@ -11,7 +11,8 @@ import json
 import trajoptpy.make_kinbodies as mk
 from trajoptpy.check_traj import traj_is_safe
 
-# raise Exception("this example was recently made non-functional by a recent code change for openrave 0.8 compatibility. you can check out revision fc7f9d8a839ceb627fae53847627a961c48ad08c")
+assert openravepy.__version__ >= "0.9"
+    
 
 def remove_floor(cloud):
     notfloor = get_xyz_world_frame(cloud)[:,2] > .1
@@ -46,6 +47,14 @@ robot.SetDOFValues(dof_vals)
 
 viewer = trajoptpy.GetViewer(env)
 
+try:
+    import IPython
+    IPython.lib.inputhook.set_inputhook(viewer.Step)
+except Exception: 
+    pass
+
+
+# Plotting original point cloud
 cloud_orig_colored = cloudprocpy.readPCDXYZRGB(osp.join(trajoptpy.bigdata_dir,args.scene_name,"cloud.pcd"))
 rgbfloats = cloud_orig_colored.to2dArray()[:,4]
 rgb0 = np.ndarray(buffer=rgbfloats.copy(),shape=(480*640,4),dtype='uint8')
@@ -54,14 +63,10 @@ goodinds = np.isfinite(xyz[:,0])
 cloud_handle = env.plot3(xyz[goodinds,:], 2,(rgb0[goodinds,:3][:,::-1])/255. )
 viewer.Idle()
 del cloud_handle
+######
+
 
 handles = []
-
-try:
-    import IPython
-    IPython.lib.inputhook.set_inputhook(viewer.Step)
-except Exception: 
-    pass
 
 # BEGIN addtoenv
 if args.geom_type == "mesh":
