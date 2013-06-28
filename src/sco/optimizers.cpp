@@ -188,11 +188,9 @@ void BasicTrustRegionSQP::setTrustBoxConstraints(const DblVec& x) {
   assert(vars.size() == x.size());
   DblVec& lb=prob_->getLowerBounds(), ub=prob_->getUpperBounds();
   DblVec lbtrust(x.size()), ubtrust(x.size());
-  const vector<bool>& incmask = prob_->getIncrementMask();
-  if (incmask.empty()) prob_->setIncrementMask(vector<bool>(x.size(), false));
   for (size_t i=0; i < x.size(); ++i) {
-    lbtrust[i] = fmax((incmask[i] ? 0 : x[i]) - trust_box_size_, lb[i]);
-    ubtrust[i] = fmin((incmask[i] ? 0 : x[i]) + trust_box_size_, ub[i]);
+    lbtrust[i] = fmax(x[i] - trust_box_size_, lb[i]);
+    ubtrust[i] = fmin(x[i] + trust_box_size_, ub[i]);
   }
   model_->setVarBounds(vars, lbtrust, ubtrust);
 }
@@ -239,8 +237,6 @@ OptStatus BasicTrustRegionSQP::optimize() {
   for (int merit_increases=0; merit_increases < max_merit_coeff_increases_; ++merit_increases) { /* merit adjustment loop */
     for (int iter=1; ; ++iter) { /* sqp loop */
       callCallbacks(x_);
-      vector<bool> incmask = prob_->getIncrementMask();
-      for (int i=0; i < incmask.size(); ++i) if (incmask[i]) x_[i] = 0;
 
       LOG_DEBUG("current iterate: %s", CSTR(x_));
       LOG_INFO("iteration %i", iter);

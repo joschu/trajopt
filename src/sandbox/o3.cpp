@@ -67,9 +67,6 @@ void O3Helper::OptimizerCallback(OptProb*, DblVec& x) {
 void O3Helper::AddAngVelCosts(OptProb& prob, double coeff) {
   prob.addCost(CostPtr(new AngVelCost(m_rbs, m_orivars, coeff)));  
 }
-void O3Helper::ConfigureProblem(OptProb& prob) {
- prob.setIncremental(m_orivars.flatten()); 
-}
 void O3Helper::ConfigureOptimizer(Optimizer& opt) {
   opt.addCallback(boost::bind(&O3Helper::OptimizerCallback, this, _1, _2));  
 }

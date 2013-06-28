@@ -332,7 +332,7 @@ struct MechanicsProblem: public OptProb {
   void AddCollisionCosts(double coeff);
   ConfigurationPtr GetConfig(KinBody::LinkPtr, int timestep);
   VarVector GetDOFVars(KinBody::LinkPtr, int timestep);
-  void Callback(const DblVec&);
+  void Callback(DblVec&);
   void AnimateSolution(const DblVec& x);
   vector<ContactPtr> GetContacts(KinBody::LinkPtr link, int timestep);
 
@@ -414,7 +414,6 @@ MechanicsProblem::MechanicsProblem(int nSteps, const vector<KinBodyPtr>& dynBodi
     for (int iStep = 0; iStep < m_nSteps; ++iStep) {
       q.row(iStep) = Vector4d(1, 0, 0, 0).transpose();
     }
-    setIncremental(m_obj2r[iBody].flatten());    
   }
 
 }
@@ -582,7 +581,7 @@ void MechanicsProblem::AnimateSolution(const DblVec& x) {
   
 }
 
-void MechanicsProblem::Callback(const DblVec& x) {
+void MechanicsProblem::Callback(DblVec& x) {
 
 
   // Update quats
@@ -594,8 +593,9 @@ void MechanicsProblem::Callback(const DblVec& x) {
       // cout << quatMult(quatExp(rvals.row(iStep)), q.row(iStep)).transpose() << " =?= " << geometry::quatMultiply(geometry::quatFromAxisAngle(toRave(rvals.row(iStep))), toRaveQuat(q.row(iStep))) << endl;
       // cout << quatExp(rvals.row(iStep)).transpose() << " =?= " << OR::geometry::quatFromAxisAngle(toRave(rvals.row(iStep))) << endl;
       m_dynObjConfigs(iStep, iObj)->m_q = toRaveQuat(q.row(iStep));
-      m_dynObjConfigs(iStep, iObj)->m_r = OR::Vector(0,0,0);      
+      m_dynObjConfigs(iStep, iObj)->m_r = OR::Vector(0,0,0);
     }
+    setVec(x, m_obj2r[iObj].flatten(), DblVec(m_obj2r[iObj].size(), 0));
   }
 
 
@@ -847,15 +847,19 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
   VectorXd startPt = VectorXd::Zero(6);
   startPt.topRows(3) = toVector3d(box->GetTransform().trans);
   VectorXd endPt = startPt;
-  endPt[0] += .1;
+  endPt[0] += .12;
+  // endPt[1] = .05;
 
   cout << "box start: " << startPt.transpose() << endl;
   cout << "table transform" << table->GetLinks()[0]->GetTransform() << endl;
+
 
   DblVec dofvals = robotConfig->GetDOFValues();
   for (int j=0; j < robotConfig->GetDOF(); ++j) {
     setVec(xinit, prob->m_th.col(j), VectorXd::Ones(nSteps)*dofvals[j]);    
   }
+  prob->Callback(xinit);
+
   
 
   VarArray& posvars = prob->m_obj2posvars[0];
@@ -1073,8 +1077,7 @@ int main(int argc, char** argv) {
     SetupPR2Lift(env, prob, xinit);
   }
   
-  OSGViewerPtr viewer(new OSGViewer(env));
-  env->AddViewer(viewer);
+  OSGViewerPtr viewer = OSGViewer::GetOrCreate(env);
   
   BasicTrustRegionSQP opt(prob);
   opt.initialize(xinit);

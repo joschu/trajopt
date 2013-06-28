@@ -159,7 +159,6 @@ VarVector OptProb::createVariables(const vector<string>& var_names, const DblVec
     upper_bounds_.push_back(ub[i]);
   }
   model_->update();
-  incmask_.insert(incmask_.end(),n_add, false);
   return VarVector(vars_.end()-n_add, vars_.end());
 }
 void OptProb::setLowerBounds(const vector<double>& lb) {

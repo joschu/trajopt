@@ -113,7 +113,6 @@ int main(int argc, char** argv)
 
 
   O3Helper helper(robot, trajvars.block(0,3,n_steps,3));
-  helper.ConfigureProblem(*prob);
   
   double radius = 1; // turning radius for needle
   VectorXd start(n_dof); start << 0,0,0,0,0,0;

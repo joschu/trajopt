@@ -15,7 +15,6 @@ struct O3Helper {
   VarArray m_orivars;
   O3Helper(const OpenRAVE::KinBodyPtr body, const VarArray& vars);  
   void OptimizerCallback(OptProb*, DblVec& x);
-  void ConfigureProblem(OptProb&);
   void ConfigureOptimizer(Optimizer&);
   void AddAngVelCosts(OptProb&, double coeff);
 };
