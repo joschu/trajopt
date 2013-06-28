@@ -464,12 +464,12 @@ void JointVelConstraintInfo::fromJson(const Value& v) {
   
   int n_steps = gPCI->basic_info.n_steps;  
   int n_dof = gPCI->rad->GetDOF();  
-  FAIL_IF_FALSE(vals.size() == n_dof);
-  FAIL_IF_FALSE((first_step >= 0) && (first_step < n_steps));
-  FAIL_IF_FALSE((last_step >= first_step) && (last_step < n_steps));
   childFromJson(params, vals, "vals");
   childFromJson(params, first_step, "first_step", 0);
   childFromJson(params, last_step, "last_step", n_steps-1);
+  FAIL_IF_FALSE(vals.size() == n_dof);
+  FAIL_IF_FALSE((first_step >= 0) && (first_step < n_steps));
+  FAIL_IF_FALSE((last_step >= first_step) && (last_step < n_steps));
   
   const char* all_fields[] = {"vals", "first_step", "last_step"};
   ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));  
