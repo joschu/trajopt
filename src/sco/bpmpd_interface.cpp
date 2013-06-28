@@ -208,7 +208,8 @@ int gPipeIn=0, gPipeOut=0;
 void fexit() {
   char text[1] = {EXIT_CHAR};
   int n = write(gPipeIn, text, 1);
-  assert(n==1);
+  ALWAYS_ASSERT(n==1);
+  
 }
 
 BPMPDModel::BPMPDModel() : m_pipeIn(0), m_pipeOut(0) {  
@@ -327,11 +328,7 @@ CvxOptStatus BPMPDModel::optimize() {
          
   int n = m_vars.size();
   int m = m_cnts.size();
-  int code; // retcode
-  int memsiz = 0;
-  
-  double opt;
-  
+    
   vector<int> acolcnt(n), acolidx, qcolcnt(n), qcolidx, status(m+n);
   vector<double> acolnzs, qcolnzs, rhs(m), obj(n,0), lbound(m+n), ubound(m+n), primal(m+n), dual(m+n);
   
