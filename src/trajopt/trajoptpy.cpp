@@ -288,6 +288,11 @@ public:
     assert(!!m_viewer);
     m_viewer->Idle();
   }
+PyGraphHandle DrawText(std::string text, float x, float y, float fontsize, py::object pycolor) {
+    OpenRAVE::Vector color = OpenRAVE::Vector(py::extract<float>(pycolor[0]), py::extract<float>(pycolor[1]), py::extract<float>(pycolor[2]), py::extract<float>(pycolor[3]));
+    return PyGraphHandle(m_viewer->drawtext(text, x, y, fontsize, color));
+  }
+  
 private:
   OSGViewerPtr m_viewer;
   PyOSGViewer() {}
@@ -352,6 +357,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
      .def("SetTransparency", &PyOSGViewer::SetTransparency)
      .def("SetAllTransparency", &PyOSGViewer::SetAllTransparency)
      .def("Idle", &PyOSGViewer::Idle)
+     .def("DrawText", &PyOSGViewer::DrawText)
     ;
   py::def("GetViewer", &PyGetViewer, "Get OSG viewer for environment or create a new one");
 
