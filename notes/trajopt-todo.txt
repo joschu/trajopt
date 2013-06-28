@@ -1,7 +1,6 @@
 Critical
 =========
 
-something funny in arm_to_joint_target (not seeing collisions)
 documentation on colllision costs, stationary initialization
 
 unit test collision constraint
