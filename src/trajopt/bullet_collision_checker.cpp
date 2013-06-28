@@ -388,7 +388,7 @@ struct CollisionCollector : public btCollisionWorld::ContactResultCallback {
     const KinBody::Link* linkB = getLink(colObj1Wrap->getCollisionObject());
     m_collisions.push_back(Collision(linkA, linkB, toOR(cp.m_positionWorldOnA), toOR(cp.m_positionWorldOnB),
         toOR(cp.m_normalWorldOnB), cp.m_distance1));
-    LOG_DEBUG("CollisionCollector: adding collision %s-%s", linkA->GetName().c_str(), linkB->GetName().c_str());
+    LOG_DEBUG("CollisionCollector: adding collision %s-%s (%.4f)", linkA->GetName().c_str(), linkB->GetName().c_str(), cp.m_distance1);
     return 1;
   }
   bool needsCollision(btBroadphaseProxy* proxy0) const {

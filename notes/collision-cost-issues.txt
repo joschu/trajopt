@@ -1,0 +1,68 @@
+face-face degenerate cases actually do happen, where we end up underestimating the decrease in signed distance
+when I run python arm_to_joint.py in 5d0440cfb21a22d0152
+observe that two penazed collisions appear (table_link-r_forearm_link), which the convexification didn't know about
+
+Before step
+==============
+
+
+[DEBUG] don't need to add or remove stuff
+[DEBUG] 46 objects in bullet world
+[DEBUG] CollisionCollector: adding collision table_link-r_forearm_link (0.0255)
+[DEBUG] CastVsAll checked 14 links and found 1 collisions
+[DEBUG] not using cached collision check
+
+[DEBUG] don't need to add or remove stuff
+[DEBUG] 46 objects in bullet world
+[DEBUG] CollisionCollector: adding collision table_link-r_upper_arm_link (0.0580)
+[DEBUG] CollisionCollector: adding collision table_link-r_forearm_link (0.0282)
+[DEBUG] CollisionCollector: adding collision table_link-r_wrist_flex_link (0.0492)
+[DEBUG] CastVsAll checked 14 links and found 3 collisions
+[DEBUG] not using cached collision check
+
+[DEBUG] don't need to add or remove stuff
+[DEBUG] 46 objects in bullet world
+[DEBUG] CollisionCollector: adding collision table_link-r_upper_arm_link (0.0580)
+[DEBUG] CollisionCollector: adding collision table_link-r_forearm_link (0.0449)
+[DEBUG] CollisionCollector: adding collision table_link-r_wrist_flex_link (0.0579)
+[DEBUG] CastVsAll checked 14 links and found 3 collisions
+[DEBUG] not using cached collision check
+
+[DEBUG] don't need to add or remove stuff
+[DEBUG] 46 objects in bullet world
+[DEBUG] CollisionCollector: adding collision table_link-r_upper_arm_link (0.0632)
+[DEBUG] CastVsAll checked 14 links and found 1 collisions
+
+
+After step
+============
+
+[DEBUG] don't need to add or remove stuff
+[DEBUG] 46 objects in bullet world
+[DEBUG] CollisionCollector: adding collision table_link-r_upper_arm_link (0.0649)
+[DEBUG] CollisionCollector: adding collision table_link-r_forearm_link (0.0223)
+[DEBUG] CollisionCollector: adding collision table_link-r_wrist_flex_link (0.0558)
+[DEBUG] CastVsAll checked 14 links and found 3 collisions
+[DEBUG] not using cached collision check
+
+[DEBUG] don't need to add or remove stuff
+[DEBUG] 46 objects in bullet world
+[DEBUG] CollisionCollector: adding collision table_link-r_upper_arm_link (0.0562)
+[DEBUG] CollisionCollector: adding collision table_link-r_forearm_link (0.0237)
+[DEBUG] CollisionCollector: adding collision table_link-r_wrist_flex_link (0.0461)
+[DEBUG] CastVsAll checked 14 links and found 3 collisions
+[DEBUG] not using cached collision check
+
+[DEBUG] don't need to add or remove stuff
+[DEBUG] 46 objects in bullet world
+[DEBUG] CollisionCollector: adding collision table_link-r_upper_arm_link (0.0562)
+[DEBUG] CollisionCollector: adding collision table_link-r_forearm_link (0.0510)
+[DEBUG] CollisionCollector: adding collision table_link-r_wrist_flex_link (0.0637)
+[DEBUG] CastVsAll checked 14 links and found 3 collisions
+[DEBUG] not using cached collision check
+
+[DEBUG] don't need to add or remove stuff
+[DEBUG] 46 objects in bullet world
+[DEBUG] CollisionCollector: adding collision table_link-r_upper_arm_link (0.0649)
+[DEBUG] CastVsAll checked 14 links and found 1 collisions
+
