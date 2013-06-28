@@ -26,6 +26,23 @@ namespace {
 bool gRegisteredMakers = false;
 
 
+
+void ensure_only_members(const Value& v, const char** fields, int nvalid) {
+  for (Json::ValueConstIterator it = v.begin(); it != v.end(); ++it) {
+    bool valid = false;
+    for (int j=0; j < nvalid; ++j) {
+      if ( strcmp(it.memberName(), fields[j]) == 0) {
+        valid = true;
+        break;
+      }
+    }
+    if (!valid) {
+      PRINT_AND_THROW( boost::format("invalid field found: %s")%it.memberName());
+    }
+  } 
+}
+
+
 void RegisterMakers() {
 
   TermInfo::RegisterMaker("pose", &PoseCostInfo::create);
@@ -324,9 +341,10 @@ void SetupPlotting(TrajOptProb& prob, Optimizer& opt) {
 }
 
 
+
 void PoseCostInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));
-  const Value& params = v["params"];
+  const Value& params = v["params"];  
   childFromJson(params, timestep, "timestep", gPCI->basic_info.n_steps-1);
   childFromJson(params, xyz,"xyz");
   childFromJson(params, wxyz,"wxyz");
@@ -339,6 +357,10 @@ void PoseCostInfo::fromJson(const Value& v) {
   if (!link) {
     PRINT_AND_THROW(boost::format("invalid link name: %s")%linkstr);
   }
+
+  const char* all_fields[] = {"timestep", "xyz", "wxyz", "pos_coeffs", "rot_coeffs","link"};
+  ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));
+
 }
 
 void PoseCostInfo::hatch(TrajOptProb& prob) {
@@ -369,6 +391,11 @@ void JointPosCostInfo::fromJson(const Value& v) {
     PRINT_AND_THROW( boost::format("wrong number of dof vals. expected %i got %i")%n_dof%vals.size());
   }
   childFromJson(params, timestep, "timestep", gPCI->basic_info.n_steps-1);
+  
+  const char* all_fields[] = {"vals", "coeffs", "timestep"};
+  ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));
+  
+  
 }
 void JointPosCostInfo::hatch(TrajOptProb& prob) {
   prob.addCost(CostPtr(new JointPosCost(prob.GetVarRow(timestep), toVectorXd(vals), toVectorXd(coeffs))));
@@ -392,6 +419,11 @@ void CartVelCntInfo::fromJson(const Value& v) {
   if (!link) {
     PRINT_AND_THROW( boost::format("invalid link name: %s")%linkstr);
   }
+  
+  const char* all_fields[] = {"first_step", "last_step", "distance_limit"};
+  ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));
+  
+  
 }
 
 void CartVelCntInfo::hatch(TrajOptProb& prob) {
@@ -413,6 +445,11 @@ void JointVelCostInfo::fromJson(const Value& v) {
   else if (coeffs.size() != n_dof) {
     PRINT_AND_THROW( boost::format("wrong number of coeffs. expected %i got %i")%n_dof%coeffs.size());
   }
+  
+  const char* all_fields[] = {"coeffs"};
+  ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));
+  
+  
 }
 
 void JointVelCostInfo::hatch(TrajOptProb& prob) {
@@ -433,6 +470,10 @@ void JointVelConstraintInfo::fromJson(const Value& v) {
   childFromJson(params, vals, "vals");
   childFromJson(params, first_step, "first_step", 0);
   childFromJson(params, last_step, "last_step", n_steps-1);
+  
+  const char* all_fields[] = {"vals", "first_step", "last_step"};
+  ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));  
+  
 }
 void JointVelConstraintInfo::hatch(TrajOptProb& prob) {
   for (int i = first_step; i <= last_step-1; ++i) {
@@ -467,6 +508,10 @@ void CollisionCostInfo::fromJson(const Value& v) {
   else if (dist_pen.size() != n_terms) {
     PRINT_AND_THROW(boost::format("wrong size: dist_pen. expected %i got %i")%n_terms%dist_pen.size());
   }
+  
+  const char* all_fields[] = {"continuous", "first_step", "last_step", "gap", "coeffs", "dist_pen"};
+  ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));  
+  
 }
 void CollisionCostInfo::hatch(TrajOptProb& prob) {
   if (term_type == TT_COST) {
@@ -517,6 +562,10 @@ void JointConstraintInfo::fromJson(const Value& v) {
     PRINT_AND_THROW( boost::format("wrong number of dof vals. expected %i got %i")%n_dof%vals.size());
   }
   childFromJson(params, timestep, "timestep", gPCI->basic_info.n_steps-1);
+  
+  const char* all_fields[] = {"vals", "timestep"};
+  ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));  
+  
 }
 
 void JointConstraintInfo::hatch(TrajOptProb& prob) {

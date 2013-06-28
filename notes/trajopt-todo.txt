@@ -1,9 +1,8 @@
 Critical
 =========
 
+something funny in arm_to_joint_target (not seeing collisions)
 documentation on colllision costs, stationary initialization
-
-warning on unused arguments
 
 unit test collision constraint
 setcontactdistance screws you up if you have multiple collision cost groups

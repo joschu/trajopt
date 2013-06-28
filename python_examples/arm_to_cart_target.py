@@ -61,12 +61,10 @@ request = {
     "params" : {"xyz" : xyz_target, 
                 "wxyz" : quat_target, 
                 "link": "r_gripper_tool_frame",
-		"pos_coeffs" : [20,20,20],
-		"rot_coeffs" : [0,0,0] if args.position_only else [20,20,20]
+        		"pos_coeffs" : [20,20,20],
+        		"rot_coeffs" : [0,0,0] if args.position_only else [20,20,20]
                 # "timestep" : 9
                 # omitted because timestep = n_steps-1 is default
-                # "pos_coeffs" : [1,1,1], # omitted because that's default
-               # "rot_coeffs" : ([0,0,0] if args.position_only else [1,1,1])
                 }
                  
   }
