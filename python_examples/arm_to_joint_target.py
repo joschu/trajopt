@@ -32,7 +32,7 @@ request = {
   {
     "type" : "joint_vel", # joint-space velocity cost
     "params": {"coeffs" : [1]} # a list of length one is automatically expanded to a list of length n_dofs
-    # Also valid: "coeffs" : [7,6,5,4,3,2,1]
+    # also valid: [1.9, 2, 3, 4, 5, 5, 4, 3, 2, 1]
   },
   {
     "type" : "collision",

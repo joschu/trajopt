@@ -42,7 +42,6 @@ request = {
   {
     "type" : "joint_vel", # joint-space velocity cost
     "params": {"coeffs" : [1]} # a list of length one is automatically expanded to a list of length n_dofs
-    # Also valid: "coeffs" : [7,6,5,4,3,2,1]
   },
   {
     "type" : "collision",
@@ -61,8 +60,7 @@ request = {
     "params" : {"xyz" : xyz_target, 
                 "wxyz" : quat_target, 
                 "link": "r_gripper_tool_frame",
-                # "timestep" : 9
-                # omitted because timestep = n_steps-1 is default
+                "timestep" : 9
                 }
                  
   }

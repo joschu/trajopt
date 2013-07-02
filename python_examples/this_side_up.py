@@ -67,7 +67,7 @@ request = {
     "type" : "cart_vel",
     "name" : "cart_vel",
     "params" : {
-        "distance_limit" : .05,
+        "max_displacement" : .05,
         "first_step" : 0,
         "last_step" : n_steps-1, #inclusive
         "link" : "r_gripper_tool_frame"
@@ -117,4 +117,4 @@ else: #use constraint
 # END add_constraints
 
 result = trajoptpy.OptimizeProblem(prob) # do optimization
-print result
+assert [viol <= 1e-4 for (_name,viol) in result.GetConstraints()]

@@ -1,0 +1,23 @@
+Test project /home/joschu/build/trajopt
+    Start 1: arm_to_joint_target.py
+1/9 Test #1: arm_to_joint_target.py .............   Passed    1.53 sec
+    Start 2: arm_to_cart_target.py
+2/9 Test #2: arm_to_cart_target.py ..............   Passed    1.78 sec
+    Start 3: fullbody_plan.py
+3/9 Test #3: fullbody_plan.py ...................   Passed    2.63 sec
+    Start 4: position_base.py
+4/9 Test #4: position_base.py ...................   Passed    1.84 sec
+    Start 5: arm_to_cart_target_position_only
+5/9 Test #5: arm_to_cart_target_position_only ...   Passed    1.77 sec
+    Start 6: sco-unit
+6/9 Test #6: sco-unit ...........................   Passed    0.08 sec
+    Start 7: collision-checker-unit
+7/9 Test #7: collision-checker-unit .............   Passed    0.09 sec
+    Start 8: planning-unit
+8/9 Test #8: planning-unit ......................   Passed    1.05 sec
+    Start 9: cast-cost-unit
+9/9 Test #9: cast-cost-unit .....................   Passed    0.09 sec
+
+100% tests passed, 0 tests failed out of 9
+
+Total Test time (real) =  10.90 sec

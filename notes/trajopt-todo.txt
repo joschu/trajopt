@@ -14,16 +14,14 @@ RobotAndDOF is a mess now
 
 filtermask arguments in collision_terms
 
+fixed length steps: need a custom constraint + projection
+
 Eventually
 ===========
 
-do something about METERS
 
-fix up bpmd interface
 
 boost python arguments
-
-voxel grid collision checking. or at least preprocess voxel grid data.
 
 TrajArray/DblMatrix/MatrixXd mean the same thing
 

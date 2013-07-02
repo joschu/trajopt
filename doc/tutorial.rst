@@ -21,15 +21,16 @@ The optimization will pause at every iteration and plot the current trajectory a
 
 Every problem description contains four sections: basic_info, costs, constraints, and init_info (i.e., initialization info).
 
-Here, there are two cost components: joint-space velocity, and the collision penalty. There is one constraint: the final joint state. 
+Here, there are two cost components: joint-space velocity, and the collision penalty. There is one constraint: the final joint state.
 
 .. note:: Why do we use a collision cost, rather than a constraint? In the sequential convex optimization procedure, constraints get converted into costs--specifically, :math:`\ell_1` penalties (see the paper). So the difference between a constraint and an :math:`\ell_1` cost is that for a constraint, the optimizer checks to see if it is satisfied (to some tolerance), and if not, it jacks up the penalty coefficient. The thing about collisions is that it's often necessary to violate the safety margin, e.g. when you need to contact an object. So you're best off handling the logic yourself of adjusting penalties and safety margins, based on your specific problem.
+
+See :ref:`collcosts` for more info on the collision penalty.
 
 
 Move arm to pose target
 -------------------------
 Full source code:  :file:`python_examples/arm_to_cart_target.py`
-
 
 Next, let's solve the same problem, but instead of specifying the target joint position, we'll specify the target pose.
 
@@ -48,6 +49,7 @@ Initialize using collision-free IK:
 ...
 
 .. literalinclude:: ../python_examples/arm_to_cart_target.py
+  :language: python
   :start-after: BEGIN init
   :end-before: END init
 
@@ -62,6 +64,49 @@ Whether you use a straight-line initialization, stationary initialization, or so
 You can see this strategy in ``benchmark.py``, which uses four waypoints. Using this strategy, the algorithm solves 100% of 204 planning problems in the three provided scenes (tabletop, bookshelves, and kitchen_counter).
 
 
+All in all, there are several ways to initialize:
+
+- **Stationary**: Initialize with the trajectory that stands still for ``n_steps`` timesteps.
+
+  .. code-block:: python
+
+    "init_info" : {
+        "type" : "stationary"
+    }
+
+- **With a given trajectory**: 
+
+  .. code-block:: python
+
+    "init_info" : {
+        "type" : "given_traj"
+        "data" : [[ 0.   ,  0.   ,  0.   ],
+                   [ 0.111,  0.222,  0.333],
+                   [ 0.222,  0.444,  0.667],
+                   [ 0.333,  0.667,  1.   ],
+                   [ 0.444,  0.889,  1.333],
+                   [ 0.556,  1.111,  1.667],
+                   [ 0.667,  1.333,  2.   ],
+                   [ 0.778,  1.556,  2.333],
+                   [ 0.889,  1.778,  2.667],
+                   [ 1.   ,  2.   ,  3.   ]]
+    }
+    
+  ``data`` must be a 2d array with ``n_steps`` rows, and the first row must be the robot's current DOF values
+    
+- **With a straight line in configuration space**.
+
+  .. code-block:: python
+
+    "init_info" : {
+        "type" : "given_traj"
+        "endpoint" : [ 1.   ,  2.   ,  3.   ]
+    }
+    
+  The robot's DOF values are used for the start point of the line.
+    
+    
+    
 .. _rollingyourown:
 
 Rolling your own costs and constraints in python
@@ -72,7 +117,8 @@ Full source code:  :file:`python_examples/this_side_up.py`
 
 This next script shows how you can easily implement your own costs and constraints. The constraint we consider here says that a certain vector defined in the robot gripper frame must point up (in the world coordinates). For example, one might imagine that the robot is holding a glass of water, and we don't want it to spill.
 
-The basic setup of the problem is similar to the previous examples.
+The basic setup of the problem is similar to the previous examples. Before getting to the python constraint functions, we'll add some constraints to the problem in the json file, including a cartesian velocity constraint.
+
 We set a pose constraint at the end of the trajectory. This time, we ignore the rotation (by setting :code:`rot_coefs = [0,0,0]`).
 
 .. literalinclude:: ../python_examples/this_side_up.py

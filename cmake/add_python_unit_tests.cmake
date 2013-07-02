@@ -4,6 +4,7 @@ set(python_test_scripts
   arm_to_cart_target.py
   fullbody_plan.py
   position_base.py
+  this_side_up.py
 )
 
 foreach(pyfile ${python_test_scripts})

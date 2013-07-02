@@ -420,7 +420,7 @@ void CartVelCntInfo::fromJson(const Value& v) {
     PRINT_AND_THROW( boost::format("invalid link name: %s")%linkstr);
   }
   
-  const char* all_fields[] = {"first_step", "last_step", "max_displacement"};
+  const char* all_fields[] = {"first_step", "last_step", "max_displacement","link"};
   ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));
   
   
