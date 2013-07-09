@@ -1,6 +1,6 @@
 
 
-find_package(PCL 1.7 REQUIRED)
+find_package(PCL 1.6 REQUIRED)
 
 include_directories(SYSTEM ${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
