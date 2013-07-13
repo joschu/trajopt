@@ -67,6 +67,7 @@ public:
 
   /** Prevent this pair of links from colliding */
   virtual void ExcludeCollisionPair(const KinBody::Link& link0, const KinBody::Link& link1) = 0;
+  virtual void IncludeCollisionPair(const KinBody::Link& link0, const KinBody::Link& link1) = 0;
 
 
   OpenRAVE::EnvironmentBaseConstPtr GetEnv() {return m_env;}

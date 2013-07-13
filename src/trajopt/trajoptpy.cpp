@@ -251,6 +251,10 @@ public:
     EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
     m_cc->ExcludeCollisionPair(*GetCppLink(link0, env), *GetCppLink(link1, env));
   }
+  void IncludeCollisionPair(py::object link0, py::object link1) {
+    EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
+    m_cc->IncludeCollisionPair(*GetCppLink(link0, env), *GetCppLink(link1, env));
+  }
   PyCollisionChecker(CollisionCheckerPtr cc) : m_cc(cc) {}
 private:
   PyCollisionChecker();
@@ -344,6 +348,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("BodyVsAll", &PyCollisionChecker::BodyVsAll)
       .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
       .def("ExcludeCollisionPair", &PyCollisionChecker::ExcludeCollisionPair)
+      .def("IncludeCollisionPair", &PyCollisionChecker::IncludeCollisionPair)
       ;
   py::def("GetCollisionChecker", &PyGetCollisionChecker);
   py::class_<PyCollision>("Collision", py::no_init)
