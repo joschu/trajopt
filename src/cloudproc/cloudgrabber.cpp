@@ -1,6 +1,7 @@
 #include "cloudgrabber.hpp"
 #include <pcl/io/openni_grabber.h>
 #include <boost/function.hpp>
+#include <boost/thread/thread.hpp>
 #include <cstdio>
 using namespace pcl;
 
@@ -44,7 +45,7 @@ public:
   }
   
   void rgbd_cb(const boost::shared_ptr<openni_wrapper::Image>& rgb, const boost::shared_ptr<openni_wrapper::DepthImage>& depth) {
-    if (m_rs == PENDING); {
+    if (m_rs == PENDING) {
       if (!m_rgbd) m_rgbd.reset(new cloudproc::RGBD());
       rgb->fillRGB(640, 480, m_rgbd->rgb.data(), 640*3);
       unsigned char* rgb_ptr = m_rgbd->rgb.data();
@@ -83,7 +84,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr CloudGrabberImpl::getXYZ() {
   }
   else if (m_ss == XYZ) {
     m_rs = PENDING;
-    while (m_rs == PENDING) sleep(.01);
+    while (m_rs == PENDING) boost::this_thread::sleep(boost::posix_time::milliseconds(10));
     return m_xyz;
   }
   else PRINT_AND_THROW("asked for xyz but currently streaming another type");
@@ -98,7 +99,7 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr CloudGrabberImpl::getXYZRGB() {
   }
   else if (m_ss == XYZRGB) {
     m_rs = PENDING;
-    while (m_rs == PENDING) sleep(.01);
+    while (m_rs == PENDING) boost::this_thread::sleep(boost::posix_time::milliseconds(10));
     return m_xyzrgb;
   }
   else PRINT_AND_THROW("asked for xyzrgb but currently streaming another type");
@@ -113,7 +114,7 @@ RGBD::Ptr CloudGrabberImpl::getRGBD() {
   }
   else if (m_ss == RGBD) {
     m_rs = PENDING;
-    while (m_rs == PENDING) sleep(.01);
+    while (m_rs == PENDING) boost::this_thread::sleep(boost::posix_time::milliseconds(10));
     return m_rgbd;
   }
   else PRINT_AND_THROW("asked for rgbd but currently streaming another type");
