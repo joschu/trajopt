@@ -29,3 +29,8 @@ Contents:
    tutorial
    tips
    misc
+   
+   
+.. raw:: html
+   
+  Comments/questions/problems? <a href='http://www.emailmeform.com/builder/form/nvPWc4yb3IYad4Zk0' title='Contact us' target='_blank'>Leave feedback</a>

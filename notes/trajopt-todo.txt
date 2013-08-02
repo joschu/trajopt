@@ -1,6 +1,8 @@
 Critical
 =========
 
+MIN_APPROX_IMPROVE_FRAC
+
 create examples of costs in python
 
 documentation on colllision costs, stationary initialization
@@ -14,7 +16,8 @@ RobotAndDOF is a mess now
 
 filtermask arguments in collision_terms
 
-fixed length steps: need a custom constraint + projection
+fixed length steps: maybe need a custom constraint + projection
+try weighing different links
 
 Eventually
 ===========
