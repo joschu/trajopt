@@ -609,10 +609,16 @@ OpenRAVE::GraphHandlePtr OSGViewer::plot3(const float* ppoints, int numPoints, i
 
   Vec3Array* osgPts = new Vec3Array;
   osgPts->reserve(numPoints);
+  Vec4Array* osgCols = new Vec4Array;
+  osgCols->reserve(numPoints);
   for (int i=0; i < numPoints; ++i) {
     const float* p = ppoints + i*floats_per_pt;
-    if (isfinite(p[0]))  osgPts->push_back(osg::Vec3(p[0], p[1], p[2]));
+    if (isfinite(p[0]))  {
+      osgPts->push_back(osg::Vec3(p[0], p[1], p[2]));
+      osgCols->push_back((colors != NULL) ? osg::Vec4(colors[4*i], colors[4*i+1], colors[4*i+2], colors[4*i+3]) : osg::Vec4(1,0,0,1));
+    }
   }
+
   osg::StateSet* ss = geom->getOrCreateStateSet();
   osg::Point *point = new osg::Point();
   point->setSize(pointsize);
@@ -627,17 +633,10 @@ OpenRAVE::GraphHandlePtr OSGViewer::plot3(const float* ppoints, int numPoints, i
 
   geom->setVertexArray(osgPts);
   geom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,osgPts->size()));
-//
-  if (colors != NULL) {
-    Vec4Array* osgCols = new Vec4Array;
-    for (int i=0; i < numPoints; ++i) {
-      const float* p = colors + i*3;
-      osgCols->push_back(osg::Vec4(p[0], p[1], p[2],1));
-    }
-    geom->setColorArray(osgCols);
-    geom->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
-  }
 
+  geom->setColorArray(osgCols);
+  geom->setColorBinding(osg::Geometry::BIND_PER_VERTEX);
+//
   Geode* geode = new osg::Geode();
   geode->addDrawable(geom);
 

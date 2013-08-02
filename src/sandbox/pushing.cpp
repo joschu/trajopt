@@ -858,8 +858,8 @@ void SetupPR2Push(EnvironmentBasePtr env, boost::shared_ptr<MechanicsProblem>& p
   for (int j=0; j < robotConfig->GetDOF(); ++j) {
     setVec(xinit, prob->m_th.col(j), VectorXd::Ones(nSteps)*dofvals[j]);    
   }
-  prob->Callback(xinit);
-
+  // prob->Callback(xinit);
+  // 
   
 
   VarArray& posvars = prob->m_obj2posvars[0];
