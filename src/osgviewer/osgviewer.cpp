@@ -596,8 +596,14 @@ OpenRAVE::GraphHandlePtr OSGViewer::drawarrow(const RaveVectorf& p1, const RaveV
 }
 
 OpenRAVE::GraphHandlePtr OSGViewer::plot3 (const float *ppoints, int numPoints, int stride, float fPointSize, const RaveVector< float > &color, int drawstyle){
+  vector<float> colordata(numPoints*3);
+  for (int i=0; i < numPoints; ++i) {
+    colordata[3*i] = color[0];
+    colordata[3*i+1] = color[1];
+    colordata[3*i+2] = color[2];
+  }
   vector< RaveVectorf > colors(numPoints, color);
-  return plot3(ppoints, numPoints, stride, fPointSize, (float*)colors.data(), drawstyle);
+  return plot3(ppoints, numPoints, stride, fPointSize, colordata.data(), drawstyle);
 }
 
 OpenRAVE::GraphHandlePtr OSGViewer::plot3(const float* ppoints, int numPoints, int stride, float pointsize, const float* colors, int drawstyle, bool bhasalpha) {
