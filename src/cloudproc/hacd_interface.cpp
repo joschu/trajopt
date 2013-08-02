@@ -2,7 +2,7 @@
 #include <pcl/PolygonMesh.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/ros/conversions.h>
+#include <pcl/conversions.h>
 #include <hacdHACD.h>
 using HACD::Vec3;
 using HACD::Real;
@@ -16,7 +16,7 @@ void polygonMeshFromPointsTriangles(pcl::PolygonMesh& mesh, const vector< Vec3<R
     cloud.points[i].y = points[i].Y();
     cloud.points[i].z = points[i].Z();
   }
-  pcl::toROSMsg(cloud, mesh.cloud);
+  pcl::toPCLPointCloud2(cloud, mesh.cloud);
   mesh.polygons.resize(triangles.size());
   for (int i=0; i < triangles.size(); ++i) {
     vector<uint32_t>& vertices = mesh.polygons[i].vertices;
@@ -28,7 +28,7 @@ void polygonMeshFromPointsTriangles(pcl::PolygonMesh& mesh, const vector< Vec3<R
 }
 void pointsTrianglesFromPolygonMesh(const pcl::PolygonMesh& mesh, vector< Vec3<Real> >& points, vector< Vec3<long> >& triangles) {
   PointCloud<PointXYZ> cloud;
-  pcl::fromROSMsg (mesh.cloud, cloud);
+  pcl::fromPCLPointCloud2 (mesh.cloud, cloud);
   points.resize(cloud.size());
   for (int i=0; i < cloud.size(); ++i) {
     points[i].X() = cloud.points[i].x;

@@ -7,7 +7,7 @@
 #include "utils/stl_to_string.hpp"
  #include "cloudgrabber.hpp"
 #include "cloudproc/mesh_simplification.hpp"
-#include <pcl/ros/conversions.h>
+#include <pcl/conversions.h>
 #include <pcl/point_types.h>
 #include <boost/format.hpp>
 #include "hacd_interface.hpp"
@@ -100,7 +100,7 @@ struct PyCloud {
 
 CloudXYZ::Ptr PolygonMesh_getCloud(const PolygonMesh* mesh) {
   CloudXYZ::Ptr cloud(new CloudXYZ());
-  pcl::fromROSMsg(mesh->cloud, *cloud);
+  pcl::fromPCLPointCloud2(mesh->cloud, *cloud);
   return cloud;
 }
 py::object PolygonMesh_getVertices(const PolygonMesh* mesh) {

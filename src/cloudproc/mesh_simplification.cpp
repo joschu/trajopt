@@ -9,7 +9,7 @@
 #include <pcl/PolygonMesh.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
-#include <pcl/ros/conversions.h>
+#include <pcl/conversions.h>
 #include "macros.h"
 
 using namespace pcl;
@@ -43,12 +43,12 @@ void toPCL(vtkPolyData& in, pcl::PolygonMesh& out) {
     vertices[1] = idxdata[1];
     vertices[2] = idxdata[2];
   }
-  pcl::toROSMsg(cloud, out.cloud);
+  pcl::toPCLPointCloud2(cloud, out.cloud);
 
 }
 void toVTK(pcl::PolygonMesh& in, vtkPolyData& out) {
   pcl::PointCloud<pcl::PointXYZ> cloud;
-  pcl::fromROSMsg(in.cloud, cloud);
+  pcl::fromPCLPointCloud2(in.cloud, cloud);
 
   vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
   BOOST_FOREACH(const PointXYZ& pt, cloud.points) {

@@ -135,7 +135,7 @@ void CloudGrabberImpl::startXYZRGB() {
 }
 void CloudGrabberImpl::startRGBD() {
   m_ss = RGBD;
-  boost::function<void(const boost::shared_ptr<openni_wrapper::Image>&, const boost::shared_ptr<openni_wrapper::DepthImage>&, float)> f = 
+  boost::function<void(const boost::shared_ptr<openni_wrapper::Image>&, const boost::shared_ptr<openni_wrapper::DepthImage>&, float)> f =
     boost::bind(&CloudGrabberImpl::rgbd_cb, this, _1, _2);
   c = m_interface.registerCallback (f);
   m_interface.start();

@@ -43,10 +43,10 @@ void setWidthToSize(const CloudT& cloud) {
 
 template <class T>
 typename pcl::PointCloud<T>::Ptr readPCD(const std::string& pcdfile) {
-  sensor_msgs::PointCloud2 cloud_blob;
+  pcl::PCLPointCloud2 cloud_blob;
   typename pcl::PointCloud<T>::Ptr cloud (new typename pcl::PointCloud<T>);
   if (pcl::io::loadPCDFile (pcdfile, cloud_blob) != 0) FILE_OPEN_ERROR(pcdfile);
-  pcl::fromROSMsg (cloud_blob, *cloud);
+  pcl::fromPCLPointCloud2 (cloud_blob, *cloud);
   return cloud;
 }
 
@@ -194,7 +194,7 @@ pcl::PolygonMesh::Ptr meshOFM(PointCloud<pcl::PointXYZ>::ConstPtr cloud, int edg
   ofm.setTriangulationType (pcl::OrganizedFastMesh<PointXYZ>::TRIANGLE_ADAPTIVE_CUT);
   pcl::PolygonMeshPtr mesh(new pcl::PolygonMesh());
   ofm.reconstruct(mesh->polygons);
-  pcl::toROSMsg(*cloud, mesh->cloud);
+  pcl::toPCLPointCloud2(*cloud, mesh->cloud);
   mesh->header = cloud->header;
   return mesh;
 }
@@ -217,7 +217,7 @@ void saveTrimeshCustomFmt(pcl::PolygonMesh::ConstPtr mesh, const std::string& fn
   ofstream o(fname.c_str());
   if (o.bad()) FILE_OPEN_ERROR(fname);
   pcl::PointCloud<PointXYZ>::Ptr cloud(new pcl::PointCloud<PointXYZ>());
-  pcl::fromROSMsg(mesh->cloud, *cloud);
+  pcl::fromPCLPointCloud2(mesh->cloud, *cloud);
   o << cloud->size() << endl;
   BOOST_FOREACH(const PointXYZ& pt, cloud->points) {
     o << pt.x << " " << pt.y << " " << pt.z;
@@ -315,8 +315,8 @@ typename pcl::PointCloud<T>::Ptr fastBilateralFilter(typename pcl::PointCloud<T>
 #endif
 }
 
-void removenans(sensor_msgs::PointCloud2& cloud, float fillval=0);
-void removenans(sensor_msgs::PointCloud2& cloud, float fillval) {
+void removenans(pcl::PCLPointCloud2& cloud, float fillval=0);
+void removenans(pcl::PCLPointCloud2& cloud, float fillval) {
   int npts = cloud.width * cloud.height;
   for (int i=0; i < npts; ++i) {
     float* ptdata = (float*)(cloud.data.data() + cloud.point_step * i);
