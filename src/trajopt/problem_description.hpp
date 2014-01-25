@@ -166,6 +166,7 @@ struct PoseCostInfo : public TermInfo, public MakesCost, public MakesConstraint 
   Vector3d xyz;
   Vector4d wxyz;
   Vector3d pos_coeffs, rot_coeffs;
+  string penalty_type;
   // double coeff;
   KinBody::LinkPtr link;
   void fromJson(const Value& v);

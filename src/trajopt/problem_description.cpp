@@ -350,6 +350,7 @@ void PoseCostInfo::fromJson(const Value& v) {
   childFromJson(params, wxyz,"wxyz");
   childFromJson(params, pos_coeffs,"pos_coeffs", (Vector3d)Vector3d::Ones());
   childFromJson(params, rot_coeffs,"rot_coeffs", (Vector3d)Vector3d::Ones());
+  childFromJson(params, penalty_type,"penalty_type",string(""));
 
   string linkstr;
   childFromJson(params, linkstr, "link");
@@ -358,15 +359,25 @@ void PoseCostInfo::fromJson(const Value& v) {
     PRINT_AND_THROW(boost::format("invalid link name: %s")%linkstr);
   }
 
-  const char* all_fields[] = {"timestep", "xyz", "wxyz", "pos_coeffs", "rot_coeffs","link"};
+  const char* all_fields[] = {"timestep", "xyz", "wxyz", "pos_coeffs", "rot_coeffs","link","penalty_type"};
   ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));
 
 }
 
 void PoseCostInfo::hatch(TrajOptProb& prob) {
   VectorOfVectorPtr f(new CartPoseErrCalculator(toRaveTransform(wxyz, xyz), prob.GetRAD(), link));
-  if (term_type == TT_COST) {
-    prob.addCost(CostPtr(new CostFromErrFunc(f, prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), ABS, name)));
+  if (term_type == TT_COST) {    
+    PenaltyType pentype;
+    if (penalty_type == "l1") {
+      pentype = ABS;
+    }
+    else if (penalty_type == "l2") {
+      pentype = SQUARED;
+    }
+    else {
+      PRINT_AND_THROW("penalty_type must be l1 or l2");
+    }
+    prob.addCost(CostPtr(new CostFromErrFunc(f, prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), pentype, name)));
   }
   else if (term_type == TT_CNT) {
     prob.addConstraint(ConstraintPtr(new ConstraintFromFunc(f, prob.GetVarRow(timestep), concat(rot_coeffs, pos_coeffs), EQ, name)));

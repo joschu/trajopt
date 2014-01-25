@@ -1,6 +1,7 @@
 from __future__ import division
 import openravepy as rave
 import numpy as np
+import tempfile
 
 def create_trimesh(env, verts, faces, name="mesh"):  
     body = rave.RaveCreateKinBody(env, "")
@@ -28,25 +29,29 @@ def create_box_from_bounds(env, bounds, name="box"):
     xml_str = """
 <Environment>
   <KinBody name="%s">
-    <Body type="static">
+    <Body type="static" name="%s">
       <Geom type="box">
-	<Translation> %f %f %f </Translation>
 	<extents> %f %f %f </extents>
       </Geom>
     </Body>
   </KinBody>
 
 </Environment>
-"""%( name,
-      (xmin+xmax)/2, (ymin+ymax)/2, (zmin+zmax)/2,
+"""%( name,name,
       (xmax-xmin)/2, (ymax-ymin)/2, (zmax-zmin)/2 )
 
+    success = env.LoadData(xml_str)
+    assert success
 
-    fname = "/tmp/%s.xml"%name
-    with open(fname,"w") as fh:
-        fh.write(xml_str)
 
-    return env.Load(fname)
+
+    body = env.GetKinBody(name)
+
+    T = np.eye(4)
+    T[:3,3] = (xmax+xmin)/2, (ymax+ymin)/2, (zmax+zmin)/2
+    body.SetTransform(T)
+
+    return body
 
 def create_cylinder(env, center, radius, height, name = "cylinder"):
     xcenter, ycenter, zcenter = center

@@ -10,6 +10,7 @@
 #include <LinearMath/btConvexHull.h>
 #include <utils/stl_to_string.hpp>
 #include "utils/logging.hpp"
+#include "utils/set_differences.hpp"
 #include "openrave_userdata_utils.hpp"
 using namespace util;
 using namespace std;
@@ -341,7 +342,10 @@ public:
   virtual void ExcludeCollisionPair(const KinBody::Link& link0, const KinBody::Link& link1) {
     m_excludedPairs.insert(LinkPair(&link0, &link1));
     COW *cow0 = GetCow(&link0), *cow1 = GetCow(&link1);
-    if (cow0 && cow1) m_allowedCollisionMatrix(cow0->m_index, cow1->m_index) = 0;
+    if (cow0 && cow1) {
+      m_allowedCollisionMatrix(cow0->m_index, cow1->m_index) = 0;
+      m_allowedCollisionMatrix(cow1->m_index, cow0->m_index) = 0;
+    }
   }
   // collision checking
   virtual void AllVsAll(vector<Collision>& collisions);
@@ -556,24 +560,6 @@ void BulletCollisionChecker::RemoveKinBody(const OR::KinBodyPtr& body) {
   trajopt::RemoveUserData(*body, "bt");
 }
 
-template <typename T>
-void SetDifferences(const vector<T>& A, const vector<T>& B, vector<T>& AMinusB, vector<T>& BMinusA) {
-  set<T> Aset, Bset;
-  AMinusB.clear();
-  BMinusA.clear();
-  BOOST_FOREACH(const T& a, A) {
-    Aset.insert(a);
-  }
-  BOOST_FOREACH(const T& b, B) {
-    Bset.insert(b);
-  }
-  BOOST_FOREACH(const T& a, A) {
-    if (Bset.count(a) == 0) AMinusB.push_back(a);
-  }
-  BOOST_FOREACH(const T& b, B) {
-    if (Aset.count(b) == 0) BMinusA.push_back(b);
-  }
-}
 
 void BulletCollisionChecker::AddAndRemoveBodies(const vector<KinBodyPtr>& curVec, const vector<KinBodyPtr>& prevVec, vector<KinBodyPtr>& toAdd) {
   vector<KinBodyPtr> toRemove;

@@ -19,6 +19,7 @@
 #include "openrave_userdata_utils.hpp"
 #include <osgText/Font>
 #include <osgText/Text>
+#include "utils/set_differences.hpp"
 
 using namespace osg;
 using namespace OpenRAVE;
@@ -513,18 +514,37 @@ OSGViewer::~OSGViewer(){
 }
 
 
+void OSGViewer::AddAndRemoveBodies(const vector<KinBodyPtr>& curVec, const vector<KinBodyPtr>& prevVec, vector<KinBodyPtr>& toAdd) {
+  vector<KinBodyPtr> toRemove;
+  SetDifferences(curVec, prevVec, toAdd, toRemove);
+
+  BOOST_FOREACH(const KinBodyPtr& body, toAdd) {
+    assert(!trajopt::GetUserData(*body, "osg"));
+    // AddKinBody(body);
+  }
+  BOOST_FOREACH(const KinBodyPtr& body, toRemove) {
+    RemoveKinBody(body);
+  }
+}
+
 void OSGViewer::UpdateSceneData() {
-  vector<OpenRAVE::KinBodyPtr> bodies;
+  vector<OpenRAVE::KinBodyPtr> bodies, addedBodies;
   GetEnv()->GetBodies(bodies);
+  if (bodies.size() != m_prevbodies.size() || !std::equal(bodies.begin(), bodies.end(), m_prevbodies.begin())) {
+    AddAndRemoveBodies(bodies, m_prevbodies, addedBodies);
+    BOOST_FOREACH(KinBodyPtr& body, addedBodies) {
+      KinBodyGroup* group = CreateOsgGroup(*body);
+      m_root->addChild(group);      
+    }
+    m_prevbodies = bodies;    
+  }
+
   for (int i=0; i < bodies.size(); ++i) {
     KinBody& body = *bodies[i];
     KinBodyGroup* group = GetOsgGroup(body);
-    if (!group) {
-      group = CreateOsgGroup(body);
-      m_root->addChild(group);
-    }
     group->update();
   }
+
   m_viewer.requestRedraw();
 }
 
@@ -612,6 +632,7 @@ OpenRAVE::GraphHandlePtr OSGViewer::plot3(const float* ppoints, int numPoints, i
 
 
   int floats_per_pt = stride / sizeof(float);
+  int colorsize = bhasalpha ? 4 : 3;
 
   Vec3Array* osgPts = new Vec3Array;
   osgPts->reserve(numPoints);
@@ -621,7 +642,7 @@ OpenRAVE::GraphHandlePtr OSGViewer::plot3(const float* ppoints, int numPoints, i
     const float* p = ppoints + i*floats_per_pt;
     if (isfinite(p[0]))  {
       osgPts->push_back(osg::Vec3(p[0], p[1], p[2]));
-      osgCols->push_back((colors != NULL) ? osg::Vec4(colors[4*i], colors[4*i+1], colors[4*i+2], colors[4*i+3]) : osg::Vec4(1,0,0,1));
+      osgCols->push_back((colors != NULL) ? osg::Vec4(colors[colorsize*i], colors[colorsize*i+1], colors[colorsize*i+2], bhasalpha ? colors[colorsize*i+3] : 1) : osg::Vec4(1,0,0,1));
     }
   }
 

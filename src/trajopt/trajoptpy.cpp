@@ -179,14 +179,8 @@ public:
     return out;
   }
   py::object GetTraj() {
-    TrajArray &traj = m_result->traj;
-    py::object out = np_mod.attr("empty")(py::make_tuple(traj.rows(), traj.cols()));
-    for (int i = 0; i < traj.rows(); ++i) {
-      for (int j = 0; j < traj.cols(); ++j) {
-        out[i][j] = traj(i, j);
-      }
-    }
-    return out;
+    TrajArray &traj = m_result->traj;    
+    return toNdarray2<double>(traj.data(),traj.rows(), traj.cols());    
   }
   py::object __str__() {
     return GetCosts().attr("__str__")() + GetConstraints().attr("__str__")();
@@ -203,6 +197,11 @@ public:
   Collision m_c;
   PyCollision(const Collision& c) : m_c(c) {}
   float GetDistance() {return m_c.distance;}
+  py::object GetNormal() {return toNdarray1<double>((double*)&m_c.normalB2A,3);}
+  py::object GetPtA() {return toNdarray1<double>((double*)&m_c.ptA,3);}
+  py::object GetPtB() {return toNdarray1<double>((double*)&m_c.ptB,3);}
+  string GetLinkAName() {return m_c.linkA->GetName();}
+  string GetLinkBName() {return m_c.linkB->GetName();}
 };
 
 py::list toPyList(const vector<Collision>& collisions) {
@@ -268,7 +267,6 @@ class PyOSGViewer {
 public:
     PyOSGViewer(OSGViewerPtr viewer) : m_viewer(viewer) {}
   int Step() {
-    m_viewer->UpdateSceneData();
     m_viewer->Draw();
     return 0;
   }
@@ -291,7 +289,7 @@ public:
     assert(!!m_viewer);
     m_viewer->Idle();
   }
-PyGraphHandle DrawText(std::string text, float x, float y, float fontsize, py::object pycolor) {
+  PyGraphHandle DrawText(std::string text, float x, float y, float fontsize, py::object pycolor) {
     OpenRAVE::Vector color = OpenRAVE::Vector(py::extract<float>(pycolor[0]), py::extract<float>(pycolor[1]), py::extract<float>(pycolor[2]), py::extract<float>(pycolor[3]));
     return PyGraphHandle(m_viewer->drawtext(text, x, y, fontsize, color));
   }

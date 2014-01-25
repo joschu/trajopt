@@ -22,6 +22,8 @@ public:
   void Draw();
   void Idle(); // should be called ToggleIdle
   void UpdateSceneData();
+  void AddAndRemoveBodies(const std::vector<OpenRAVE::KinBodyPtr>& curVec, 
+      const std::vector<OpenRAVE::KinBodyPtr>& prevVec, std::vector<OpenRAVE::KinBodyPtr>& toAdd);
   const std::string& GetName() const {return m_name;}
   void SetBkgndColor(const RaveVectorf &) {printf("warning: SetBkgndColor not implemented\n");}
 
@@ -72,7 +74,7 @@ public:
   osgViewer::Viewer m_viewer;
   bool m_idling, m_request_stop_idling;
   std::string m_name;
-
+  std::vector<OpenRAVE::KinBodyPtr> m_prevbodies;
 
 };
 typedef boost::shared_ptr<OSGViewer> OSGViewerPtr;

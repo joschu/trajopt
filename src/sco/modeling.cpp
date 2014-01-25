@@ -59,6 +59,7 @@ void ConvexObjective::addMax(const AffExprVector& ev) {
     ineqs_.push_back(ev[i]);
     exprDec(ineqs_.back(), m);
   }
+  exprInc(quad_, m);
 }
 
 void ConvexObjective::addConstraintsToModel() {

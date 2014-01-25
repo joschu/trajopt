@@ -255,7 +255,7 @@ if __name__ == "__main__":
         loadsuccess = loadsuccess and env.Load("../data/obstructed_door.env.xml")
         assert loadsuccess
         try:
-            import IPython
+            import IPython.lib.inputhook
             viewer = trajoptpy.GetViewer(env)
             IPython.lib.inputhook.set_inputhook(viewer.Step)
         except ImportError:
