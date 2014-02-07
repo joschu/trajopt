@@ -11,7 +11,7 @@ namespace trajopt {
 
 void RobotAndDOF::SetDOFValues(const DblVec& dofs) {
   if (affinedofs != 0) {
-    OR::Transform T;
+    OR::Transform T = robot->GetTransform();
     OR::RaveGetTransformFromAffineDOFValues(T, dofs.begin()+joint_inds.size(), affinedofs, rotationaxis, true);
     robot->SetTransform(T);
     robot->SetDOFValues(dofs, false, joint_inds);
