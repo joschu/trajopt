@@ -67,7 +67,7 @@ public:
 
   osg::ref_ptr<EventHandler> m_handler;
   osg::ref_ptr<osg::Group> m_root;
-  private:
+  // private:
 
 //  osg::ref_ptr<osgViewer::Viewer> m_viewer;
   osg::ref_ptr<osg::Camera> m_cam, m_hudcam;

@@ -131,6 +131,7 @@ osg::Node* osgNodeFromGeom(const KinBody::Link::Geometry& geom) {
   geode->accept(sv);
 
   if (!geom.GetRenderFilename().empty()) {
+    printf("Got graphics mesh!\n");
     osg::Node* node = osgDB::readNodeFile(geom.GetRenderFilename());
     if (node) {
 #if 0  // show collision mesh and collision mesh

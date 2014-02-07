@@ -2,9 +2,11 @@
 #include "trajopt/collision_checker.hpp"
 #include "trajopt/problem_description.hpp"
 #include "osgviewer/osgviewer.hpp"
+#include "osgviewer/robot_ui.hpp"
 #include <boost/foreach.hpp>
 #include "macros.h"
 #include "sco/modeling_utils.hpp"
+#include "openrave_userdata_utils.hpp"
 #include "numpy_utils.hpp"
 using namespace trajopt;
 using namespace Eigen;
@@ -33,7 +35,14 @@ KinBody::LinkPtr GetCppLink(py::object py_link, EnvironmentBasePtr env) {
   int idx = py::extract<int>(py_link.attr("GetIndex")());
   return parent->GetLinks()[idx];
 }
+RobotBasePtr GetCppRobot(py::object py_robot, EnvironmentBasePtr env) {
+  return boost::dynamic_pointer_cast<RobotBase>(GetCppKinBody(py_robot, env));
+}
 
+OpenRAVE::RobotBase::ManipulatorPtr GetCppManip(py::object py_manip, EnvironmentBasePtr env) {
+  RobotBasePtr robot = GetCppRobot(py_manip.attr("GetRobot")(), env);
+  return robot->GetManipulator(py::extract<string>(py_manip.attr("GetName")()));
+}
 
 
 
@@ -263,6 +272,11 @@ PyCollisionChecker PyGetCollisionChecker(py::object py_env) {
   return PyCollisionChecker(cc);
 }
 
+
+void CallPyFunc(py::object f) {
+  f();
+}
+
 class PyOSGViewer {
 public:
     PyOSGViewer(OSGViewerPtr viewer) : m_viewer(viewer) {}
@@ -292,6 +306,22 @@ public:
   PyGraphHandle DrawText(std::string text, float x, float y, float fontsize, py::object pycolor) {
     OpenRAVE::Vector color = OpenRAVE::Vector(py::extract<float>(pycolor[0]), py::extract<float>(pycolor[1]), py::extract<float>(pycolor[2]), py::extract<float>(pycolor[3]));
     return PyGraphHandle(m_viewer->drawtext(text, x, y, fontsize, color));
+  }
+  void AddManipulatorControl(py::object py_manip) {
+    RobotBase::ManipulatorPtr manip = GetCppManip(py_manip, m_viewer->GetEnv());
+    SetUserData(*manip->GetRobot(), "ManipulatorControl", UserDataPtr(new ManipulatorControl(manip, m_viewer)));
+  }
+  void AddDriveControl(py::object py_robot) {
+    RobotBasePtr robot = GetCppRobot(py_robot, m_viewer->GetEnv());
+    SetUserData(*robot, "DriveControl", UserDataPtr(new DriveControl(robot, m_viewer)));
+  }
+  void AddInteractiveMarker(py::object pose) {
+    OpenRAVE::Transform T;
+    return UserDataPtr(new InteractiveMarker(m_viewer, T));
+  }
+  void AddKeyCallback(py::object key, py::object py_fn) {
+    OSGViewer::KeyCallback f = boost::bind(CallPyFunc, py_fn);
+    m_viewer->AddKeyCallback(py::extract<int>(key), f);
   }
   
 private:
@@ -360,6 +390,9 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
      .def("SetAllTransparency", &PyOSGViewer::SetAllTransparency)
      .def("Idle", &PyOSGViewer::Idle)
      .def("DrawText", &PyOSGViewer::DrawText)
+     .def("AddManipulatorControl",&PyOSGViewer::AddManipulatorControl)
+     .def("AddDriveControl",&PyOSGViewer::AddDriveControl)
+     .def("AddKeyCallback", &PyOSGViewer::AddKeyCallback)
     ;
   py::def("GetViewer", &PyGetViewer, "Get OSG viewer for environment or create a new one");
 
