@@ -250,6 +250,12 @@ public:
     m_cc->BodyVsAll(*cpp_kb, collisions);
     return toPyList(collisions);
   }
+  void SetContactDistance(float dist) {
+    m_cc->SetContactDistance(dist);
+  }
+  double GetContactDistance() {
+    return m_cc->GetContactDistance();
+  }
   PyGraphHandle PlotCollisionGeometry() {
     vector<GraphHandlePtr> handles;
     m_cc->PlotCollisionGeometry(handles);
@@ -372,6 +378,8 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("BodyVsAll", &PyCollisionChecker::BodyVsAll)
       .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
       .def("ExcludeCollisionPair", &PyCollisionChecker::ExcludeCollisionPair)
+      .def("SetContactDistance", &PyCollisionChecker::SetContactDistance)
+      .def("GetContactDistance", &PyCollisionChecker::GetContactDistance)
       ;
   py::def("GetCollisionChecker", &PyGetCollisionChecker);
   py::class_<PyCollision>("Collision", py::no_init)
