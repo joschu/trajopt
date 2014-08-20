@@ -376,6 +376,11 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
   py::def("GetCollisionChecker", &PyGetCollisionChecker);
   py::class_<PyCollision>("Collision", py::no_init)
      .def("GetDistance", &PyCollision::GetDistance)
+     .def("GetNormal", &PyCollision::GetNormal)
+     .def("GetPtA", &PyCollision::GetPtA)
+     .def("GetPtB", &PyCollision::GetPtB)
+     .def("GetLinkAName", &PyCollision::GetLinkAName)
+     .def("GetLinkBName", &PyCollision::GetLinkBName)
     ;
   py::class_< PyGraphHandle >("GraphHandle", py::no_init)
      .def("SetTransparency", &PyGraphHandle::SetTransparency1)
