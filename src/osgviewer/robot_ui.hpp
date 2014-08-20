@@ -29,9 +29,10 @@ private:
 };
 
 class TRAJOPT_API InteractiveMarker : public OpenRAVE::UserData {
+public:
   InteractiveMarker(const OpenRAVE::Transform& initTrans, OSGViewerPtr viewer);
   bool ProcessMouseInput(const osgGA::GUIEventAdapter &ea);
-public:
+private:
   OSGViewerPtr m_viewer;
   float lastX, lastY;
   OpenRAVE::Transform m_T;
