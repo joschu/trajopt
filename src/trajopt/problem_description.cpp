@@ -350,7 +350,7 @@ void PoseCostInfo::fromJson(const Value& v) {
   childFromJson(params, wxyz,"wxyz");
   childFromJson(params, pos_coeffs,"pos_coeffs", (Vector3d)Vector3d::Ones());
   childFromJson(params, rot_coeffs,"rot_coeffs", (Vector3d)Vector3d::Ones());
-  childFromJson(params, penalty_type,"penalty_type",string(""));
+  childFromJson(params, penalty_type,"penalty_type",string("l1")); //l1 is default (if default is blank, unit tests need to be updated)
 
   string linkstr;
   childFromJson(params, linkstr, "link");
