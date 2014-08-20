@@ -315,10 +315,10 @@ public:
     RobotBasePtr robot = GetCppRobot(py_robot, m_viewer->GetEnv());
     SetUserData(*robot, "DriveControl", UserDataPtr(new DriveControl(robot, m_viewer)));
   }
-  void AddInteractiveMarker(py::object pose) {
-    OpenRAVE::Transform T;
-    return UserDataPtr(new InteractiveMarker(m_viewer, T));
-  }
+  //void AddInteractiveMarker(py::object pose) {
+  //  OpenRAVE::Transform T;
+  //  return UserDataPtr(new InteractiveMarker(T, m_viewer));
+  //}
   void AddKeyCallback(py::object key, py::object py_fn) {
     OSGViewer::KeyCallback f = boost::bind(CallPyFunc, py_fn);
     m_viewer->AddKeyCallback(py::extract<int>(key), f);
