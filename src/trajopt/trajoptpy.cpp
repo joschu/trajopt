@@ -38,7 +38,6 @@ KinBody::LinkPtr GetCppLink(py::object py_link, EnvironmentBasePtr env) {
 RobotBasePtr GetCppRobot(py::object py_robot, EnvironmentBasePtr env) {
   return boost::dynamic_pointer_cast<RobotBase>(GetCppKinBody(py_robot, env));
 }
-
 OpenRAVE::RobotBase::ManipulatorPtr GetCppManip(py::object py_manip, EnvironmentBasePtr env) {
   RobotBasePtr robot = GetCppRobot(py_manip.attr("GetRobot")(), env);
   return robot->GetManipulator(py::extract<string>(py_manip.attr("GetName")()));
@@ -265,6 +264,10 @@ public:
     EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
     m_cc->ExcludeCollisionPair(*GetCppLink(link0, env), *GetCppLink(link1, env));
   }
+  void IncludeCollisionPair(py::object link0, py::object link1) {
+    EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
+    m_cc->IncludeCollisionPair(*GetCppLink(link0, env), *GetCppLink(link1, env));
+  }
   PyCollisionChecker(CollisionCheckerPtr cc) : m_cc(cc) {}
 private:
   PyCollisionChecker();
@@ -378,6 +381,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("BodyVsAll", &PyCollisionChecker::BodyVsAll)
       .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
       .def("ExcludeCollisionPair", &PyCollisionChecker::ExcludeCollisionPair)
+      .def("IncludeCollisionPair", &PyCollisionChecker::IncludeCollisionPair)
       .def("SetContactDistance", &PyCollisionChecker::SetContactDistance)
       .def("GetContactDistance", &PyCollisionChecker::GetContactDistance)
       ;

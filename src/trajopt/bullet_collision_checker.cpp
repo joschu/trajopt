@@ -347,6 +347,11 @@ public:
       m_allowedCollisionMatrix(cow1->m_index, cow0->m_index) = 0;
     }
   }
+  virtual void IncludeCollisionPair(const KinBody::Link& link0, const KinBody::Link& link1) {
+    m_excludedPairs.erase(LinkPair(&link0, &link1));
+    COW *cow0 = GetCow(&link0), *cow1 = GetCow(&link1);
+    if (cow0 && cow1) m_allowedCollisionMatrix(cow0->m_index, cow1->m_index) = 1;
+  }
   // collision checking
   virtual void AllVsAll(vector<Collision>& collisions);
   virtual void LinksVsAll(const vector<KinBody::LinkPtr>& links, vector<Collision>& collisions, short filterMask);
