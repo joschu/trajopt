@@ -46,9 +46,16 @@ public:
   virtual void LinkVsAll(const KinBody::Link& link, vector<Collision>& collisions, short filterMask)=0;
   virtual void LinksVsAll(const vector<KinBody::LinkPtr>& links, vector<Collision>& collisions, short filterMask)=0;
 
+  /** check link vs link */
+  virtual void LinkVsLink(const KinBody::Link& link1, const KinBody::Link& link2, vector<Collision>& collisions, short filterMask)=0;
+  virtual void LinksVsLinks(const vector<KinBody::LinkPtr>& links1, const vector<KinBody::LinkPtr>& links2, vector<Collision>& collisions, short filterMask)=0;
+
   /** check robot vs everything else. includes attached bodies */
   void BodyVsAll(const KinBody& body, vector<Collision>& collisions, short filterMask=-1) {
     LinksVsAll(body.GetLinks(), collisions, filterMask);
+  }
+  void BodyVsBody(const KinBody& body1, const KinBody& body2, vector<Collision>& collisions, short filterMask=-1) {
+    LinksVsLinks(body1.GetLinks(), body2.GetLinks(), collisions, filterMask);
   }
   /** contacts of distance < (arg) will be returned */
   virtual void SetContactDistance(float distance)  = 0;
@@ -60,6 +67,7 @@ public:
   
   /** Find contacts between swept-out shapes of robot links and everything in the environment, as robot goes from startjoints to endjoints */ 
   virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions) {throw std::runtime_error("not implemented");}
+  virtual void CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links, const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions)  {throw std::runtime_error("not implemented");}
 
   /** Finds all self collisions when all joints are set to zero, and ignore collisions between the colliding links */
   void IgnoreZeroStateSelfCollisions();

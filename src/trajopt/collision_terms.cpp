@@ -105,7 +105,6 @@ SingleTimestepCollisionEvaluator::SingleTimestepCollisionEvaluator(Configuration
   m_link2ind(),
   m_links(),
   m_filterMask(-1) {
-  vector<KinBody::LinkPtr> links;
   vector<int> inds;
   rad->GetAffectedLinks(m_links, true, inds);
   for (int i=0; i < m_links.size(); ++i) {
@@ -145,7 +144,6 @@ CastCollisionEvaluator::CastCollisionEvaluator(ConfigurationPtr rad, const VarVe
   m_vars1(vars1),
   m_link2ind(),
   m_links() {
-  vector<KinBody::LinkPtr> links;
   vector<int> inds;
   rad->GetAffectedLinks(m_links, true, inds);
   for (int i=0; i < m_links.size(); ++i) {
@@ -156,7 +154,6 @@ CastCollisionEvaluator::CastCollisionEvaluator(ConfigurationPtr rad, const VarVe
 void CastCollisionEvaluator::CalcCollisions(const DblVec& x, vector<Collision>& collisions) {
   DblVec dofvals0 = getDblVec(x, m_vars0);
   DblVec dofvals1 = getDblVec(x, m_vars1);
-  m_rad->SetDOFValues(dofvals0);
   m_cc->CastVsAll(*m_rad, m_links, dofvals0, dofvals1, collisions);
 }
 void CastCollisionEvaluator::CalcDistExpressions(const DblVec& x, vector<AffExpr>& exprs) {
@@ -228,6 +225,9 @@ void CollisionCost::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<
   PlotCollisions(collisions, env, handles, m_dist_pen);
 }
 
+void CollisionCost::GetCollisionsCached(const DblVec& x, vector<Collision>& collisions) {
+  m_calc->GetCollisionsCached(x, collisions);
+}
 // ALMOST EXACTLY COPIED FROM CollisionCost
 
 CollisionConstraint::CollisionConstraint(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars) :
@@ -262,5 +262,8 @@ DblVec CollisionConstraint::value(const vector<double>& x) {
 }
 
 
+void CollisionConstraint::GetCollisionsCached(const DblVec& x, vector<Collision>& collisions) {
+  m_calc->GetCollisionsCached(x, collisions);
+}
 
 }

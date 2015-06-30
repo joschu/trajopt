@@ -355,9 +355,12 @@ public:
   // collision checking
   virtual void AllVsAll(vector<Collision>& collisions);
   virtual void LinksVsAll(const vector<KinBody::LinkPtr>& links, vector<Collision>& collisions, short filterMask);
+  virtual void LinksVsLinks(const vector<KinBody::LinkPtr>& links1, const vector<KinBody::LinkPtr>& links2, vector<Collision>& collisions, short filterMask);
   virtual void LinkVsAll(const KinBody::Link& link, vector<Collision>& collisions, short filterMask);
+  virtual void LinkVsLink(const KinBody::Link& link1, const KinBody::Link& link2, vector<Collision>& collisions, short filterMask);
   virtual void ContinuousCheckTrajectory(const TrajArray& traj, Configuration& rad, vector<Collision>&);
   virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions);
+  virtual void CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links, const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions);
   ////
   ///////
 
@@ -367,6 +370,7 @@ public:
   }
   void SetCow(const KinBody::Link* link, COW* cow) {m_link2cow[link] = cow;}
   void LinkVsAll_NoUpdate(const KinBody::Link& link, vector<Collision>& collisions, short filterMask);
+  void LinkVsLink_NoUpdate(const KinBody::Link& link1, const KinBody::Link& link2, vector<Collision>& collisions, short filterMask);
   void UpdateBulletFromRave();
   void AddKinBody(const OR::KinBodyPtr& body);
   void RemoveKinBody(const OR::KinBodyPtr& body);
@@ -378,6 +382,8 @@ public:
   void UpdateAllowedCollisionMatrix();
   void CheckShapeCast(btCollisionShape* shape, const btTransform& tf0, const btTransform& tf1,
       CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions);
+  void CheckShapeCastVsLinks(btCollisionShape* shape, const btTransform& tf0, const btTransform& tf1, const KinBody::Link& link,
+      CollisionObjectWrapper* cow1, btCollisionWorld* world, vector<Collision>& collisions);
 
 
 };
@@ -501,8 +507,19 @@ void BulletCollisionChecker::LinksVsAll(const vector<KinBody::LinkPtr>& links, v
   for (int i=0; i < links.size(); ++i) {
     LinkVsAll_NoUpdate(*links[i], collisions, filterMask);
   }
+  LOG_DEBUG("LinksVsAll checked %li links and found %li collisions", links.size(), collisions.size());
 }
 
+void BulletCollisionChecker::LinksVsLinks(const vector<KinBody::LinkPtr>& links1, const vector<KinBody::LinkPtr>& links2, vector<Collision>& collisions, short filterMask) {
+  UpdateBulletFromRave();
+  m_world->updateAabbs();
+  
+  for (int i=0; i < links1.size(); ++i) {
+    for (int j=0; j < links2.size(); ++j) {
+      LinkVsLink_NoUpdate(*links1[i], *links2[j], collisions, filterMask);
+    }
+  }
+}
 
 void BulletCollisionChecker::LinkVsAll(const KinBody::Link& link, vector<Collision>& collisions, short filterMask) {
   UpdateBulletFromRave();
@@ -515,6 +532,20 @@ void BulletCollisionChecker::LinkVsAll_NoUpdate(const KinBody::Link& link, vecto
   CollisionCollector cc(collisions, cow, this);
   cc.m_collisionFilterMask = filterMask;
   m_world->contactTest(cow, cc);
+}
+
+void BulletCollisionChecker::LinkVsLink(const KinBody::Link& link1, const KinBody::Link& link2, vector<Collision>& collisions, short filterMask) {
+  UpdateBulletFromRave();
+  LinkVsLink_NoUpdate(link1, link2, collisions, filterMask);
+}
+
+void BulletCollisionChecker::LinkVsLink_NoUpdate(const KinBody::Link& link1, const KinBody::Link& link2, vector<Collision>& collisions, short filterMask) {
+  if (link1.GetGeometries().empty() || link2.GetGeometries().empty()) return;
+  CollisionObjectWrapper* cow1 = GetCow(&link1);
+  CollisionObjectWrapper* cow2 = GetCow(&link2);
+  CollisionCollector cc(collisions, cow1, this);
+  cc.m_collisionFilterMask = filterMask;
+  m_world->contactPairTest(cow1, cow2, cc);
 }
 
 struct KinBodyCollisionData;
@@ -998,9 +1029,62 @@ void BulletCollisionChecker::CastVsAll(Configuration& rad, const vector<KinBody:
   LOG_DEBUG("CastVsAll checked %li links and found %li collisions", links.size(), collisions.size());
 }
 
+void BulletCollisionChecker::CheckShapeCastVsLinks(btCollisionShape* shape, const btTransform& tf0, const btTransform& tf1, const KinBody::Link& link,
+    CollisionObjectWrapper* cow1, btCollisionWorld* world, vector<Collision>& collisions) {
+  if (link.GetGeometries().empty()) return;
+  if (btConvexShape* convex = dynamic_cast<btConvexShape*>(shape)) {
+    CastHullShape* shape = new CastHullShape(convex, tf0.inverseTimes(tf1));
+    CollisionObjectWrapper* r_obj = new CollisionObjectWrapper(cow1->m_link);
+    r_obj->setCollisionShape(shape);
+    r_obj->setWorldTransform(tf0);
+    r_obj->m_index = cow1->m_index;
+    CollisionObjectWrapper* cow2 = GetCow(&link);
+    CastCollisionCollector cc(collisions, r_obj, this);
+    cc.m_collisionFilterMask = KinBodyFilter;
+    // cc.m_collisionFilterGroup = cow1->m_collisionFilterGroup;
+    world->contactPairTest(r_obj, cow2, cc);
+    delete r_obj;
+    delete shape;
+  }
+  else if (btCompoundShape* compound = dynamic_cast<btCompoundShape*>(shape)) {
+    for (int i = 0; i < compound->getNumChildShapes(); ++i) {
+      CheckShapeCastVsLinks(compound->getChildShape(i), tf0*compound->getChildTransform(i), tf1*compound->getChildTransform(i), link, cow1, world, collisions);
+    }
+  }
+  else {
+    throw std::runtime_error("I can only continuous collision check convex shapes and compound shapes made of convex shapes");
+  }
+
 }
 
+void BulletCollisionChecker::CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links,
+    const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions) {
+  Configuration::SaverPtr saver = rad.Save();
+  rad.SetDOFValues(startjoints);
+  int nlinks = r_links.size();
+  vector<btTransform> tbefore(nlinks), tafter(nlinks);
+  for (int i=0; i < nlinks; ++i) {
+    tbefore[i] = toBt(r_links[i]->GetTransform());
+  }
+  rad.SetDOFValues(endjoints);
+  for (int i=0; i < nlinks; ++i) {
+    tafter[i] = toBt(r_links[i]->GetTransform());
+  }
+  rad.SetDOFValues(startjoints);
+  UpdateBulletFromRave();
+  m_world->updateAabbs();
 
+  for (int i=0; i < nlinks; ++i) {
+    assert(m_link2cow[r_links[i].get()] != NULL);
+    CollisionObjectWrapper* cow = m_link2cow[r_links[i].get()];
+    for (int j=0; j < b_links.size(); ++j) {
+      CheckShapeCastVsLinks(cow->getCollisionShape(), tbefore[i], tafter[i], *b_links[j], cow, m_world, collisions);
+    }
+  }
+  LOG_DEBUG("CastVsLinks checked %li links and found %li collisions", r_links.size(), collisions.size());
+}
+
+}
 
 
 

@@ -8,6 +8,8 @@
 #include "sco/modeling_utils.hpp"
 #include "openrave_userdata_utils.hpp"
 #include "numpy_utils.hpp"
+#include <limits>
+#include "utils/eigen_conversions.hpp"
 using namespace trajopt;
 using namespace Eigen;
 using namespace OpenRAVE;
@@ -166,6 +168,30 @@ void SetInteractive(py::object b) {
   gInteractive = py::extract<bool>(b);
 }
 
+class PyCollision {
+public:
+  Collision m_c;
+  PyCollision(const Collision& c) : m_c(c) {}
+  float GetDistance() {return m_c.distance;}
+  py::object GetNormal() {return toNdarray1<double>((double*)&m_c.normalB2A,3);}
+  py::object GetPtA() {return toNdarray1<double>((double*)&m_c.ptA,3);}
+  py::object GetPtB() {return toNdarray1<double>((double*)&m_c.ptB,3);}
+  string GetLinkAName() {return m_c.linkA->GetName();}
+  string GetLinkBName() {return m_c.linkB->GetName();}
+  string GetLinkAParentName() {return m_c.linkA->GetParent()->GetName();}
+  string GetLinkBParentName() {return m_c.linkB->GetParent()->GetName();}
+};
+
+py::list toPyList(const vector<Collision>& collisions) {
+  py::list out;
+  BOOST_FOREACH(const Collision& c, collisions) {
+    out.append(PyCollision(c));
+  }
+  return out;
+}
+
+bool compareCollisions(const Collision& c1,const Collision& c2) { return c1.distance < c2.distance; }
+
 class PyTrajOptResult {
 public:
   PyTrajOptResult(TrajOptResultPtr result) : m_result(result) {}
@@ -190,6 +216,10 @@ public:
     TrajArray &traj = m_result->traj;    
     return toNdarray2<double>(traj.data(),traj.rows(), traj.cols());    
   }
+  py::object GetCollisions() {
+    std::sort(m_result->colsContinuous.begin(), m_result->colsContinuous.end(), compareCollisions);
+    return toPyList(m_result->colsContinuous);
+  }
   py::object __str__() {
     return GetCosts().attr("__str__")() + GetConstraints().attr("__str__")();
   }
@@ -197,27 +227,6 @@ public:
 
 PyTrajOptResult PyOptimizeProblem(PyTrajOptProb& prob) {
   return OptimizeProblem(prob.m_prob, gInteractive);
-}
-
-
-class PyCollision {
-public:
-  Collision m_c;
-  PyCollision(const Collision& c) : m_c(c) {}
-  float GetDistance() {return m_c.distance;}
-  py::object GetNormal() {return toNdarray1<double>((double*)&m_c.normalB2A,3);}
-  py::object GetPtA() {return toNdarray1<double>((double*)&m_c.ptA,3);}
-  py::object GetPtB() {return toNdarray1<double>((double*)&m_c.ptB,3);}
-  string GetLinkAName() {return m_c.linkA->GetName();}
-  string GetLinkBName() {return m_c.linkB->GetName();}
-};
-
-py::list toPyList(const vector<Collision>& collisions) {
-  py::list out;
-  BOOST_FOREACH(const Collision& c, collisions) {
-    out.append(PyCollision(c));
-  }
-  return out;
 }
 
 class PyGraphHandle {
@@ -239,7 +248,7 @@ public:
     m_cc->AllVsAll(collisions);
     return toPyList(collisions);
   }
-  py::object BodyVsAll(py::object py_kb) {
+  py::object BodyVsAll(py::object py_kb, bool sort=true) {
     KinBodyPtr cpp_kb = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
         ->GetBodyFromEnvironmentId(py::extract<int>(py_kb.attr("GetEnvironmentId")()));
     if (!cpp_kb) {
@@ -247,7 +256,66 @@ public:
     }
     vector<Collision> collisions;
     m_cc->BodyVsAll(*cpp_kb, collisions);
+    if (sort)
+      std::sort(collisions.begin(), collisions.end(), compareCollisions);
     return toPyList(collisions);
+  }
+  py::object BodyVsBody(py::object py_kb1, py::object py_kb2, bool sort=true) {
+    KinBodyPtr cpp_kb1 = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
+        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb1.attr("GetEnvironmentId")()));
+    KinBodyPtr cpp_kb2 = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
+        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb2.attr("GetEnvironmentId")()));
+    if (!cpp_kb1) {
+      throw openrave_exception("body 1 isn't part of environment!");
+    }
+    if (!cpp_kb2) {
+      throw openrave_exception("body 2 isn't part of environment!");
+    }
+    vector<Collision> collisions;
+    m_cc->BodyVsBody(*cpp_kb1, *cpp_kb2, collisions);
+    if (sort)
+      std::sort(collisions.begin(), collisions.end(), compareCollisions);
+    return toPyList(collisions);
+  }
+  py::object BodiesVsBodies(py::list py_kbs1, py::list py_kbs2) {
+    //py::list py_kbs vs np::list py_kbs
+    EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
+
+    //Convert Bodies
+    int n_kbs1 = boost::python::extract<int>(py_kbs1.attr("__len__")());
+    vector<KinBodyPtr> cpp_kbs1(n_kbs1);
+    for (int i=0; i < n_kbs1; ++i) {
+      cpp_kbs1[i] = env->GetBodyFromEnvironmentId(py::extract<int>(py_kbs1[i].attr("GetEnvironmentId")()));
+      if (!cpp_kbs1[i]) {
+        throw openrave_exception("One of the bodies isn't part of environment!");
+      }
+    }
+
+    int n_kbs2 = boost::python::extract<int>(py_kbs2.attr("__len__")());
+    vector<KinBodyPtr> cpp_kbs2(n_kbs2);
+    for (int i=0; i < n_kbs2; ++i) {
+      cpp_kbs2[i] = env->GetBodyFromEnvironmentId(py::extract<int>(py_kbs2[i].attr("GetEnvironmentId")()));
+      if (!cpp_kbs2[i]) {
+        throw openrave_exception("One of the bodies isn't part of environment!");
+      }
+    }
+
+    vector< vector<Collision> > collisions(n_kbs1);
+    for (int i=0; i < n_kbs1; ++i) { 
+      for (int j=0; j < n_kbs2; ++j) {
+        m_cc->BodyVsBody(*cpp_kbs1[i], *cpp_kbs2[j], collisions[i]);
+      }
+    }
+
+    vector<Collision> f_collisions;
+    for (int i=0; i < n_kbs1; ++i) {
+      std::sort(collisions[i].begin(), collisions[i].end(), compareCollisions);
+      if (!collisions[i].empty()) {
+        f_collisions.push_back(collisions[i].front());
+      }
+    }
+    
+    return toPyList(f_collisions);
   }
   void SetContactDistance(float dist) {
     m_cc->SetContactDistance(dist);
@@ -273,7 +341,6 @@ private:
   PyCollisionChecker();
   CollisionCheckerPtr m_cc;
 };
-
 
 
 PyCollisionChecker PyGetCollisionChecker(py::object py_env) {
@@ -345,6 +412,9 @@ PyOSGViewer PyGetViewer(py::object py_env) {
 }
 
 
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsAllDefaults, PyCollisionChecker::BodyVsAll, 1, 2);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsBodyDefaults, PyCollisionChecker::BodyVsBody, 2, 3);
+
 BOOST_PYTHON_MODULE(ctrajoptpy) {
 
   np_mod = py::import("numpy");
@@ -373,12 +443,15 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("GetCosts", &PyTrajOptResult::GetCosts)
       .def("GetConstraints", &PyTrajOptResult::GetConstraints)
       .def("GetTraj", &PyTrajOptResult::GetTraj)
+      .def("GetCollisions", &PyTrajOptResult::GetCollisions)
       .def("__str__", &PyTrajOptResult::__str__)
       ;
 
   py::class_<PyCollisionChecker>("CollisionChecker", py::no_init)
       .def("AllVsAll", &PyCollisionChecker::AllVsAll)
-      .def("BodyVsAll", &PyCollisionChecker::BodyVsAll)
+      .def("BodyVsAll", &PyCollisionChecker::BodyVsAll, BodyVsAllDefaults())
+      .def("BodyVsBody", &PyCollisionChecker::BodyVsBody, BodyVsBodyDefaults())
+      .def("BodiesVsBodies", &PyCollisionChecker::BodiesVsBodies)
       .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
       .def("ExcludeCollisionPair", &PyCollisionChecker::ExcludeCollisionPair)
       .def("IncludeCollisionPair", &PyCollisionChecker::IncludeCollisionPair)
@@ -393,6 +466,8 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
      .def("GetPtB", &PyCollision::GetPtB)
      .def("GetLinkAName", &PyCollision::GetLinkAName)
      .def("GetLinkBName", &PyCollision::GetLinkBName)
+     .def("GetLinkAParentName", &PyCollision::GetLinkAParentName)
+     .def("GetLinkBParentName", &PyCollision::GetLinkBParentName)
     ;
   py::class_< PyGraphHandle >("GraphHandle", py::no_init)
      .def("SetTransparency", &PyGraphHandle::SetTransparency1)
