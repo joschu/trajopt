@@ -216,10 +216,6 @@ public:
     TrajArray &traj = m_result->traj;    
     return toNdarray2<double>(traj.data(),traj.rows(), traj.cols());    
   }
-  py::object GetCollisions() {
-    std::sort(m_result->colsContinuous.begin(), m_result->colsContinuous.end(), compareCollisions);
-    return toPyList(m_result->colsContinuous);
-  }
   py::object __str__() {
     return GetCosts().attr("__str__")() + GetConstraints().attr("__str__")();
   }
@@ -443,7 +439,6 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("GetCosts", &PyTrajOptResult::GetCosts)
       .def("GetConstraints", &PyTrajOptResult::GetConstraints)
       .def("GetTraj", &PyTrajOptResult::GetTraj)
-      .def("GetCollisions", &PyTrajOptResult::GetCollisions)
       .def("__str__", &PyTrajOptResult::__str__)
       ;
 
