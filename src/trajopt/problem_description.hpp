@@ -4,6 +4,8 @@
 #include <boost/shared_ptr.hpp>
 #include "traj_plotter.hpp"
 
+#include "trajopt/collision_checker.hpp"
+
 namespace sco{struct OptResults;}
 
 namespace trajopt {
@@ -81,6 +83,7 @@ struct TRAJOPT_API TrajOptResult {
   vector<string> cost_names, cnt_names;
   vector<double> cost_vals, cnt_viols;
   TrajArray traj;
+  vector<Collision> colsContinuous;
   TrajOptResult(OptResults& opt, TrajOptProb& prob);
 };
 

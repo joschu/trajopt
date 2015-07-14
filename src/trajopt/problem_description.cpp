@@ -234,6 +234,15 @@ TrajOptResult::TrajOptResult(OptResults& opt, TrajOptProb& prob) :
   cnt_viols(opt.cnt_viols) {
   BOOST_FOREACH(const CostPtr& cost, prob.getCosts()) {
     cost_names.push_back(cost->name());
+
+    CollisionCost* colCost = dynamic_cast<CollisionCost*>(cost.get());
+    if (colCost && colCost->isColCostContinuous()) {
+      vector<Collision> cols;
+      colCost->GetCollisionsCached(opt.x,cols);
+      colsContinuous.insert(colsContinuous.end(), cols.begin(), cols.end());
+      cols.clear();
+    }
+
   }
   BOOST_FOREACH(const ConstraintPtr& cnt, prob.getConstraints()) {
     cnt_names.push_back(cnt->name());

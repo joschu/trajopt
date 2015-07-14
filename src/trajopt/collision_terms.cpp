@@ -192,12 +192,12 @@ void PlotCollisions(const std::vector<Collision>& collisions, OR::EnvironmentBas
 
 CollisionCost::CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars) :
     Cost("collision"),
-    m_calc(new SingleTimestepCollisionEvaluator(rad, vars)), m_dist_pen(dist_pen), m_coeff(coeff)
+    continuousColCost(false), m_calc(new SingleTimestepCollisionEvaluator(rad, vars)), m_dist_pen(dist_pen), m_coeff(coeff)
 {}
 
 CollisionCost::CollisionCost(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars0, const VarVector& vars1) :
     Cost("cast_collision"),
-    m_calc(new CastCollisionEvaluator(rad, vars0, vars1)), m_dist_pen(dist_pen), m_coeff(coeff)
+    continuousColCost(true), m_calc(new CastCollisionEvaluator(rad, vars0, vars1)), m_dist_pen(dist_pen), m_coeff(coeff)
 {}
 ConvexObjectivePtr CollisionCost::convex(const vector<double>& x, Model* model) {
   ConvexObjectivePtr out(new ConvexObjective(model));
@@ -225,9 +225,14 @@ void CollisionCost::Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<
   PlotCollisions(collisions, env, handles, m_dist_pen);
 }
 
+bool CollisionCost::isColCostContinuous() {
+  return continuousColCost;
+}
+
 void CollisionCost::GetCollisionsCached(const DblVec& x, vector<Collision>& collisions) {
   m_calc->GetCollisionsCached(x, collisions);
 }
+
 // ALMOST EXACTLY COPIED FROM CollisionCost
 
 CollisionConstraint::CollisionConstraint(double dist_pen, double coeff, ConfigurationPtr rad, const VarVector& vars) :

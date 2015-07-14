@@ -81,8 +81,10 @@ public:
   virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model);
   virtual double value(const vector<double>&);
   void Plot(const DblVec& x, OR::EnvironmentBase& env, std::vector<OR::GraphHandlePtr>& handles);
+  bool isColCostContinuous();
   void GetCollisionsCached(const DblVec& x, vector<Collision>& collisions);
 private:
+  bool continuousColCost;
   CollisionEvaluatorPtr m_calc;
   double m_dist_pen;
   double m_coeff;
