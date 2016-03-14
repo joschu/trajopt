@@ -14,7 +14,8 @@ void RobotAndDOF::SetDOFValues(const DblVec& dofs) {
     OR::Transform T = robot->GetTransform();
     OR::RaveGetTransformFromAffineDOFValues(T, dofs.begin()+joint_inds.size(), affinedofs, rotationaxis, true);
     robot->SetTransform(T);
-    robot->SetDOFValues(dofs, false, joint_inds);
+    if (joint_inds.size() > 0)
+      robot->SetDOFValues(dofs, false, joint_inds);
   }
   else {
     robot->SetDOFValues(dofs, false, joint_inds);
@@ -23,7 +24,8 @@ void RobotAndDOF::SetDOFValues(const DblVec& dofs) {
 
 DblVec RobotAndDOF::GetDOFValues() {
   DblVec out;
-  robot->GetDOFValues(out, joint_inds);
+  if (joint_inds.size() > 0):
+    robot->GetDOFValues(out, joint_inds);
   if (affinedofs != 0) {
     out.resize(GetDOF());
     OR::Transform T = robot->GetTransform();
@@ -40,7 +42,8 @@ void RobotAndDOF::SetRobotActiveDOFs()  {
 }
 
 void RobotAndDOF::GetDOFLimits(DblVec& lower, DblVec& upper) const {
-  robot->GetDOFLimits(lower, upper, joint_inds);
+  if (joint_inds.size() > 0)
+    robot->GetDOFLimits(lower, upper, joint_inds);
   const int translation_dofs[3] = {DOF_X, DOF_Y, DOF_Z};
   for (int i=0; i < 3; ++i) {
     if (affinedofs & translation_dofs[i]) {
