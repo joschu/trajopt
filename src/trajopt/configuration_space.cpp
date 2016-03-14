@@ -24,7 +24,7 @@ void RobotAndDOF::SetDOFValues(const DblVec& dofs) {
 
 DblVec RobotAndDOF::GetDOFValues() {
   DblVec out;
-  if (joint_inds.size() > 0):
+  if (joint_inds.size() > 0)
     robot->GetDOFValues(out, joint_inds);
   if (affinedofs != 0) {
     out.resize(GetDOF());
