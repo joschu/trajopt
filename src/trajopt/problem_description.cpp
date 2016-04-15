@@ -8,7 +8,6 @@
 #include "trajopt/trajectory_costs.hpp"
 #include "trajopt/collision_terms.hpp"
 #include "trajopt/rave_utils.hpp"
-#include "trajopt/rave_utils.hpp"
 #include "trajopt/traj_plotter.hpp"
 #include "utils/eigen_conversions.hpp"
 #include "utils/eigen_slicing.hpp"
@@ -78,7 +77,7 @@ RobotAndDOFPtr RADFromName(const string& name, RobotBasePtr robot) {
     else if (KinBody::JointPtr joint = robot->GetJoint(component)) {
       dof_inds.push_back(joint->GetDOFIndex());
     }
-    else PRINT_AND_THROW( boost::format("error in reading manip description: %s must be a manipulator, link, or 'base'")%component );
+    else PRINT_AND_THROW( boost::format("error in reading manip description: %s must be a manipulator, joint, or 'base'")%component );
   }
   return RobotAndDOFPtr(new RobotAndDOF(robot, dof_inds, affinedofs, rotationaxis));
 }
@@ -254,7 +253,7 @@ TrajOptResultPtr OptimizeProblem(TrajOptProbPtr prob, bool plot) {
   Configuration::SaverPtr saver = prob->GetRAD()->Save();
   BasicTrustRegionSQP opt(prob);
   opt.max_iter_ = 40;
-  // opt.min_approx_improve_frac_ = .001;
+  opt.min_approx_improve_frac_ = .001;
   opt.improve_ratio_threshold_ = .2;
   opt.merit_error_coeff_ = 20;
   if (plot) {

@@ -12,6 +12,7 @@
 #include "utils/logging.hpp"
 #include "utils/set_differences.hpp"
 #include "openrave_userdata_utils.hpp"
+#include "osgviewer/osgviewer.hpp"
 using namespace util;
 using namespace std;
 using namespace trajopt;
@@ -257,7 +258,7 @@ COWPtr CollisionObjectFromLink(OR::KinBody::LinkPtr link, bool useTrimesh) {
 
 
 void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
-    OpenRAVE::EnvironmentBase& env, vector<OpenRAVE::GraphHandlePtr>& handles) {
+    EnvironmentBasePtr env, vector<OpenRAVE::GraphHandlePtr>& handles, OR::RaveVector<float> color = OR::RaveVector<float>(1,1,1,.1)) {
 
   typedef map<btCollisionShape*, HullResult > Shape2Inds;
   Shape2Inds gHullCache;
@@ -267,7 +268,7 @@ void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
     btCompoundShape* compound = static_cast<btCompoundShape*>(shape);
     for (int i = 0; i < compound->getNumChildShapes(); ++i) {
       RenderCollisionShape(compound->getChildShape(i),
-          tf * compound->getChildTransform(i), env, handles);
+          tf * compound->getChildTransform(i), env, handles, color);
     }
     break;
   }
@@ -303,8 +304,8 @@ void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
       for (int i=0; i < tverts.size(); ++i) tverts[i] = tf * hr.m_OutputVertices[i];
 
 
-      handles.push_back(env.drawtrimesh((float*)&tverts[0], 16,
-          (int*) &hr.m_Indices[0], hr.mNumFaces, OR::RaveVector<float>(1,1,1,.1)));
+      handles.push_back(OSGViewer::GetOrCreate(env)->drawtrimesh((float*)&tverts[0], 16,
+          (int*) &hr.m_Indices[0], hr.mNumFaces, color));
     }
     break;
 
@@ -312,7 +313,20 @@ void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
   }
 
   default:
-    LOG_INFO("not rendering shape of type %i", shape->getShapeType());
+    if (shape->getShapeType() <= CUSTOM_CONVEX_SHAPE_TYPE) {
+      btConvexShape* convex = dynamic_cast<btConvexShape*>(shape);
+      btShapeHull* hull = new btShapeHull(convex);
+      hull->buildHull(convex->getMargin());
+      int num_triangles = hull->numTriangles();
+      const unsigned int* indices = hull->getIndexPointer();
+      const btVector3* vertices = hull->getVertexPointer();
+      btVector3 tf_vertices[hull->numVertices()];
+      for (int i=0; i<hull->numVertices(); i++) tf_vertices[i] = tf * vertices[i];
+
+      handles.push_back(OSGViewer::GetOrCreate(env)->drawtrimesh((float*)tf_vertices, 16, (int*) indices, num_triangles, color));
+    } else {
+      LOG_INFO("not rendering shape of type %i", shape->getShapeType());
+    }
     break;
   }
 }
@@ -350,7 +364,10 @@ public:
   virtual void IncludeCollisionPair(const KinBody::Link& link0, const KinBody::Link& link1) {
     m_excludedPairs.erase(LinkPair(&link0, &link1));
     COW *cow0 = GetCow(&link0), *cow1 = GetCow(&link1);
-    if (cow0 && cow1) m_allowedCollisionMatrix(cow0->m_index, cow1->m_index) = 1;
+    if (cow0 && cow1) {
+      m_allowedCollisionMatrix(cow0->m_index, cow1->m_index) = 1;
+      m_allowedCollisionMatrix(cow1->m_index, cow0->m_index) = 1;
+    }
   }
   // collision checking
   virtual void AllVsAll(vector<Collision>& collisions);
@@ -667,7 +684,8 @@ void BulletCollisionChecker::PlotCollisionGeometry(vector<OpenRAVE::GraphHandleP
   btCollisionObjectArray& objs = m_world->getCollisionObjectArray();
   LOG_DEBUG("%i objects in bullet world", objs.size());
   for (int i=0; i < objs.size(); ++i) {
-    RenderCollisionShape(objs[i]->getCollisionShape(), objs[i]->getWorldTransform(), *boost::const_pointer_cast<OpenRAVE::EnvironmentBase>(m_env), handles);
+    RenderCollisionShape(objs[i]->getCollisionShape(), objs[i]->getWorldTransform(),
+            boost::const_pointer_cast<OpenRAVE::EnvironmentBase>(m_env), handles);
   }
 }
 
