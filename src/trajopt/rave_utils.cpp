@@ -92,7 +92,6 @@ RobotAndDOFPtr RADFromName(const string& name, RobotBasePtr robot) {
   }
   vector<int> dof_inds;
   int affinedofs = 0;
-  Vector rotationaxis(0,0,1);
   vector<string> components;
   boost::split(components, name, boost::is_any_of("+"));
   for (int i=0; i < components.size(); ++i) {
@@ -109,7 +108,7 @@ RobotAndDOFPtr RADFromName(const string& name, RobotBasePtr robot) {
     }
     else PRINT_AND_THROW( boost::format("error in reading manip description: %s must be a manipulator, joint, or 'base'")%component );
   }
-  return RobotAndDOFPtr(new RobotAndDOF(robot, dof_inds, affinedofs, rotationaxis));
+  return RobotAndDOFPtr(new RobotAndDOF(robot, dof_inds, affinedofs, robot->GetAffineRotationAxis()));
 }
 
 }
