@@ -10,6 +10,7 @@
 #include "numpy_utils.hpp"
 #include <limits>
 #include "utils/eigen_conversions.hpp"
+#include "trajopt/rave_utils.hpp"
 using namespace trajopt;
 using namespace Eigen;
 using namespace OpenRAVE;
@@ -18,8 +19,6 @@ using std::vector;
 namespace py = boost::python;
 
 bool gInteractive = false;
-py::object openravepy;
-
 
 
 EnvironmentBasePtr GetCppEnv(py::object py_env) {
@@ -317,6 +316,36 @@ public:
     
     return toPyList(f_collisions);
   }
+  py::object CastVsAll(py::object& py_kb, py::object& py_dv0, py::object& py_dv1, string which_dofs="active", bool sort=true) {
+    KinBodyPtr cpp_kb = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
+        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb.attr("GetEnvironmentId")()));
+    if (!cpp_kb) {
+      throw openrave_exception("Kinbody isn't part of environment!");
+    }
+    RobotBasePtr robot = boost::dynamic_pointer_cast<RobotBase>(cpp_kb);
+    if (!robot) {
+      throw openrave_exception("Kinbody isn't a robot!");
+    }
+
+    int n_dofs0 = py::extract<int>(py_dv0.attr("__len__")());
+    DblVec dofvals0(n_dofs0);
+    for (unsigned i=0; i < n_dofs0; ++i) dofvals0[i] = py::extract<double>(py_dv0[i]);
+
+    int n_dofs1 = py::extract<int>(py_dv1.attr("__len__")());
+    DblVec dofvals1(n_dofs1);
+    for (unsigned i=0; i < n_dofs1; ++i) dofvals1[i] = py::extract<double>(py_dv1[i]);
+
+    ConfigurationPtr rad = RADFromName(which_dofs, robot);
+    vector<int> inds;
+    std::vector<KinBody::LinkPtr> links;
+    rad->GetAffectedLinks(links,true,inds);
+
+    vector<Collision> collisions;
+    m_cc->CastVsAll(*rad, links, dofvals0, dofvals1, collisions);
+    if (sort)
+      std::sort(collisions.begin(), collisions.end(), compareCollisions);
+    return toPyList(collisions);
+  }
   void SetContactDistance(float dist) {
     m_cc->SetContactDistance(dist);
   }
@@ -419,6 +448,7 @@ void translate_runtime_error(std::runtime_error const& e)
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsAllDefaults, PyCollisionChecker::BodyVsAll, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsBodyDefaults, PyCollisionChecker::BodyVsBody, 2, 3);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(CastVsAllDefaults, PyCollisionChecker::CastVsAll, 3, 5);
 
 BOOST_PYTHON_MODULE(ctrajoptpy) {
 
@@ -459,6 +489,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("BodyVsAll", &PyCollisionChecker::BodyVsAll, BodyVsAllDefaults())
       .def("BodyVsBody", &PyCollisionChecker::BodyVsBody, BodyVsBodyDefaults())
       .def("BodiesVsBodies", &PyCollisionChecker::BodiesVsBodies)
+      .def("CastVsAll", &PyCollisionChecker::CastVsAll, CastVsAllDefaults())
       .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
       .def("ExcludeCollisionPair", &PyCollisionChecker::ExcludeCollisionPair)
       .def("IncludeCollisionPair", &PyCollisionChecker::IncludeCollisionPair)

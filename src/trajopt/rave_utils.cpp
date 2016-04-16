@@ -4,6 +4,8 @@ using namespace OpenRAVE;
 #include "utils/logging.hpp"
 #include <Eigen/Core>
 #include "typedefs.hpp"
+#include <boost/algorithm/string.hpp>
+#include <iostream>
 using namespace std;
 namespace trajopt {
 
@@ -84,5 +86,30 @@ void PlotAxes(EnvironmentBase& env, const OpenRAVE::Transform& T, float size, ve
   handles.push_back(env.drawarrow(T.trans, z, size/10, Vector(0,0,1,1)));
 }
 
+RobotAndDOFPtr RADFromName(const string& name, RobotBasePtr robot) {
+  if (name == "active") {
+    return RobotAndDOFPtr(new RobotAndDOF(robot, robot->GetActiveDOFIndices(), robot->GetAffineDOF(), robot->GetAffineRotationAxis()));
+  }
+  vector<int> dof_inds;
+  int affinedofs = 0;
+  Vector rotationaxis(0,0,1);
+  vector<string> components;
+  boost::split(components, name, boost::is_any_of("+"));
+  for (int i=0; i < components.size(); ++i) {
+    std::string& component = components[i];
+    if (RobotBase::ManipulatorPtr manip = GetManipulatorByName(*robot, component)) {
+      vector<int> inds = manip->GetArmIndices();
+      dof_inds.insert(dof_inds.end(), inds.begin(), inds.end());
+    }
+    else if (component == "base") {
+      affinedofs |= DOF_X | DOF_Y | DOF_RotationAxis;
+    }
+    else if (KinBody::JointPtr joint = robot->GetJoint(component)) {
+      dof_inds.push_back(joint->GetDOFIndex());
+    }
+    else PRINT_AND_THROW( boost::format("error in reading manip description: %s must be a manipulator, joint, or 'base'")%component );
+  }
+  return RobotAndDOFPtr(new RobotAndDOF(robot, dof_inds, affinedofs, rotationaxis));
+}
 
 }

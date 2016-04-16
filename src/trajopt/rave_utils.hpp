@@ -2,6 +2,7 @@
 #include <openrave/openrave.h>
 #include "macros.h"
 #include "openrave_userdata_utils.hpp"
+#include "configuration_space.hpp"
 namespace trajopt {
 
 
@@ -15,6 +16,7 @@ OpenRAVE::RobotBasePtr TRAJOPT_API GetRobot(OpenRAVE::EnvironmentBase& env);
 int GetRobotLinkIndex(const OR::RobotBase& robot, const OR::KinBody::Link& link);
 bool DoesAffect(const OR::RobotBase& robot, const std::vector<int>& dof_inds, int link_ind);
 void PlotAxes(OR::EnvironmentBase& env, const OR::Transform& T, float size, std::vector<OR::GraphHandlePtr>& handles);
+RobotAndDOFPtr TRAJOPT_API RADFromName(const string& name, OR::RobotBasePtr robot);
 
 
 }
