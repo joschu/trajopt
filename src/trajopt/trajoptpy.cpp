@@ -346,6 +346,38 @@ public:
       std::sort(collisions.begin(), collisions.end(), compareCollisions);
     return toPyList(collisions);
   }
+  py::object MultiCastVsAll(py::object& py_kb, py::object& py_dof_list, string which_dofs="active", bool sort=true) {
+    KinBodyPtr cpp_kb = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
+        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb.attr("GetEnvironmentId")()));
+    if (!cpp_kb) {
+      throw openrave_exception("Kinbody isn't part of environment!");
+    }
+    RobotBasePtr robot = boost::dynamic_pointer_cast<RobotBase>(cpp_kb);
+    if (!robot) {
+      throw openrave_exception("Kinbody isn't a robot!");
+    }
+
+    int n_elements = py::extract<int>(py_dof_list.attr("__len__")());
+    int n_dofs = 0;
+    if (n_elements > 0)
+      n_dofs = py::extract<int>(py_dof_list[0].attr("__len__")());
+    vector<DblVec> dofvals(n_elements, DblVec(n_dofs));
+    for (int i=0; i<n_elements; i++) {
+      for (int j=0; j<n_dofs; j++) {
+        dofvals[i][j] = py::extract<double>(py_dof_list[i][j]);
+      }
+    }
+
+    ConfigurationPtr rad = RADFromName(which_dofs, robot);
+    vector<int> inds;
+    std::vector<KinBody::LinkPtr> links;
+    rad->GetAffectedLinks(links,true,inds);
+    vector<Collision> collisions;
+    m_cc->MultiCastVsAll(*rad, links, dofvals, collisions);
+    if (sort)
+      std::sort(collisions.begin(), collisions.end(), compareCollisions);
+    return toPyList(collisions);
+  }
   void SetContactDistance(float dist) {
     m_cc->SetContactDistance(dist);
   }
@@ -449,6 +481,7 @@ void translate_runtime_error(std::runtime_error const& e)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsAllDefaults, PyCollisionChecker::BodyVsAll, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsBodyDefaults, PyCollisionChecker::BodyVsBody, 2, 3);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(CastVsAllDefaults, PyCollisionChecker::CastVsAll, 3, 5);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(MultiCastVsAllDefaults, PyCollisionChecker::MultiCastVsAll, 2, 4);
 
 BOOST_PYTHON_MODULE(ctrajoptpy) {
 
@@ -490,6 +523,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("BodyVsBody", &PyCollisionChecker::BodyVsBody, BodyVsBodyDefaults())
       .def("BodiesVsBodies", &PyCollisionChecker::BodiesVsBodies)
       .def("CastVsAll", &PyCollisionChecker::CastVsAll, CastVsAllDefaults())
+      .def("MultiCastVsAll", &PyCollisionChecker::MultiCastVsAll, MultiCastVsAllDefaults())
       .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
       .def("ExcludeCollisionPair", &PyCollisionChecker::ExcludeCollisionPair)
       .def("IncludeCollisionPair", &PyCollisionChecker::IncludeCollisionPair)
