@@ -24,6 +24,10 @@ struct Collision {
   double distance; /* pt1 = pt2 + normal*dist */
   float weight, time;
   CastCollisionType cctype;
+  struct MultiCastInfo {
+    vector<float> alpha;
+    vector<int> instance_ind;
+  } mi;
   Collision(const KinBody::Link* linkA, const KinBody::Link* linkB, const OR::Vector& ptA, const OR::Vector& ptB, const OR::Vector& normalB2A, double distance, float weight=1, float time=0) :
     linkA(linkA), linkB(linkB), ptA(ptA), ptB(ptB), normalB2A(normalB2A), distance(distance), weight(weight), time(0), cctype(CCType_None) {}
 };
@@ -68,6 +72,7 @@ public:
   /** Find contacts between swept-out shapes of robot links and everything in the environment, as robot goes from startjoints to endjoints */ 
   virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions) {throw std::runtime_error("not implemented");}
   virtual void CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links, const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions)  {throw std::runtime_error("not implemented");}
+  virtual void MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const vector<DblVec>& multi_joints, vector<Collision>& collisions) {throw std::runtime_error("not implemented");}
 
   /** Finds all self collisions when all joints are set to zero, and ignore collisions between the colliding links */
   void IgnoreZeroStateSelfCollisions();
