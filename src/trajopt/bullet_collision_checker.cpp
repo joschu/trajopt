@@ -1268,9 +1268,7 @@ btScalar MultiCastCollisionCollector::addSingleResult(btManifoldPoint& cp,
 
 void BulletCollisionChecker::CheckShapeMultiCast(btCollisionShape* shape, const vector<btTransform>& tfi,
     CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions) {
-  std::cout << "NUM TFI: " << tfi.size() << std::endl;
   if (btConvexShape* convex = dynamic_cast<btConvexShape*>(shape)) {
-    std::cout << "CONVEX" << std::endl;
     vector<btTransform> t0i(tfi.size());
     // transform all the points with respect to the first transform
     for (int i=0; i<tfi.size(); i++) t0i[i] = tfi[0].inverseTimes(tfi[i]);
@@ -1288,7 +1286,6 @@ void BulletCollisionChecker::CheckShapeMultiCast(btCollisionShape* shape, const 
     delete shape;
   }
   else if (btCompoundShape* compound = dynamic_cast<btCompoundShape*>(shape)) {
-    std::cout << "COMPOUND" << std::endl;
     for (int child_ind = 0; child_ind < compound->getNumChildShapes(); ++child_ind) {
       vector<btTransform> tfi_child(tfi.size());
       for (int i=0; i<tfi.size(); i++) tfi_child[i] = tfi[i]*compound->getChildTransform(child_ind);
