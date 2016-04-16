@@ -248,7 +248,7 @@ public:
     m_cc->AllVsAll(collisions);
     return toPyList(collisions);
   }
-  py::object BodyVsAll(py::object py_kb, bool sort=true) {
+  py::object BodyVsAll(py::object& py_kb, bool sort=true) {
     KinBodyPtr cpp_kb = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
         ->GetBodyFromEnvironmentId(py::extract<int>(py_kb.attr("GetEnvironmentId")()));
     if (!cpp_kb) {
@@ -260,7 +260,7 @@ public:
       std::sort(collisions.begin(), collisions.end(), compareCollisions);
     return toPyList(collisions);
   }
-  py::object BodyVsBody(py::object py_kb1, py::object py_kb2, bool sort=true) {
+  py::object BodyVsBody(py::object& py_kb1, py::object& py_kb2, bool sort=true) {
     KinBodyPtr cpp_kb1 = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
         ->GetBodyFromEnvironmentId(py::extract<int>(py_kb1.attr("GetEnvironmentId")()));
     KinBodyPtr cpp_kb2 = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
@@ -277,12 +277,12 @@ public:
       std::sort(collisions.begin(), collisions.end(), compareCollisions);
     return toPyList(collisions);
   }
-  py::object BodiesVsBodies(py::list py_kbs1, py::list py_kbs2) {
+  py::object BodiesVsBodies(py::list& py_kbs1, py::list& py_kbs2) {
     //py::list py_kbs vs np::list py_kbs
     EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
 
     //Convert Bodies
-    int n_kbs1 = boost::python::extract<int>(py_kbs1.attr("__len__")());
+    int n_kbs1 = py::extract<int>(py_kbs1.attr("__len__")());
     vector<KinBodyPtr> cpp_kbs1(n_kbs1);
     for (int i=0; i < n_kbs1; ++i) {
       cpp_kbs1[i] = env->GetBodyFromEnvironmentId(py::extract<int>(py_kbs1[i].attr("GetEnvironmentId")()));
@@ -291,7 +291,7 @@ public:
       }
     }
 
-    int n_kbs2 = boost::python::extract<int>(py_kbs2.attr("__len__")());
+    int n_kbs2 = py::extract<int>(py_kbs2.attr("__len__")());
     vector<KinBodyPtr> cpp_kbs2(n_kbs2);
     for (int i=0; i < n_kbs2; ++i) {
       cpp_kbs2[i] = env->GetBodyFromEnvironmentId(py::extract<int>(py_kbs2[i].attr("GetEnvironmentId")()));
@@ -411,6 +411,11 @@ PyOSGViewer PyGetViewer(py::object py_env) {
   return PyOSGViewer(viewer);
 }
 
+void translate_runtime_error(std::runtime_error const& e)
+{
+    // Use the Python 'C' API to set up an exception object
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+}
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsAllDefaults, PyCollisionChecker::BodyVsAll, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsBodyDefaults, PyCollisionChecker::BodyVsBody, 2, 3);
@@ -425,6 +430,8 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
   if (OPENRAVE_VERSION_STRING != pyversion) {
     PRINT_AND_THROW("the openrave on your pythonpath is different from the openrave version that trajopt links to!");
   }
+
+  py::register_exception_translator<std::runtime_error>(&translate_runtime_error);
 
   py::class_<PyTrajOptProb>("TrajOptProb", py::no_init)
       .def("GetDOFIndices", &PyTrajOptProb::GetDOFIndices)
