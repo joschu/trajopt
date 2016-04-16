@@ -13,6 +13,7 @@
 #include "utils/set_differences.hpp"
 #include "openrave_userdata_utils.hpp"
 #include "osgviewer/osgviewer.hpp"
+#include <boost/algorithm/string.hpp>
 using namespace util;
 using namespace std;
 using namespace trajopt;
@@ -378,7 +379,7 @@ public:
   virtual void ContinuousCheckTrajectory(const TrajArray& traj, Configuration& rad, vector<Collision>&);
   virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions);
   virtual void CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links, const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions);
-  virtual void MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const vector<DblVec>& multi_joints, vector<Collision>& collisions);
+  virtual void MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const vector<DblVec>& multi_joints, vector<Collision>& collisions, bool prevent_z_movement_hack);
   ////
   ///////
 
@@ -1299,7 +1300,7 @@ void BulletCollisionChecker::CheckShapeMultiCast(btCollisionShape* shape, const 
 
 // multi_joints is a vector where each element is a vector of joint angles
 void BulletCollisionChecker::MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links,
-    const vector<DblVec>& multi_joints, vector<Collision>& collisions) {
+    const vector<DblVec>& multi_joints, vector<Collision>& collisions, bool prevent_z_movement_hack) {
   Configuration::SaverPtr saver = rad.Save();
   int nlinks = links.size();
   vector<vector<btTransform> > multi_tf(nlinks, vector<btTransform>(multi_joints.size())); // multi_tf[i_link][i_multi]
@@ -1307,6 +1308,27 @@ void BulletCollisionChecker::MultiCastVsAll(Configuration& rad, const vector<Kin
     rad.SetDOFValues(multi_joints[i_multi]);
     for (int i_link=0; i_link < nlinks; ++i_link) {
       multi_tf[i_link][i_multi] = toBt(links[i_link]->GetTransform());
+    }
+  }
+  if (prevent_z_movement_hack) {
+    // This is a hack that will prevent bullet from returning normals in the z direction
+    // Most robots cannot move in that direction anyways.
+    for (int i_link=0; i_link<nlinks; i_link++) {
+      if (boost::contains(links[i_link]->GetName(), "base")){
+        OpenRAVE::Vector mean;
+        for (int i_multi=0; i_multi<multi_joints.size(); i_multi++) {
+          rad.SetDOFValues(multi_joints[i_multi]);
+          mean += links[i_link]->GetTransform().trans;
+        }
+        mean /= multi_joints.size();
+        OpenRAVE::Transform t = links[i_link]->GetTransform();
+        t.trans = mean;
+        t.trans[2] += 100;
+        multi_tf[i_link].push_back(toBt(t));
+        t.trans[2] -= 2*100;
+        multi_tf[i_link].push_back(toBt(t));
+        break;
+      }
     }
   }
   rad.SetDOFValues(multi_joints[0]); // is this necessary?
