@@ -55,7 +55,14 @@ RobotBase::ManipulatorPtr GetCppManip(py::object py_manip, EnvironmentBasePtr en
   }
   return cpp_manip;
 }
-
+vector<KinBody::LinkPtr> GetCppLinks(py::object py_obj, EnvironmentBasePtr env) {
+  vector<KinBody::LinkPtr> links;
+  KinBodyPtr cpp_kb = GetCppKinBody(py_obj, env);
+  if (!!cpp_kb) links.insert(links.end(), cpp_kb->GetLinks().begin(), cpp_kb->GetLinks().end());
+  KinBody::LinkPtr cpp_link = GetCppLink(py_obj, env);
+  if (!!cpp_link) links.push_back(cpp_link);
+  return links;
+}
 
 
 class PyTrajOptProb {
@@ -400,13 +407,29 @@ public:
     m_cc->PlotCollisionGeometry(handles);
     return PyGraphHandle(handles);
   }
-  void ExcludeCollisionPair(py::object link0, py::object link1) {
+  void ExcludeCollisionPair(py::object py_obj0, py::object py_obj1) {
     EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
-    m_cc->ExcludeCollisionPair(*GetCppLink(link0, env), *GetCppLink(link1, env));
+    
+    vector<KinBody::LinkPtr> links0 = GetCppLinks(py_obj0, env);
+    vector<KinBody::LinkPtr> links1 = GetCppLinks(py_obj1, env);
+
+    BOOST_FOREACH(const KinBody::LinkPtr& link0, links0) {
+      BOOST_FOREACH(const KinBody::LinkPtr& link1, links1) {
+        m_cc->ExcludeCollisionPair(*link0, *link1);
+      }
+    }
   }
-  void IncludeCollisionPair(py::object link0, py::object link1) {
+  void IncludeCollisionPair(py::object py_obj0, py::object py_obj1) {
     EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
-    m_cc->IncludeCollisionPair(*GetCppLink(link0, env), *GetCppLink(link1, env));
+    
+    vector<KinBody::LinkPtr> links0 = GetCppLinks(py_obj0, env);
+    vector<KinBody::LinkPtr> links1 = GetCppLinks(py_obj1, env);
+
+    BOOST_FOREACH(const KinBody::LinkPtr& link0, links0) {
+      BOOST_FOREACH(const KinBody::LinkPtr& link1, links1) {
+        m_cc->IncludeCollisionPair(*link0, *link1);
+      }
+    }
   }
   PyCollisionChecker(CollisionCheckerPtr cc) : m_cc(cc) {}
 private:
