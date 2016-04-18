@@ -391,6 +391,7 @@ public:
   void LinkVsAll_NoUpdate(const KinBody::Link& link, vector<Collision>& collisions, short filterMask);
   void LinkVsLink_NoUpdate(const KinBody::Link& link1, const KinBody::Link& link2, vector<Collision>& collisions, short filterMask);
   void UpdateBulletFromRave();
+  void UpdateGlobalVars();
   void AddKinBody(const OR::KinBodyPtr& body);
   void RemoveKinBody(const OR::KinBodyPtr& body);
   void AddAndRemoveBodies(const vector<OR::KinBodyPtr>& curVec, const vector<OR::KinBodyPtr>& prevVec, vector<KinBodyPtr>& addedBodies);
@@ -468,8 +469,7 @@ BulletCollisionChecker::~BulletCollisionChecker() {
 void BulletCollisionChecker::SetContactDistance(float dist) {
   LOG_DEBUG("setting contact distance to %.2f", dist);
   m_contactDistance = dist;
-  SHAPE_EXPANSION = btVector3(1,1,1)*dist;
-  gContactBreakingThreshold = 2.001*dist; // wtf. when I set it to 2.0 there are no contacts with distance > 0
+  UpdateGlobalVars();
   btCollisionObjectArray& objs = m_world->getCollisionObjectArray();
   for (int i=0; i < objs.size(); ++i) {
     objs[i]->setContactProcessingThreshold(dist);
@@ -478,6 +478,10 @@ void BulletCollisionChecker::SetContactDistance(float dist) {
   dispatcher->setDispatcherFlags(dispatcher->getDispatcherFlags() & ~btCollisionDispatcher::CD_USE_RELATIVE_CONTACT_BREAKING_THRESHOLD);
 }
 
+void BulletCollisionChecker::UpdateGlobalVars() {
+  SHAPE_EXPANSION = btVector3(1,1,1)*m_contactDistance;
+  gContactBreakingThreshold = 2.001*m_contactDistance; // wtf. when I set it to 2.0 there are no contacts with distance > 0
+}
 
 void BulletCollisionChecker::AllVsAll(vector<Collision>& collisions) {
   LOG_WARN("WARNING: AllVsAll seems to be broken! (since a8f8da01)");
@@ -671,6 +675,7 @@ void BulletCollisionChecker::UpdateBulletFromRave() {
     LOG_DEBUG("don't need to add or remove stuff");
   }
 
+  UpdateGlobalVars();
   btCollisionObjectArray& objs = m_world->getCollisionObjectArray();
   LOG_DEBUG("%i objects in bullet world", objs.size());
   for (int i=0; i < objs.size(); ++i) {
