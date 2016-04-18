@@ -260,8 +260,8 @@ public:
     return toPyList(collisions);
   }
   py::object BodyVsAll(py::object& py_kb, bool sort=true) {
-    KinBodyPtr cpp_kb = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
-        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb.attr("GetEnvironmentId")()));
+    EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
+    KinBodyPtr cpp_kb = GetCppKinBody(py_kb, env);
     if (!cpp_kb) {
       throw openrave_exception("body isn't part of environment!");
     }
@@ -272,10 +272,9 @@ public:
     return toPyList(collisions);
   }
   py::object BodyVsBody(py::object& py_kb1, py::object& py_kb2, bool sort=true) {
-    KinBodyPtr cpp_kb1 = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
-        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb1.attr("GetEnvironmentId")()));
-    KinBodyPtr cpp_kb2 = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
-        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb2.attr("GetEnvironmentId")()));
+    EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
+    KinBodyPtr cpp_kb1 = GetCppKinBody(py_kb1, env);
+    KinBodyPtr cpp_kb2 = GetCppKinBody(py_kb2, env);
     if (!cpp_kb1) {
       throw openrave_exception("body 1 isn't part of environment!");
     }
@@ -296,7 +295,7 @@ public:
     int n_kbs1 = py::extract<int>(py_kbs1.attr("__len__")());
     vector<KinBodyPtr> cpp_kbs1(n_kbs1);
     for (int i=0; i < n_kbs1; ++i) {
-      cpp_kbs1[i] = env->GetBodyFromEnvironmentId(py::extract<int>(py_kbs1[i].attr("GetEnvironmentId")()));
+      cpp_kbs1[i] = GetCppKinBody(py_kbs1[i], env);
       if (!cpp_kbs1[i]) {
         throw openrave_exception("One of the bodies isn't part of environment!");
       }
@@ -305,7 +304,7 @@ public:
     int n_kbs2 = py::extract<int>(py_kbs2.attr("__len__")());
     vector<KinBodyPtr> cpp_kbs2(n_kbs2);
     for (int i=0; i < n_kbs2; ++i) {
-      cpp_kbs2[i] = env->GetBodyFromEnvironmentId(py::extract<int>(py_kbs2[i].attr("GetEnvironmentId")()));
+      cpp_kbs2[i] = GetCppKinBody(py_kbs2[i], env);
       if (!cpp_kbs2[i]) {
         throw openrave_exception("One of the bodies isn't part of environment!");
       }
@@ -329,8 +328,8 @@ public:
     return toPyList(f_collisions);
   }
   py::object CastVsAll(py::object& py_kb, py::object& py_dv0, py::object& py_dv1, string which_dofs="active", bool sort=true) {
-    KinBodyPtr cpp_kb = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
-        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb.attr("GetEnvironmentId")()));
+    EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
+    KinBodyPtr cpp_kb = GetCppKinBody(py_kb, env);
     if (!cpp_kb) {
       throw openrave_exception("Kinbody isn't part of environment!");
     }
@@ -359,8 +358,8 @@ public:
     return toPyList(collisions);
   }
   py::object MultiCastVsAll(py::object& py_kb, py::object& py_dof_list, string which_dofs="active", bool prevent_z=true, bool sort=true) {
-    KinBodyPtr cpp_kb = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv())
-        ->GetBodyFromEnvironmentId(py::extract<int>(py_kb.attr("GetEnvironmentId")()));
+    EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
+    KinBodyPtr cpp_kb = GetCppKinBody(py_kb, env);
     if (!cpp_kb) {
       throw openrave_exception("Kinbody isn't part of environment!");
     }
