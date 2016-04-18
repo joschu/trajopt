@@ -28,20 +28,32 @@ EnvironmentBasePtr GetCppEnv(py::object py_env) {
   return cpp_env;
 }
 KinBodyPtr GetCppKinBody(py::object py_kb, EnvironmentBasePtr env) {
-  int id = py::extract<int>(py_kb.attr("GetEnvironmentId")());
-  return env->GetBodyFromEnvironmentId(id);
+  KinBodyPtr cpp_kb;
+  if (PyObject_HasAttrString(py_kb.ptr(), "GetEnvironmentId")) {
+    int id = py::extract<int>(py_kb.attr("GetEnvironmentId")());
+    cpp_kb = env->GetBodyFromEnvironmentId(id);
+  }
+  return cpp_kb;
 }
 KinBody::LinkPtr GetCppLink(py::object py_link, EnvironmentBasePtr env) {
-  KinBodyPtr parent = GetCppKinBody(py_link.attr("GetParent")(), env);
-  int idx = py::extract<int>(py_link.attr("GetIndex")());
-  return parent->GetLinks()[idx];
+  KinBody::LinkPtr cpp_link;
+  if (PyObject_HasAttrString(py_link.ptr(), "GetParent")) {
+    KinBodyPtr parent = GetCppKinBody(py_link.attr("GetParent")(), env);
+    int idx = py::extract<int>(py_link.attr("GetIndex")());
+    cpp_link = parent->GetLinks()[idx];
+  }
+  return cpp_link;
 }
 RobotBasePtr GetCppRobot(py::object py_robot, EnvironmentBasePtr env) {
   return boost::dynamic_pointer_cast<RobotBase>(GetCppKinBody(py_robot, env));
 }
-OpenRAVE::RobotBase::ManipulatorPtr GetCppManip(py::object py_manip, EnvironmentBasePtr env) {
-  RobotBasePtr robot = GetCppRobot(py_manip.attr("GetRobot")(), env);
-  return robot->GetManipulator(py::extract<string>(py_manip.attr("GetName")()));
+RobotBase::ManipulatorPtr GetCppManip(py::object py_manip, EnvironmentBasePtr env) {
+  RobotBase::ManipulatorPtr cpp_manip;
+  if (PyObject_HasAttrString(py_manip.ptr(), "GetRobot")) {
+    RobotBasePtr robot = GetCppRobot(py_manip.attr("GetRobot")(), env);
+    cpp_manip = robot->GetManipulator(py::extract<string>(py_manip.attr("GetName")()));
+  }
+  return cpp_manip;
 }
 
 
