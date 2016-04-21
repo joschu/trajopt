@@ -186,6 +186,12 @@ void SetInteractive(py::object b) {
   gInteractive = py::extract<bool>(b);
 }
 
+py::list toPyList2(const std::vector< OpenRAVE::Vector >& x) {
+  py::list out;
+  for (int i=0; i < x.size(); ++i) out.append(toNdarray1<double>((double*)&x[i],3) );
+  return out;
+}
+
 class PyCollision {
 public:
   Collision m_c;
@@ -200,6 +206,7 @@ public:
   string GetLinkBParentName() {return m_c.linkB->GetParent()->GetName();}
   py::object GetMultiCastAlphas() {return toNdarray1<float>(&m_c.mi.alpha[0], m_c.mi.alpha.size());}
   py::object GetMultiCastIndices() {return toNdarray1<int>(&m_c.mi.instance_ind[0], m_c.mi.instance_ind.size());}
+  py::object GetMultiCastSupportVertices() {return toPyList2(m_c.mi.supportPtsWorld);}
 };
 
 py::list toPyList(const vector<Collision>& collisions) {
@@ -578,6 +585,7 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
      .def("GetLinkBParentName", &PyCollision::GetLinkBParentName)
      .def("GetMultiCastAlphas", &PyCollision::GetMultiCastAlphas)
      .def("GetMultiCastIndices", &PyCollision::GetMultiCastIndices)
+     .def("GetMultiCastSupportVertices", &PyCollision::GetMultiCastSupportVertices)
     ;
   py::class_< PyGraphHandle >("GraphHandle", py::no_init)
      .def("SetTransparency", &PyGraphHandle::SetTransparency1)

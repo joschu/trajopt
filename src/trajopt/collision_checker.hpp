@@ -27,6 +27,7 @@ struct Collision {
   struct MultiCastInfo {
     vector<float> alpha;
     vector<int> instance_ind;
+    vector<OR::Vector> supportPtsWorld;
   } mi;
   Collision(const KinBody::Link* linkA, const KinBody::Link* linkB, const OR::Vector& ptA, const OR::Vector& ptB, const OR::Vector& normalB2A, double distance, float weight=1, float time=0) :
     linkA(linkA), linkB(linkB), ptA(ptA), ptB(ptB), normalB2A(normalB2A), distance(distance), weight(weight), time(0), cctype(CCType_None) {}

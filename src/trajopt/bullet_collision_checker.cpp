@@ -1250,6 +1250,7 @@ btScalar MultiCastCollisionCollector::addSingleResult(btManifoldPoint& cp,
     vector<float> sups;
     vector<btVector3> max_ptWorld;
     vector<int> instance_inds;
+    vector<OR::Vector> supportPtsWorld;
     for (int i=0; i<sup.size(); i++) {
       if (max_sup-sup[i] < SUPPORT_FUNC_TOLERANCE) {
         int j;
@@ -1258,6 +1259,7 @@ btScalar MultiCastCollisionCollector::addSingleResult(btManifoldPoint& cp,
         if (j==max_ptWorld.size()) { // if this ptWorld[i] is not already in the max_ptWorld
           sups.push_back(sup[i]);
           max_ptWorld.push_back(ptWorld[i]);
+          supportPtsWorld.push_back(toOR(ptWorld[i]));
           instance_inds.push_back(i);
         }
       }
@@ -1277,6 +1279,7 @@ btScalar MultiCastCollisionCollector::addSingleResult(btManifoldPoint& cp,
     computeSupportingWeights(max_ptWorld, ptOnCast, m_collisions.back().mi.alpha);
        // cout << "alpha " << Str(m_collisions.back().mi.alpha) << endl;
     m_collisions.back().mi.instance_ind = instance_inds;
+    m_collisions.back().mi.supportPtsWorld = supportPtsWorld;
   }
   return retval;
 }
