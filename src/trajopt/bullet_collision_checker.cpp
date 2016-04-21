@@ -1229,7 +1229,14 @@ btScalar MultiCastCollisionCollector::addSingleResult(btManifoldPoint& cp,
     for (int i=0; i<sup.size(); i++) {
       btTransform tfWorld = m_cow->getWorldTransform() * shape->m_t0i[i];
       btVector3 normalLocal = normalWorldFromCast * tfWorld.getBasis();
+#if 0
       ptWorld[i] = tfWorld * shape->localGetSupportingVertex(normalLocal);
+#else
+      btVector3 ptLocal;
+      float localsup;
+      GetAverageSupport(shape->m_shape, normalLocal, localsup, ptLocal);
+      ptWorld[i] = tfWorld * ptLocal;
+#endif
       sup[i] = normalWorldFromCast.dot(ptWorld[i]);
     }
 
