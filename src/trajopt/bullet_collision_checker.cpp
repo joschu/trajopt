@@ -1187,10 +1187,12 @@ void computeSupportingWeights(const vector<btVector3>& v, const btVector3& p, ve
   }
   case 2:
   {
-    float l0p = (p-v[0]).length();
-    float l01 = (v[1]-v[0]).length();
-    alpha[0] = l01 > 0  ?  fmin(l0p/l01, 1) : .5;
-    alpha[1] = 1 - alpha[0];
+    float l0c = (p-v[0]).length();
+    float l1c = (p-v[1]).length();
+    const float LENGTH_TOLERANCE = .001 METERS;
+    if (l0c+l1c < LENGTH_TOLERANCE) alpha[0] = .5;
+    else alpha[1] = l0c/(l0c+l1c);
+    alpha[0] = 1 - alpha[1];
     break;
   }
   case 3:
@@ -1235,37 +1237,37 @@ btScalar MultiCastCollisionCollector::addSingleResult(btManifoldPoint& cp,
       // cout << "col points " << Str(ptWorld) << endl;
       // cout << "all sups " << Str(sup) << endl;
 
-    const float SUPPORT_FUNC_TOLERANCE = 1e-5;
-    const float COLINEARITY_TOLERANCE = 1e-5;
+    const float SUPPORT_FUNC_TOLERANCE = 1e-5 METERS;
+    const float COLINEARITY_TOLERANCE = 1e-5 METERS;
     float max_sup = *max_element(sup.begin(), sup.end());
     vector<float> sups;
-    vector<btVector3> max_ptWorlds;
+    vector<btVector3> max_ptWorld;
     vector<int> instance_inds;
     for (int i=0; i<sup.size(); i++) {
       if (max_sup-sup[i] < SUPPORT_FUNC_TOLERANCE) {
         int j;
-        for (j=0; j<max_ptWorlds.size(); j++)
-          if ((max_ptWorlds[j] - ptWorld[i]).length2() < COLINEARITY_TOLERANCE) break;
-        if (j==max_ptWorlds.size()) { // if this ptWorld[i] is not already in the max_ptWorlds
+        for (j=0; j<max_ptWorld.size(); j++)
+          if ((max_ptWorld[j] - ptWorld[i]).length2() < COLINEARITY_TOLERANCE) break;
+        if (j==max_ptWorld.size()) { // if this ptWorld[i] is not already in the max_ptWorld
           sups.push_back(sup[i]);
-          max_ptWorlds.push_back(ptWorld[i]);
+          max_ptWorld.push_back(ptWorld[i]);
           instance_inds.push_back(i);
         }
       }
     }
 
-       // cout << "max_ptWorlds instance_inds " << max_ptWorlds.size() << endl;
+       // cout << "max_ptWorld instance_inds " << max_ptWorld.size() << endl;
        // cout << "max_sup " << max_sup << endl;
        // cout << "filtered sups " << Str(sups) << endl;
-       // cout << "max_ptWorlds " << Str(max_ptWorlds) << endl;
+       // cout << "max_ptWorld " << Str(max_ptWorld) << endl;
        // cout << "instance_inds " << Str(instance_inds) << endl;
 
-    assert(max_ptWorlds.size()>0);
-    assert(max_ptWorlds.size()<4);
+    assert(max_ptWorld.size()>0);
+    assert(max_ptWorld.size()<4);
 
     const btVector3& ptOnCast = castShapeIsFirst ? cp.m_positionWorldOnA : cp.m_positionWorldOnB;
        // cout << "ptOnCast " << ptOnCast << endl;
-    computeSupportingWeights(max_ptWorlds, ptOnCast, m_collisions.back().mi.alpha);
+    computeSupportingWeights(max_ptWorld, ptOnCast, m_collisions.back().mi.alpha);
        // cout << "alpha " << Str(m_collisions.back().mi.alpha) << endl;
     m_collisions.back().mi.instance_ind = instance_inds;
   }
