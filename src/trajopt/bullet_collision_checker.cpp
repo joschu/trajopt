@@ -1123,7 +1123,6 @@ public:
     vector<btVector3> svi (m_t0i.size());
     double max_vec_dot_sv = -INFINITY;
     int max_ind = -1;
-    m_shape->localGetSupportingVertex(vec);
     for (int i=0; i<m_t0i.size(); i++) {
       svi[i] = m_t0i[i]*m_shape->localGetSupportingVertex(vec*m_t0i[i].getBasis());
       double vec_dot_sv = vec.dot(svi[i]);
@@ -1204,7 +1203,8 @@ void computeSupportingWeights(const vector<btVector3>& v, const btVector3& p, ve
     break;
   }
   default:
-    throw std::runtime_error("Unsupported case for computeSupportingWeights");
+    
+    throw std::runtime_error(boost::str(boost::format("Unsupported case %d for computeSupportingWeights") % v.size()));
   }
 }
 
