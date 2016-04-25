@@ -194,59 +194,59 @@ DblMatrix KinBodyAndDOF::PositionJacobian(int link_ind, const OR::Vector& pt) co
 }
 
 void RobotAndDOF::SetDOFValues(const DblVec& dofs) {
-  if (affinedofs != 0) {
-    OR::Transform T = robot->GetTransform();
-    OR::RaveGetTransformFromAffineDOFValues(T, dofs.begin()+joint_inds.size(), affinedofs, rotationaxis, true);
-    robot->SetTransform(T);
-    if (joint_inds.size() > 0)
-      robot->SetDOFValues(dofs, false, joint_inds);
+  if (m_affinedofs != 0) {
+    OR::Transform T = m_kinbody->GetTransform();
+    OR::RaveGetTransformFromAffineDOFValues(T, dofs.begin()+m_joint_inds.size(), m_affinedofs, m_rotationaxis, true);
+    m_kinbody->SetTransform(T);
+    if (m_joint_inds.size() > 0)
+      m_kinbody->SetDOFValues(dofs, false, m_joint_inds);
   }
   else {
-    robot->SetDOFValues(dofs, false, joint_inds);
+    m_kinbody->SetDOFValues(dofs, false, m_joint_inds);
   }
 }
 
 DblVec RobotAndDOF::GetDOFValues() {
   DblVec out;
-  if (joint_inds.size() > 0)
-    robot->GetDOFValues(out, joint_inds);
-  if (affinedofs != 0) {
+  if (m_joint_inds.size() > 0)
+    m_kinbody->GetDOFValues(out, m_joint_inds);
+  if (m_affinedofs != 0) {
     out.resize(GetDOF());
-    OR::Transform T = robot->GetTransform();
-    OR::RaveGetAffineDOFValuesFromTransform(out.begin() + joint_inds.size(), T, affinedofs, rotationaxis);
+    OR::Transform T = m_kinbody->GetTransform();
+    OR::RaveGetAffineDOFValuesFromTransform(out.begin() + m_joint_inds.size(), T, m_affinedofs, m_rotationaxis);
   }
   return out;
 }
 
 void RobotAndDOF::SetRobotActiveDOFs()  {
-  RobotBasePtr robot1 = boost::dynamic_pointer_cast<RobotBase>(robot); // since robot is just a kinbody
-  vector<int> current_active = robot1->GetActiveDOFIndices();
-  if (robot1->GetActiveDOF() != GetDOF() || !std::equal(current_active.begin(), current_active.end(), joint_inds.begin()))
-    robot1->SetActiveDOFs(joint_inds, affinedofs);
+  RobotBasePtr robot = boost::dynamic_pointer_cast<RobotBase>(m_kinbody); // since robot is just a kinbody
+  vector<int> current_active = robot->GetActiveDOFIndices();
+  if (robot->GetActiveDOF() != GetDOF() || !std::equal(current_active.begin(), current_active.end(), m_joint_inds.begin()))
+    robot->SetActiveDOFs(m_joint_inds, m_affinedofs);
 }
 
 void RobotAndDOF::GetDOFLimits(DblVec& lower, DblVec& upper) const {
-  if (joint_inds.size() > 0)
-    robot->GetDOFLimits(lower, upper, joint_inds);
+  if (m_joint_inds.size() > 0)
+    m_kinbody->GetDOFLimits(lower, upper, m_joint_inds);
   const int translation_dofs[3] = {DOF_X, DOF_Y, DOF_Z};
   for (int i=0; i < 3; ++i) {
-    if (affinedofs & translation_dofs[i]) {
+    if (m_affinedofs & translation_dofs[i]) {
       lower.push_back(-INFINITY);
       upper.push_back(INFINITY);
     }
   }
-  if (affinedofs & DOF_RotationMask) {
-    if (affinedofs & DOF_RotationAxis) {
+  if (m_affinedofs & DOF_RotationMask) {
+    if (m_affinedofs & DOF_RotationAxis) {
       lower.push_back(-INFINITY);
       upper.push_back(INFINITY);
     }
-    else if (affinedofs & DOF_Rotation3D) {
+    else if (m_affinedofs & DOF_Rotation3D) {
       for (int i=0; i < 3; ++i) {
         lower.push_back(-INFINITY);
         upper.push_back(INFINITY);
       }
     }
-    else if (affinedofs & DOF_RotationQuat) {
+    else if (m_affinedofs & DOF_RotationQuat) {
       for (int i=0; i < 4; ++i) {
         lower.push_back(-1);
         upper.push_back(1);
@@ -256,25 +256,25 @@ void RobotAndDOF::GetDOFLimits(DblVec& lower, DblVec& upper) const {
   }
 }
 int RobotAndDOF::GetDOF() const {
-  return joint_inds.size() + RaveGetAffineDOF(affinedofs);
+  return m_joint_inds.size() + RaveGetAffineDOF(m_affinedofs);
 }
 DblMatrix RobotAndDOF::PositionJacobian(int link_ind, const OR::Vector& pt) const {
   Configuration::SaverPtr saver = const_cast<RobotAndDOF*>(this)->Save();
   const_cast<RobotAndDOF*>(this)->SetRobotActiveDOFs();
   vector<double> jacdata;
-  boost::dynamic_pointer_cast<RobotBase>(robot)->CalculateActiveJacobian(link_ind, pt, jacdata);
+  boost::dynamic_pointer_cast<RobotBase>(m_kinbody)->CalculateActiveJacobian(link_ind, pt, jacdata);
   return Eigen::Map<DblMatrix>(jacdata.data(), 3, GetDOF());
 }
 DblMatrix RobotAndDOF::RotationJacobian(int link_ind, const OR::Vector& rot) const {
   Configuration::SaverPtr saver = const_cast<RobotAndDOF*>(this)->Save();
   const_cast<RobotAndDOF*>(this)->SetRobotActiveDOFs();
   vector<double> jacdata;
-  boost::dynamic_pointer_cast<RobotBase>(robot)->CalculateActiveRotationJacobian(link_ind, rot, jacdata);
+  boost::dynamic_pointer_cast<RobotBase>(m_kinbody)->CalculateActiveRotationJacobian(link_ind, rot, jacdata);
   return Eigen::Map<DblMatrix>(jacdata.data(), 3, GetDOF());  
 }
 bool RobotAndDOF::DoesAffect(const KinBody::Link& link) {
-  if (affinedofs > 0) return true;
-  else if (link.GetParent() == GetRobot()) return trajopt::DoesAffect(*GetRobot(), joint_inds, GetRobotLinkIndex(*GetRobot(), link));
+  if (m_affinedofs > 0) return true;
+  else if (link.GetParent() == GetRobot()) return trajopt::DoesAffect(*GetRobot(), m_joint_inds, GetRobotLinkIndex(*GetRobot(), link));
   else return false;
 }
 
@@ -296,9 +296,9 @@ void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool on
   }
 
   vector<KinBodyPtr> grabbed;
-  boost::dynamic_pointer_cast<RobotBase>(robot)->GetGrabbed(grabbed);
+  boost::dynamic_pointer_cast<RobotBase>(m_kinbody)->GetGrabbed(grabbed);
   BOOST_FOREACH(const KinBodyPtr& body, grabbed) {
-    KinBody::LinkPtr grabberLink = boost::dynamic_pointer_cast<RobotBase>(robot)->IsGrabbing(body);
+    KinBody::LinkPtr grabberLink = boost::dynamic_pointer_cast<RobotBase>(m_kinbody)->IsGrabbing(body);
     assert(grabberLink);
     BOOST_FOREACH(const KinBody::LinkPtr& link, body->GetLinks()) {
       if (link->GetGeometries().size() > 0) {
@@ -312,7 +312,7 @@ void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool on
 
 vector<KinBodyPtr> RobotAndDOF::GetBodies() {
   std::set<KinBodyPtr> bodies;
-  robot->GetAttached(bodies);
+  m_kinbody->GetAttached(bodies);
   return vector<KinBodyPtr> (bodies.begin(), bodies.end());
 } 
 

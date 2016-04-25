@@ -79,20 +79,20 @@ typedef boost::shared_ptr<KinBodyAndDOF> KinBodyAndDOFPtr;
 /**
 Stores an OpenRAVE robot and the active degrees of freedom
 */
-class TRAJOPT_API RobotAndDOF : public Configuration {
+class TRAJOPT_API RobotAndDOF : public KinBodyAndDOF {
 public:
   RobotAndDOF(OR::KinBodyPtr _robot, const IntVec& _joint_inds, int _affinedofs=0, const OR::Vector _rotationaxis=OR::Vector(0,0,1)) :
-    robot(_robot), joint_inds(_joint_inds), affinedofs(_affinedofs), rotationaxis(_rotationaxis) {}
+    KinBodyAndDOF(_robot, _affinedofs, _rotationaxis), m_joint_inds(_joint_inds) {}
 
   void SetDOFValues(const DblVec& dofs);
   void GetDOFLimits(DblVec& lower, DblVec& upper) const;
   DblVec GetDOFValues();
   int GetDOF() const;
-  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {return robot->GetEnv();};
-  IntVec GetJointIndices() const {return joint_inds;}
+  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {return m_kinbody->GetEnv();};
+  IntVec GetJointIndices() const {return m_joint_inds;}
   DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const;
   DblMatrix RotationJacobian(int link_ind, const OR::Vector& rot) const;
-  OR::RobotBasePtr GetRobot() const {return boost::dynamic_pointer_cast<RobotBase>(robot);}
+  OR::RobotBasePtr GetRobot() const {return boost::dynamic_pointer_cast<RobotBase>(m_kinbody);}
   virtual vector<OpenRAVE::KinBodyPtr> GetBodies();
   bool DoesAffect(const KinBody::Link& link);
   std::vector<KinBody::LinkPtr> GetAffectedLinks();
@@ -101,18 +101,15 @@ public:
 
   struct RobotSaver : public Saver {
     OpenRAVE::KinBody::KinBodyStateSaver saver;
-    RobotSaver(OpenRAVE::KinBodyPtr robot) : saver(robot) {}
+    RobotSaver(OpenRAVE::KinBodyPtr m_kinbody) : saver(m_kinbody) {}
   };
   SaverPtr Save() {
-    return SaverPtr(new RobotSaver(robot));
+    return SaverPtr(new RobotSaver(m_kinbody));
   }
   void SetRobotActiveDOFs();
   
-private:
-  OpenRAVE::KinBodyPtr robot;
-  IntVec joint_inds;
-  int affinedofs;
-  OR::Vector rotationaxis;
+protected:
+  IntVec m_joint_inds;
 };
 typedef boost::shared_ptr<RobotAndDOF> RobotAndDOFPtr;
 
