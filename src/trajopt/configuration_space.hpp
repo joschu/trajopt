@@ -2,6 +2,7 @@
 #include "typedefs.hpp"
 #include <openrave/openrave.h>
 #include "macros.h"
+#include <iostream>
 namespace trajopt {
 
 
@@ -54,12 +55,14 @@ public:
   DblVec GetDOFValues();
   void GetDOFLimits(DblVec& lower, DblVec& upper) const;
   int GetDOF() const;
-  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {return m_kinbody->GetEnv();};
+  OpenRAVE::EnvironmentBasePtr GetEnv() {return m_kinbody->GetEnv();};
   DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const;
-  virtual vector<OpenRAVE::KinBodyPtr> GetBodies();
+  DblMatrix RotationJacobian(int link_ind, const OR::Vector& rot) const {PRINT_AND_THROW("Not implemented!");};
+  vector<OpenRAVE::KinBodyPtr> GetBodies();
   bool DoesAffect(const KinBody::Link& link);
   std::vector<KinBody::LinkPtr> GetAffectedLinks();
   void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds);
+  DblVec RandomDOFValues() {PRINT_AND_THROW("Not implemented!");};
 
   struct KinBodySaver : public Saver {
     OpenRAVE::KinBody::KinBodyStateSaver saver;
