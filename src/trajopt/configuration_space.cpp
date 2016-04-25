@@ -62,12 +62,6 @@ void RobotAndDOF::GetDOFLimits(DblVec& lower, DblVec& upper) const {
         upper.push_back(INFINITY);
       }
     }
-    else if (affinedofs & DOF_Rotation3D) {
-      for (int i=0; i < 3; ++i) {
-        lower.push_back(-INFINITY);
-        upper.push_back(INFINITY);
-      }
-    }
     else if (affinedofs & DOF_RotationQuat) {
       for (int i=0; i < 4; ++i) {
         lower.push_back(-1);
@@ -87,11 +81,11 @@ DblMatrix RobotAndDOF::PositionJacobian(int link_ind, const OR::Vector& pt) cons
   boost::dynamic_pointer_cast<RobotBase>(robot)->CalculateActiveJacobian(link_ind, pt, jacdata);
   return Eigen::Map<DblMatrix>(jacdata.data(), 3, GetDOF());
 }
-DblMatrix RobotAndDOF::RotationJacobian(int link_ind) const {
+DblMatrix RobotAndDOF::RotationJacobian(int link_ind, const OR::Vector& rot) const {
   Configuration::SaverPtr saver = const_cast<RobotAndDOF*>(this)->Save();
   const_cast<RobotAndDOF*>(this)->SetRobotActiveDOFs();
   vector<double> jacdata;
-  boost::dynamic_pointer_cast<RobotBase>(robot)->ComputeJacobianAxisAngle(link_ind, jacdata);
+  boost::dynamic_pointer_cast<RobotBase>(robot)->CalculateActiveRotationJacobian(link_ind, rot, jacdata);
   return Eigen::Map<DblMatrix>(jacdata.data(), 3, GetDOF());  
 }
 bool RobotAndDOF::DoesAffect(const KinBody::Link& link) {

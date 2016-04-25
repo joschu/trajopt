@@ -14,12 +14,12 @@ public:
   virtual int GetDOF() const = 0;
   virtual OpenRAVE::EnvironmentBasePtr GetEnv() = 0;
   virtual DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const = 0;
-  virtual DblMatrix RotationJacobian(int link_ind) const = 0;
+  virtual DblMatrix RotationJacobian(int link_ind, const OR::Vector& rot) const = 0;
   virtual bool DoesAffect(const KinBody::Link& link) = 0;
   virtual vector<OpenRAVE::KinBodyPtr> GetBodies() = 0;
   virtual std::vector<KinBody::LinkPtr> GetAffectedLinks() = 0;
   virtual void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds) = 0;
-  virtual DblVec RandomDOFValues() = 0;  
+  virtual DblVec RandomDOFValues() = 0;
   virtual ~Configuration() {}
   struct Saver {
     virtual ~Saver(){}
@@ -43,7 +43,7 @@ public:
 typedef boost::shared_ptr<Configuration> ConfigurationPtr;
 
 /**
-Stores an OpenRAVE robot and the active degrees of freedom  
+Stores an OpenRAVE robot and the active degrees of freedom
 */
 class TRAJOPT_API RobotAndDOF : public Configuration {
 public:
@@ -54,12 +54,12 @@ public:
   void GetDOFLimits(DblVec& lower, DblVec& upper) const;
   DblVec GetDOFValues();
   int GetDOF() const;
-  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {return robot->GetEnv();};  
+  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {return robot->GetEnv();};
   IntVec GetJointIndices() const {return joint_inds;}
   DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const;
-  DblMatrix RotationJacobian(int link_ind) const;
+  DblMatrix RotationJacobian(int link_ind, const OR::Vector& rot) const;
   OR::RobotBasePtr GetRobot() const {return boost::dynamic_pointer_cast<RobotBase>(robot);}
-  virtual vector<OpenRAVE::KinBodyPtr> GetBodies();  
+  virtual vector<OpenRAVE::KinBodyPtr> GetBodies();
   bool DoesAffect(const KinBody::Link& link);
   std::vector<KinBody::LinkPtr> GetAffectedLinks();
   void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds);
