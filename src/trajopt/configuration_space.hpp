@@ -88,24 +88,13 @@ public:
   void GetDOFLimits(DblVec& lower, DblVec& upper) const;
   DblVec GetDOFValues();
   int GetDOF() const;
-  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {return m_kinbody->GetEnv();};
   IntVec GetJointIndices() const {return m_joint_inds;}
   DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const;
   DblMatrix RotationJacobian(int link_ind, const OR::Vector& rot) const;
   OR::RobotBasePtr GetRobot() const {return boost::dynamic_pointer_cast<RobotBase>(m_kinbody);}
-  virtual vector<OpenRAVE::KinBodyPtr> GetBodies();
   bool DoesAffect(const KinBody::Link& link);
-  std::vector<KinBody::LinkPtr> GetAffectedLinks();
   void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds);
   DblVec RandomDOFValues();
-
-  struct RobotSaver : public Saver {
-    OpenRAVE::KinBody::KinBodyStateSaver saver;
-    RobotSaver(OpenRAVE::KinBodyPtr m_kinbody) : saver(m_kinbody) {}
-  };
-  SaverPtr Save() {
-    return SaverPtr(new RobotSaver(m_kinbody));
-  }
   void SetRobotActiveDOFs();
   
 protected:

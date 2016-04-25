@@ -194,15 +194,12 @@ DblMatrix KinBodyAndDOF::PositionJacobian(int link_ind, const OR::Vector& pt) co
 }
 
 void RobotAndDOF::SetDOFValues(const DblVec& dofs) {
+  if (m_joint_inds.size() > 0)
+    m_kinbody->SetDOFValues(dofs, false, m_joint_inds);
   if (m_affinedofs != 0) {
     OR::Transform T = m_kinbody->GetTransform();
-    OR::RaveGetTransformFromAffineDOFValues(T, dofs.begin()+m_joint_inds.size(), m_affinedofs, m_rotationaxis, true);
+    OR::RaveGetTransformFromAffineDOFValues(T, dofs.begin() + m_joint_inds.size(), m_affinedofs, m_rotationaxis);
     m_kinbody->SetTransform(T);
-    if (m_joint_inds.size() > 0)
-      m_kinbody->SetDOFValues(dofs, false, m_joint_inds);
-  }
-  else {
-    m_kinbody->SetDOFValues(dofs, false, m_joint_inds);
   }
 }
 
@@ -228,32 +225,7 @@ void RobotAndDOF::SetRobotActiveDOFs()  {
 void RobotAndDOF::GetDOFLimits(DblVec& lower, DblVec& upper) const {
   if (m_joint_inds.size() > 0)
     m_kinbody->GetDOFLimits(lower, upper, m_joint_inds);
-  const int translation_dofs[3] = {DOF_X, DOF_Y, DOF_Z};
-  for (int i=0; i < 3; ++i) {
-    if (m_affinedofs & translation_dofs[i]) {
-      lower.push_back(-INFINITY);
-      upper.push_back(INFINITY);
-    }
-  }
-  if (m_affinedofs & DOF_RotationMask) {
-    if (m_affinedofs & DOF_RotationAxis) {
-      lower.push_back(-INFINITY);
-      upper.push_back(INFINITY);
-    }
-    else if (m_affinedofs & DOF_Rotation3D) {
-      for (int i=0; i < 3; ++i) {
-        lower.push_back(-INFINITY);
-        upper.push_back(INFINITY);
-      }
-    }
-    else if (m_affinedofs & DOF_RotationQuat) {
-      for (int i=0; i < 4; ++i) {
-        lower.push_back(-1);
-        upper.push_back(1);
-      }
-    }
-    else throw OR::openrave_exception("invalid rotation dofs", ORE_InvalidArguments);
-  }
+  KinBodyAndDOF::GetDOFLimits(lower, upper);
 }
 int RobotAndDOF::GetDOF() const {
   return m_joint_inds.size() + RaveGetAffineDOF(m_affinedofs);
@@ -274,26 +246,12 @@ DblMatrix RobotAndDOF::RotationJacobian(int link_ind, const OR::Vector& rot) con
 }
 bool RobotAndDOF::DoesAffect(const KinBody::Link& link) {
   if (m_affinedofs > 0) return true;
-  else if (link.GetParent() == GetRobot()) return trajopt::DoesAffect(*GetRobot(), m_joint_inds, GetRobotLinkIndex(*GetRobot(), link));
+  else if (link.GetParent() == m_kinbody) return trajopt::DoesAffect(*GetRobot(), m_joint_inds, GetRobotLinkIndex(*GetRobot(), link));
   else return false;
 }
 
-std::vector<KinBody::LinkPtr> RobotAndDOF::GetAffectedLinks() {
-  vector<int> inds;
-  std::vector<KinBody::LinkPtr> out;
-  GetAffectedLinks(out,false,inds);
-  return out;
-}
-
 void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds) {
-  links.clear();
-  link_inds.clear();
-  BOOST_FOREACH(const KinBody::LinkPtr& link, GetRobot()->GetLinks()) {
-    if (this->DoesAffect(*link) && !(only_with_geom && link->GetGeometries().empty())) {
-      links.push_back(link);
-      link_inds.push_back(link->GetIndex());
-    }
-  }
+  KinBodyAndDOF::GetAffectedLinks(links, only_with_geom, link_inds);
 
   vector<KinBodyPtr> grabbed;
   boost::dynamic_pointer_cast<RobotBase>(m_kinbody)->GetGrabbed(grabbed);
@@ -310,13 +268,6 @@ void RobotAndDOF::GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool on
 
 }
 
-vector<KinBodyPtr> RobotAndDOF::GetBodies() {
-  std::set<KinBodyPtr> bodies;
-  m_kinbody->GetAttached(bodies);
-  return vector<KinBodyPtr> (bodies.begin(), bodies.end());
-} 
-
-
 DblVec RobotAndDOF::RandomDOFValues() {
   int ndof = GetDOF();
   DblVec lower, upper;
@@ -330,7 +281,5 @@ DblVec RobotAndDOF::RandomDOFValues() {
   }
   return out;
 }
-
-
 
 }
