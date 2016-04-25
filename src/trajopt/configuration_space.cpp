@@ -57,6 +57,10 @@ void KinBodyAndDOF::GetDOFLimits(DblVec& lower, DblVec& upper) const {
 }
 
 int KinBodyAndDOF::GetDOF() const {
+  return GetAffineDOF();
+}
+
+int KinBodyAndDOF::GetAffineDOF() const {
   return RaveGetAffineDOF(m_affinedofs);
 }
 

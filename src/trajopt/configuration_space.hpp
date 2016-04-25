@@ -13,6 +13,7 @@ public:
   virtual void GetDOFLimits(DblVec& lower, DblVec& upper) const = 0;
   virtual DblVec GetDOFValues() = 0;
   virtual int GetDOF() const = 0;
+  virtual int GetAffineDOF() const = 0;
   virtual OpenRAVE::EnvironmentBasePtr GetEnv() = 0;
   virtual DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const = 0;
   virtual DblMatrix RotationJacobian(int link_ind, const OR::Vector& rot) const = 0;
@@ -55,6 +56,7 @@ public:
   DblVec GetDOFValues();
   void GetDOFLimits(DblVec& lower, DblVec& upper) const;
   int GetDOF() const;
+  int GetAffineDOF() const;
   OpenRAVE::EnvironmentBasePtr GetEnv() {return m_kinbody->GetEnv();};
   DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const;
   DblMatrix RotationJacobian(int link_ind, const OR::Vector& rot) const {PRINT_AND_THROW("Not implemented!");};
