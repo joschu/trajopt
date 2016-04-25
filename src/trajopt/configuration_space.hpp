@@ -43,6 +43,40 @@ public:
 typedef boost::shared_ptr<Configuration> ConfigurationPtr;
 
 /**
+Stores an OpenRAVE kinbody and the affine degrees of freedom
+*/
+class TRAJOPT_API KinBodyAndDOF : public Configuration {
+public:
+  KinBodyAndDOF(OR::KinBodyPtr _kinbody, int _affinedofs=0, const OR::Vector _rotationaxis=OR::Vector(0,0,1)) :
+    m_kinbody(_kinbody), m_affinedofs(_affinedofs), m_rotationaxis(_rotationaxis) {}
+
+  void SetDOFValues(const DblVec& dofs);
+  DblVec GetDOFValues();
+  void GetDOFLimits(DblVec& lower, DblVec& upper) const;
+  int GetDOF() const;
+  virtual OpenRAVE::EnvironmentBasePtr GetEnv() {return m_kinbody->GetEnv();};
+  DblMatrix PositionJacobian(int link_ind, const OR::Vector& pt) const;
+  virtual vector<OpenRAVE::KinBodyPtr> GetBodies();
+  bool DoesAffect(const KinBody::Link& link);
+  std::vector<KinBody::LinkPtr> GetAffectedLinks();
+  void GetAffectedLinks(std::vector<KinBody::LinkPtr>& links, bool only_with_geom, vector<int>& link_inds);
+
+  struct KinBodySaver : public Saver {
+    OpenRAVE::KinBody::KinBodyStateSaver saver;
+    KinBodySaver(OpenRAVE::KinBodyPtr m_kinbody) : saver(m_kinbody) {}
+  };
+  SaverPtr Save() {
+    return SaverPtr(new KinBodySaver(m_kinbody));
+  }
+  
+protected:
+  OpenRAVE::KinBodyPtr m_kinbody;
+  int m_affinedofs;
+  OR::Vector m_rotationaxis;
+};
+typedef boost::shared_ptr<KinBodyAndDOF> KinBodyAndDOFPtr;
+
+/**
 Stores an OpenRAVE robot and the active degrees of freedom
 */
 class TRAJOPT_API RobotAndDOF : public Configuration {
