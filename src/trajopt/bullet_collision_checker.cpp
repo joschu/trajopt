@@ -1047,8 +1047,7 @@ void BulletCollisionChecker::CastVsAll(Configuration& rad, const vector<KinBody:
   m_world->updateAabbs();
 
   for (int i=0; i < nlinks; ++i) {
-    assert(m_link2cow[links[i].get()] != NULL);
-    CollisionObjectWrapper* cow = m_link2cow[links[i].get()];
+    CollisionObjectWrapper* cow = GetCow(links[i].get());
     CheckShapeCast(cow->getCollisionShape(), tbefore[i], tafter[i], cow, m_world, collisions, filterMask);
   }
   LOG_DEBUG("CastVsAll checked %li links and found %li collisions", links.size(), collisions.size());
@@ -1100,8 +1099,7 @@ void BulletCollisionChecker::CastVsLinks(Configuration& rad, const vector<KinBod
   m_world->updateAabbs();
 
   for (int i=0; i < nlinks; ++i) {
-    assert(m_link2cow[r_links[i].get()] != NULL);
-    CollisionObjectWrapper* cow = m_link2cow[r_links[i].get()];
+    CollisionObjectWrapper* cow = GetCow(r_links[i].get());
     for (int j=0; j < b_links.size(); ++j) {
       CheckShapeCastVsLinks(cow->getCollisionShape(), tbefore[i], tafter[i], *b_links[j], cow, m_world, collisions, filterMask);
     }
@@ -1353,8 +1351,7 @@ void BulletCollisionChecker::MultiCastVsAll(Configuration& rad, const vector<Kin
   m_world->updateAabbs();
 
   for (int i_link=0; i_link < nlinks; ++i_link) {
-    assert(m_link2cow[links[i_link].get()] != NULL);
-    CollisionObjectWrapper* cow = m_link2cow[links[i_link].get()];
+    CollisionObjectWrapper* cow = GetCow(links[i_link].get());
     CheckShapeMultiCast(cow->getCollisionShape(), multi_tf[i_link], cow, m_world, collisions, filterMask);
   }
   LOG_DEBUG("MultiCastVsAll checked %i links and found %i collisions\n", (int)links.size(), (int)collisions.size());
