@@ -377,9 +377,9 @@ public:
   virtual void LinkVsAll(const KinBody::Link& link, vector<Collision>& collisions, short filterMask);
   virtual void LinkVsLink(const KinBody::Link& link1, const KinBody::Link& link2, vector<Collision>& collisions, short filterMask);
   virtual void ContinuousCheckTrajectory(const TrajArray& traj, Configuration& rad, vector<Collision>&);
-  virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions);
-  virtual void CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links, const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions);
-  virtual void MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const vector<DblVec>& multi_joints, vector<Collision>& collisions, bool prevent_z_movement_hack);
+  virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions, short filterMask);
+  virtual void CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links, const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions, short filterMask);
+  virtual void MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const vector<DblVec>& multi_joints, vector<Collision>& collisions, short filterMask, bool prevent_z_movement_hack);
   ////
   ///////
 
@@ -401,11 +401,11 @@ public:
   void SetLinkIndices();
   void UpdateAllowedCollisionMatrix();
   void CheckShapeCast(btCollisionShape* shape, const btTransform& tf0, const btTransform& tf1,
-      CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions);
+      CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions, short filterMask);
   void CheckShapeCastVsLinks(btCollisionShape* shape, const btTransform& tf0, const btTransform& tf1, const KinBody::Link& link,
-      CollisionObjectWrapper* cow1, btCollisionWorld* world, vector<Collision>& collisions);
+      CollisionObjectWrapper* cow1, btCollisionWorld* world, vector<Collision>& collisions, short filterMask);
   void CheckShapeMultiCast(btCollisionShape* shape, const vector<btTransform>& tfi,
-      CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions);
+      CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions, short filterMask);
 };
 
 struct CollisionCollector : public btCollisionWorld::ContactResultCallback {
@@ -1004,7 +1004,7 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
 }
 
 void BulletCollisionChecker::CheckShapeCast(btCollisionShape* shape, const btTransform& tf0, const btTransform& tf1,
-    CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions) {
+    CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions, short filterMask) {
   if (btConvexShape* convex = dynamic_cast<btConvexShape*>(shape)) {
     CastHullShape* shape = new CastHullShape(convex, tf0.inverseTimes(tf1));
     CollisionObjectWrapper* obj = new CollisionObjectWrapper(cow->m_link);
@@ -1012,7 +1012,7 @@ void BulletCollisionChecker::CheckShapeCast(btCollisionShape* shape, const btTra
     obj->setWorldTransform(tf0);
     obj->m_index = cow->m_index;
     CastCollisionCollector cc(collisions, obj, this);
-    cc.m_collisionFilterMask = KinBodyFilter;
+    cc.m_collisionFilterMask = filterMask;
     // cc.m_collisionFilterGroup = cow->m_collisionFilterGroup;
     world->contactTest(obj, cc);
     delete obj;
@@ -1020,7 +1020,7 @@ void BulletCollisionChecker::CheckShapeCast(btCollisionShape* shape, const btTra
   }
   else if (btCompoundShape* compound = dynamic_cast<btCompoundShape*>(shape)) {
     for (int i = 0; i < compound->getNumChildShapes(); ++i) {
-      CheckShapeCast(compound->getChildShape(i), tf0*compound->getChildTransform(i), tf1*compound->getChildTransform(i), cow, world, collisions);
+      CheckShapeCast(compound->getChildShape(i), tf0*compound->getChildTransform(i), tf1*compound->getChildTransform(i), cow, world, collisions, filterMask);
     }
   }
   else {
@@ -1030,7 +1030,7 @@ void BulletCollisionChecker::CheckShapeCast(btCollisionShape* shape, const btTra
 }
 
 void BulletCollisionChecker::CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links,
-    const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions) {
+    const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions, short filterMask) {
   Configuration::SaverPtr saver = rad.Save();
   rad.SetDOFValues(startjoints);
   int nlinks = links.size();
@@ -1049,13 +1049,13 @@ void BulletCollisionChecker::CastVsAll(Configuration& rad, const vector<KinBody:
   for (int i=0; i < nlinks; ++i) {
     assert(m_link2cow[links[i].get()] != NULL);
     CollisionObjectWrapper* cow = m_link2cow[links[i].get()];
-    CheckShapeCast(cow->getCollisionShape(), tbefore[i], tafter[i], cow, m_world, collisions);
+    CheckShapeCast(cow->getCollisionShape(), tbefore[i], tafter[i], cow, m_world, collisions, filterMask);
   }
   LOG_DEBUG("CastVsAll checked %li links and found %li collisions", links.size(), collisions.size());
 }
 
 void BulletCollisionChecker::CheckShapeCastVsLinks(btCollisionShape* shape, const btTransform& tf0, const btTransform& tf1, const KinBody::Link& link,
-    CollisionObjectWrapper* cow1, btCollisionWorld* world, vector<Collision>& collisions) {
+    CollisionObjectWrapper* cow1, btCollisionWorld* world, vector<Collision>& collisions, short filterMask) {
   if (link.GetGeometries().empty()) return;
   if (btConvexShape* convex = dynamic_cast<btConvexShape*>(shape)) {
     CastHullShape* shape = new CastHullShape(convex, tf0.inverseTimes(tf1));
@@ -1065,7 +1065,7 @@ void BulletCollisionChecker::CheckShapeCastVsLinks(btCollisionShape* shape, cons
     r_obj->m_index = cow1->m_index;
     CollisionObjectWrapper* cow2 = GetCow(&link);
     CastCollisionCollector cc(collisions, r_obj, this);
-    cc.m_collisionFilterMask = KinBodyFilter;
+    cc.m_collisionFilterMask = filterMask;
     // cc.m_collisionFilterGroup = cow1->m_collisionFilterGroup;
     world->contactPairTest(r_obj, cow2, cc);
     delete r_obj;
@@ -1073,7 +1073,7 @@ void BulletCollisionChecker::CheckShapeCastVsLinks(btCollisionShape* shape, cons
   }
   else if (btCompoundShape* compound = dynamic_cast<btCompoundShape*>(shape)) {
     for (int i = 0; i < compound->getNumChildShapes(); ++i) {
-      CheckShapeCastVsLinks(compound->getChildShape(i), tf0*compound->getChildTransform(i), tf1*compound->getChildTransform(i), link, cow1, world, collisions);
+      CheckShapeCastVsLinks(compound->getChildShape(i), tf0*compound->getChildTransform(i), tf1*compound->getChildTransform(i), link, cow1, world, collisions, filterMask);
     }
   }
   else {
@@ -1083,7 +1083,7 @@ void BulletCollisionChecker::CheckShapeCastVsLinks(btCollisionShape* shape, cons
 }
 
 void BulletCollisionChecker::CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links,
-    const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions) {
+    const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions, short filterMask) {
   Configuration::SaverPtr saver = rad.Save();
   rad.SetDOFValues(startjoints);
   int nlinks = r_links.size();
@@ -1103,7 +1103,7 @@ void BulletCollisionChecker::CastVsLinks(Configuration& rad, const vector<KinBod
     assert(m_link2cow[r_links[i].get()] != NULL);
     CollisionObjectWrapper* cow = m_link2cow[r_links[i].get()];
     for (int j=0; j < b_links.size(); ++j) {
-      CheckShapeCastVsLinks(cow->getCollisionShape(), tbefore[i], tafter[i], *b_links[j], cow, m_world, collisions);
+      CheckShapeCastVsLinks(cow->getCollisionShape(), tbefore[i], tafter[i], *b_links[j], cow, m_world, collisions, filterMask);
     }
   }
   LOG_DEBUG("CastVsLinks checked %li links and found %li collisions", r_links.size(), collisions.size());
@@ -1285,7 +1285,7 @@ btScalar MultiCastCollisionCollector::addSingleResult(btManifoldPoint& cp,
 }
 
 void BulletCollisionChecker::CheckShapeMultiCast(btCollisionShape* shape, const vector<btTransform>& tfi,
-    CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions) {
+    CollisionObjectWrapper* cow, btCollisionWorld* world, vector<Collision>& collisions, short filterMask) {
   if (btConvexShape* convex = dynamic_cast<btConvexShape*>(shape)) {
     vector<btTransform> t0i(tfi.size());
     // transform all the points with respect to the first transform
@@ -1296,8 +1296,8 @@ void BulletCollisionChecker::CheckShapeMultiCast(btCollisionShape* shape, const 
     obj->setWorldTransform(tfi[0]);
     obj->m_index = cow->m_index;
     MultiCastCollisionCollector cc(collisions, obj, this);
-    cc.m_collisionFilterMask = KinBodyFilter;
-    cc.m_collisionFilterGroup = RobotFilter;
+    cc.m_collisionFilterMask = filterMask;
+    // cc.m_collisionFilterGroup = cow->m_collisionFilterGroup;
     world->contactTest(obj, cc);
 
     delete obj;
@@ -1307,7 +1307,7 @@ void BulletCollisionChecker::CheckShapeMultiCast(btCollisionShape* shape, const 
     for (int child_ind = 0; child_ind < compound->getNumChildShapes(); ++child_ind) {
       vector<btTransform> tfi_child(tfi.size());
       for (int i=0; i<tfi.size(); i++) tfi_child[i] = tfi[i]*compound->getChildTransform(child_ind);
-      CheckShapeMultiCast(compound->getChildShape(child_ind), tfi_child, cow, world, collisions);
+      CheckShapeMultiCast(compound->getChildShape(child_ind), tfi_child, cow, world, collisions, filterMask);
     }
   }
   else {
@@ -1317,7 +1317,7 @@ void BulletCollisionChecker::CheckShapeMultiCast(btCollisionShape* shape, const 
 
 // multi_joints is a vector where each element is a vector of joint angles
 void BulletCollisionChecker::MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links,
-    const vector<DblVec>& multi_joints, vector<Collision>& collisions, bool prevent_z_movement_hack) {
+    const vector<DblVec>& multi_joints, vector<Collision>& collisions, short filterMask, bool prevent_z_movement_hack) {
   Configuration::SaverPtr saver = rad.Save();
   int nlinks = links.size();
   vector<vector<btTransform> > multi_tf(nlinks, vector<btTransform>(multi_joints.size())); // multi_tf[i_link][i_multi]
@@ -1355,7 +1355,7 @@ void BulletCollisionChecker::MultiCastVsAll(Configuration& rad, const vector<Kin
   for (int i_link=0; i_link < nlinks; ++i_link) {
     assert(m_link2cow[links[i_link].get()] != NULL);
     CollisionObjectWrapper* cow = m_link2cow[links[i_link].get()];
-    CheckShapeMultiCast(cow->getCollisionShape(), multi_tf[i_link], cow, m_world, collisions);
+    CheckShapeMultiCast(cow->getCollisionShape(), multi_tf[i_link], cow, m_world, collisions, filterMask);
   }
   LOG_DEBUG("MultiCastVsAll checked %i links and found %i collisions\n", (int)links.size(), (int)collisions.size());
 }

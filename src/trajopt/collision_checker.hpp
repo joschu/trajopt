@@ -71,9 +71,9 @@ public:
   virtual void ContinuousCheckTrajectory(const TrajArray& traj, Configuration& rad, vector<Collision>& collisions) {throw std::runtime_error("not implemented");}
   
   /** Find contacts between swept-out shapes of robot links and everything in the environment, as robot goes from startjoints to endjoints */ 
-  virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions) {throw std::runtime_error("not implemented");}
-  virtual void CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links, const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions)  {throw std::runtime_error("not implemented");}
-  virtual void MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const vector<DblVec>& multi_joints, vector<Collision>& collisions, bool prevent_z_movement_hack=true) {throw std::runtime_error("not implemented");}
+  virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions, short filterMask=KinBodyFilter) {throw std::runtime_error("not implemented");}
+  virtual void CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links, const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions, short filterMask=KinBodyFilter)  {throw std::runtime_error("not implemented");}
+  virtual void MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const vector<DblVec>& multi_joints, vector<Collision>& collisions, short filterMask=KinBodyFilter, bool prevent_z_movement_hack=true) {throw std::runtime_error("not implemented");}
 
   /** Finds all self collisions when all joints are set to zero, and ignore collisions between the colliding links */
   void IgnoreZeroStateSelfCollisions();
