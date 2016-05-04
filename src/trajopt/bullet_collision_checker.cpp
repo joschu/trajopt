@@ -370,6 +370,12 @@ public:
       m_allowedCollisionMatrix(cow1->m_index, cow0->m_index) = 1;
     }
   }
+  virtual const Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>& GetCollisionMatrix() {
+    return m_allowedCollisionMatrix;
+  }
+  virtual void SetCollisionMatrix(const Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>& col_mat) {
+    m_allowedCollisionMatrix = col_mat;
+  }
   // collision checking
   virtual void AllVsAll(vector<Collision>& collisions);
   virtual void LinksVsAll(const vector<KinBody::LinkPtr>& links, vector<Collision>& collisions, short filterMask);

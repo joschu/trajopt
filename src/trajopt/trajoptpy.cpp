@@ -268,6 +268,12 @@ public:
   }
 };
 
+class PyCollisionMatrix {
+public:
+  Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic> m_col_mat;
+  PyCollisionMatrix(const Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>& col_mat) : m_col_mat(col_mat) {}
+};
+
 class PyCollisionChecker {
 public:
   py::object AllVsAll() {
@@ -461,12 +467,17 @@ public:
       }
     }
   }
+  PyCollisionMatrix SaveCollisionMatrix() {
+    return PyCollisionMatrix(m_cc->GetCollisionMatrix());
+  }
+  void RestoreCollisionMatrix(PyCollisionMatrix py_col_mat) {
+    m_cc->SetCollisionMatrix(py_col_mat.m_col_mat);
+  }
   PyCollisionChecker(CollisionCheckerPtr cc) : m_cc(cc) {}
 private:
   PyCollisionChecker();
   CollisionCheckerPtr m_cc;
 };
-
 
 PyCollisionChecker PyGetCollisionChecker(py::object py_env) {
   CollisionCheckerPtr cc = CollisionChecker::GetOrCreate(*GetCppEnv(py_env));
@@ -582,6 +593,8 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("__str__", &PyTrajOptResult::__str__)
       ;
 
+  py::class_<PyCollisionMatrix>("PyCollisionMatrix", py::no_init);
+
   py::class_<PyCollisionChecker>("CollisionChecker", py::no_init)
       .def("AllVsAll", &PyCollisionChecker::AllVsAll)
       .def("BodyVsAll", &PyCollisionChecker::BodyVsAll, BodyVsAllDefaults())
@@ -593,6 +606,8 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
       .def("ExcludeCollisionPair", &PyCollisionChecker::ExcludeCollisionPair)
       .def("IncludeCollisionPair", &PyCollisionChecker::IncludeCollisionPair)
+      .def("SaveCollisionMatrix", &PyCollisionChecker::SaveCollisionMatrix)
+      .def("RestoreCollisionMatrix", &PyCollisionChecker::RestoreCollisionMatrix)
       .def("SetContactDistance", &PyCollisionChecker::SetContactDistance)
       .def("GetContactDistance", &PyCollisionChecker::GetContactDistance)
       ;

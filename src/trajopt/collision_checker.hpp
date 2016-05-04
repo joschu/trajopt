@@ -82,7 +82,8 @@ public:
   /** Prevent this pair of links from colliding */
   virtual void ExcludeCollisionPair(const KinBody::Link& link0, const KinBody::Link& link1) = 0;
   virtual void IncludeCollisionPair(const KinBody::Link& link0, const KinBody::Link& link1) = 0;
-
+  virtual const Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>& GetCollisionMatrix() = 0;
+  virtual void SetCollisionMatrix(const Eigen::Matrix<bool, Eigen::Dynamic, Eigen::Dynamic>& col_mat) = 0;
 
   OpenRAVE::EnvironmentBaseConstPtr GetEnv() {return m_env;}
 
