@@ -379,7 +379,7 @@ public:
   virtual void ContinuousCheckTrajectory(const TrajArray& traj, Configuration& rad, vector<Collision>&);
   virtual void CastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const DblVec& startjoints, const DblVec& endjoints, vector<Collision>& collisions, short filterMask);
   virtual void CastVsLinks(Configuration& rad, const vector<KinBody::LinkPtr>& r_links, const DblVec& startjoints, const DblVec& endjoints, const vector<KinBody::LinkPtr>& b_links, vector<Collision>& collisions, short filterMask);
-  virtual void MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const vector<DblVec>& multi_joints, vector<Collision>& collisions, short filterMask, bool prevent_z_movement_hack);
+  virtual void MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links, const vector<DblVec>& multi_joints, vector<Collision>& collisions, short filterMask);
   ////
   ///////
 
@@ -1246,35 +1246,45 @@ btScalar MultiCastCollisionCollector::addSingleResult(btManifoldPoint& cp,
     const float COLINEARITY_TOLERANCE = 1e-5 METERS;
     float max_sup = *max_element(sup.begin(), sup.end());
     vector<float> sups;
-    vector<btVector3> max_ptWorld;
+    vector<btVector3> max_ptsWorld;
     vector<int> instance_inds;
     vector<OR::Vector> supportPtsWorld;
     for (int i=0; i<sup.size(); i++) {
       if (max_sup-sup[i] < SUPPORT_FUNC_TOLERANCE) {
         int j;
-        for (j=0; j<max_ptWorld.size(); j++)
-          if ((max_ptWorld[j] - ptWorld[i]).length2() < COLINEARITY_TOLERANCE) break;
-        if (j==max_ptWorld.size()) { // if this ptWorld[i] is not already in the max_ptWorld
+        for (j=0; j<max_ptsWorld.size(); j++)
+          if ((max_ptsWorld[j] - ptWorld[i]).length2() < COLINEARITY_TOLERANCE) break;
+        if (j==max_ptsWorld.size()) { // if this ptWorld[i] is not already in the max_ptsWorld
           sups.push_back(sup[i]);
-          max_ptWorld.push_back(ptWorld[i]);
+          max_ptsWorld.push_back(ptWorld[i]);
           supportPtsWorld.push_back(toOR(ptWorld[i]));
           instance_inds.push_back(i);
         }
       }
     }
 
-       // cout << "max_ptWorld instance_inds " << max_ptWorld.size() << endl;
+       // cout << "max_ptsWorld instance_inds " << max_ptsWorld.size() << endl;
        // cout << "max_sup " << max_sup << endl;
        // cout << "filtered sups " << Str(sups) << endl;
-       // cout << "max_ptWorld " << Str(max_ptWorld) << endl;
+       // cout << "max_ptsWorld " << Str(max_ptsWorld) << endl;
        // cout << "instance_inds " << Str(instance_inds) << endl;
 
-    assert(max_ptWorld.size()>0);
-    assert(max_ptWorld.size()<4);
+    if (max_ptsWorld.size() == 0 || max_ptsWorld.size() > 3){
+      const KinBody::Link* linkA = getLink(colObj0Wrap->getCollisionObject());
+      const KinBody::Link* linkB = getLink(colObj1Wrap->getCollisionObject());
+      LOG_WARN("Ignoring collision point with %d support vectors; %s (%s) vs %s (%s).", \
+                                                              (int)max_ptsWorld.size(), \
+                                                              linkA->GetName().c_str(), \
+                                                              linkA->GetParent()->GetName().c_str(), \
+                                                              linkB->GetName().c_str(), \
+                                                              linkB->GetParent()->GetName().c_str());
+      m_collisions.pop_back();
+      return !retval;
+    }
 
     const btVector3& ptOnCast = castShapeIsFirst ? cp.m_positionWorldOnA : cp.m_positionWorldOnB;
        // cout << "ptOnCast " << ptOnCast << endl;
-    computeSupportingWeights(max_ptWorld, ptOnCast, m_collisions.back().mi.alpha);
+    computeSupportingWeights(max_ptsWorld, ptOnCast, m_collisions.back().mi.alpha);
        // cout << "alpha " << Str(m_collisions.back().mi.alpha) << endl;
     m_collisions.back().mi.instance_ind = instance_inds;
     m_collisions.back().mi.supportPtsWorld = supportPtsWorld;
@@ -1315,7 +1325,7 @@ void BulletCollisionChecker::CheckShapeMultiCast(btCollisionShape* shape, const 
 
 // multi_joints is a vector where each element is a vector of joint angles
 void BulletCollisionChecker::MultiCastVsAll(Configuration& rad, const vector<KinBody::LinkPtr>& links,
-    const vector<DblVec>& multi_joints, vector<Collision>& collisions, short filterMask, bool prevent_z_movement_hack) {
+    const vector<DblVec>& multi_joints, vector<Collision>& collisions, short filterMask) {
   Configuration::SaverPtr saver = rad.Save();
   int nlinks = links.size();
   vector<vector<btTransform> > multi_tf(nlinks, vector<btTransform>(multi_joints.size())); // multi_tf[i_link][i_multi]
@@ -1325,27 +1335,7 @@ void BulletCollisionChecker::MultiCastVsAll(Configuration& rad, const vector<Kin
       multi_tf[i_link][i_multi] = toBt(links[i_link]->GetTransform());
     }
   }
-  if (prevent_z_movement_hack) {
-    // This is a hack that will prevent bullet from returning normals in the z direction
-    // Most robots cannot move in that direction anyways.
-    for (int i_link=0; i_link<nlinks; i_link++) {
-      if (boost::contains(links[i_link]->GetName(), "base")){
-        OpenRAVE::Vector mean;
-        for (int i_multi=0; i_multi<multi_joints.size(); i_multi++) {
-          rad.SetDOFValues(multi_joints[i_multi]);
-          mean += links[i_link]->GetTransform().trans;
-        }
-        mean /= multi_joints.size();
-        OpenRAVE::Transform t = links[i_link]->GetTransform();
-        t.trans = mean;
-        t.trans[2] += 100;
-        multi_tf[i_link].push_back(toBt(t));
-        t.trans[2] -= 2*100;
-        multi_tf[i_link].push_back(toBt(t));
-        break;
-      }
-    }
-  }
+
   rad.SetDOFValues(multi_joints[0]); // is this necessary?
   UpdateBulletFromRave();
   m_world->updateAabbs();
