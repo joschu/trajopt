@@ -422,7 +422,7 @@ public:
     vector<int> inds;
     std::vector<KinBody::LinkPtr> links;
     rad->GetAffectedLinks(links,true,inds);
-    m_cc->MultiCastVsAll(*rad, links, dofvals, collisions, (rad->GetAffineDOF() > 0) && prevent_z);
+    m_cc->MultiCastVsAll(*rad, links, dofvals, collisions, -1, (rad->GetAffineDOF() > 0) && prevent_z);
     if (sort)
       std::sort(collisions.begin(), collisions.end(), compareCollisions);
   }
