@@ -42,11 +42,11 @@ void CollisionChecker::IgnoreZeroStateSelfCollisions(OpenRAVE::KinBodyPtr body) 
   LOG_DEBUG("IgnoreZeroStateSelfCollisions for %s", body->GetName().c_str());
   KinBody::KinBodyStateSaver saver(body);
   body->SetDOFValues(DblVec(body->GetDOF(), 0));
-  body->SetTransform(Transform(Vector(1,0,0,0), (Vector(0,0,10))));
+  body->SetTransform(Transform(Vector(1,0,0,0), (Vector(0,0,0))));
 
 
   vector<Collision> collisions;
-  BodyVsAll(*body,  collisions);
+  BodyVsBody(*body, *body, collisions);
   LOG_DEBUG("%li extra self collisions in zero state", collisions.size());
   for(int i=0; i < collisions.size(); ++i) {
     LOG_DEBUG("ignoring self-collision: %s %s", collisions[i].linkA->GetName().c_str(), collisions[i].linkB->GetName().c_str());
