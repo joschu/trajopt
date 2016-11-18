@@ -629,12 +629,23 @@ void BulletCollisionChecker::RemoveKinBody(const OR::KinBodyPtr& body) {
 void BulletCollisionChecker::AddAndRemoveBodies(const vector<KinBodyPtr>& curVec, const vector<KinBodyPtr>& prevVec, vector<KinBodyPtr>& toAdd) {
   vector<KinBodyPtr> toRemove;
   SetDifferences(curVec, prevVec, toAdd, toRemove);
+  if (prevVec.size() == toRemove.size() && std::equal(prevVec.begin(), prevVec.end(), toRemove.begin())) {
+    // When OpenRave env is reset, link pointers are no longer valid.
+    LOG_DEBUG("removing all bodies")
+    btCollisionObjectArray objs = m_world->getCollisionObjectArray();
+    for (int i=0; i < objs.size(); ++i) {
+      CollisionObjectWrapper* cow = static_cast<CollisionObjectWrapper*>(objs[i]);
+      m_world->removeCollisionObject(cow);
+    }
+    m_link2cow.clear();
+  } else {
+    BOOST_FOREACH(const KinBodyPtr& body, toRemove) {
+      RemoveKinBody(body);
+    }
+  }
   BOOST_FOREACH(const KinBodyPtr& body, toAdd) {
     assert(!trajopt::GetUserData(*body, "bt"));
     AddKinBody(body);
-  }
-  BOOST_FOREACH(const KinBodyPtr& body, toRemove) {
-    RemoveKinBody(body);
   }
   SetLinkIndices();
 }
