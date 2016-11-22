@@ -32,7 +32,8 @@ find_library( GUROBI_LIBRARY
         gurobi55
         gurobi56
         gurobi60
-        gurobi65    
+        gurobi65
+        gurobi70
               PATHS "$ENV{GUROBI_HOME}/lib" 
                     "/Library/gurobi502/mac64/lib"
                     "C:\\libs\\gurobi502\\lib"
