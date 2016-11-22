@@ -990,10 +990,14 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
         if (sup0 - sup1 > SUPPORT_FUNC_TOLERANCE) {
           col.time = 0;
           col.cctype = CCType_Time0;
+          m_collisions.back().mi.alpha.push_back(1);
+          m_collisions.back().mi.supportPtsWorld.push_back(toOR(ptWorld0));
         }
         else if (sup1 - sup0 > SUPPORT_FUNC_TOLERANCE) {
           col.time = 1;
           col.cctype = CCType_Time1;
+          m_collisions.back().mi.alpha.push_back(1);
+          m_collisions.back().mi.supportPtsWorld.push_back(toOR(ptWorld1));
         }
         else {
           const btVector3& ptOnCast = castShapeIsFirst ? cp.m_positionWorldOnA : cp.m_positionWorldOnB;
@@ -1014,6 +1018,10 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
             col.time = l0c/(l0c + l1c); 
           }
 
+          m_collisions.back().mi.alpha.push_back(1 - col.time);
+          m_collisions.back().mi.alpha.push_back(col.time);
+          m_collisions.back().mi.supportPtsWorld.push_back(col.ptB);
+          m_collisions.back().mi.supportPtsWorld.push_back(col.ptB1);
         }
           
       }
@@ -1199,6 +1207,24 @@ void computeSupportingWeights(const vector<btVector3>& v, const btVector3& p, ve
     alpha[0] = 1;
     break;
   }
+  case 3:
+  {
+    const float AREA_TOLERANCE = 1e-12 METERS;
+    if ((v[1]-v[0]).cross(v[2]-v[0]).length2() < AREA_TOLERANCE) {
+      if ((v[1]-v[0]).length() < .001) {
+        LOG_WARN("Using degenerate edge to compute supporting weights!");
+      }
+      alpha[2] = 0;
+      // continue to case 2
+    }
+    else {
+      btVector3 bary = barycentricCoordinates(v[0], v[1], v[2], p);
+      alpha[0] = bary[0];
+      alpha[1] = bary[1];
+      alpha[2] = bary[2];
+      break;
+    }
+  }
   case 2:
   {
     float l0c = (p-v[0]).length();
@@ -1207,14 +1233,6 @@ void computeSupportingWeights(const vector<btVector3>& v, const btVector3& p, ve
     if (l0c+l1c < LENGTH_TOLERANCE) alpha[0] = .5;
     else alpha[1] = l0c/(l0c+l1c);
     alpha[0] = 1 - alpha[1];
-    break;
-  }
-  case 3:
-  {
-    btVector3 bary = barycentricCoordinates(v[0], v[1], v[2], p);
-    alpha[0] = bary[0];
-    alpha[1] = bary[1];
-    alpha[2] = bary[2];
     break;
   }
   default:

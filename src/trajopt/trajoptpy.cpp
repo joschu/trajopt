@@ -204,6 +204,8 @@ public:
   string GetLinkBName() {return m_c.linkB->GetName();}
   string GetLinkAParentName() {return m_c.linkA->GetParent()->GetName();}
   string GetLinkBParentName() {return m_c.linkB->GetParent()->GetName();}
+  py::object GetCastAlphas() {return toNdarray1<float>(&m_c.mi.alpha[0], m_c.mi.alpha.size());}
+  py::object GetCastSupportVertices() {return toPyList2(m_c.mi.supportPtsWorld);}
   py::object GetMultiCastAlphas() {return toNdarray1<float>(&m_c.mi.alpha[0], m_c.mi.alpha.size());}
   py::object GetMultiCastIndices() {return toNdarray1<int>(&m_c.mi.instance_ind[0], m_c.mi.instance_ind.size());}
   py::object GetMultiCastSupportVertices() {return toPyList2(m_c.mi.supportPtsWorld);}
@@ -621,6 +623,8 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
      .def("GetLinkBName", &PyCollision::GetLinkBName)
      .def("GetLinkAParentName", &PyCollision::GetLinkAParentName)
      .def("GetLinkBParentName", &PyCollision::GetLinkBParentName)
+     .def("GetCastAlphas", &PyCollision::GetCastAlphas)
+     .def("GetCastSupportVertices", &PyCollision::GetCastSupportVertices)
      .def("GetMultiCastAlphas", &PyCollision::GetMultiCastAlphas)
      .def("GetMultiCastIndices", &PyCollision::GetMultiCastIndices)
      .def("GetMultiCastSupportVertices", &PyCollision::GetMultiCastSupportVertices)
