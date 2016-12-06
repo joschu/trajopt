@@ -42,6 +42,7 @@ public:
   CostFromFunc(ScalarOfVectorPtr f, const VarVector& vars, const string& name, bool full_hessian=false);
   double value(const vector<double>& x);
   ConvexObjectivePtr convex(const vector<double>& x, Model* model);
+  VarVector getVars() {return vars_;}
 protected:
   ScalarOfVectorPtr f_;
   VarVector vars_;
@@ -57,6 +58,7 @@ public:
   CostFromErrFunc(VectorOfVectorPtr f, MatrixOfVectorPtr dfdx, const VarVector& vars, const VectorXd& coeffs, PenaltyType pen_type, const string& name);
   double value(const vector<double>& x);
   ConvexObjectivePtr convex(const vector<double>& x, Model* model);
+  VarVector getVars() {return vars_;}
 protected:
   VectorOfVectorPtr f_;
   MatrixOfVectorPtr dfdx_;
@@ -75,6 +77,7 @@ public:
   vector<double> value(const vector<double>& x);
   ConvexConstraintsPtr convex(const vector<double>& x, Model* model);
   ConstraintType type() {return type_;}
+  VarVector getVars() {return vars_;}
 protected:
   VectorOfVectorPtr f_;
   MatrixOfVectorPtr dfdx_;
