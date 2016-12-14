@@ -249,15 +249,17 @@ public:
     y = camera.getViewport()->y();
     width = camera.getViewport()->width();
     height = camera.getViewport()->height();
-    osg::ref_ptr<osg::Image> image = new osg::Image;
-    image->readPixels(x,y,width,height,GL_RGB,GL_UNSIGNED_BYTE);
-    if (osgDB::writeImageFile(*image,_filename))
+    _image = new osg::Image;
+    _image->readPixels(x,y,width,height,GL_RGB,GL_UNSIGNED_BYTE);
+    if (_filename != "" && osgDB::writeImageFile(*_image,_filename))
       std::cout << "Saved screenshot to `"<<_filename<<"`"<< std::endl;
     _snapImageOnNextFrame = false;
   }
+  osg::ref_ptr<osg::Image> getImage() const { return _image; }
 protected:
   std::string _filename;
   mutable bool _snapImageOnNextFrame;
+  mutable osg::ref_ptr<osg::Image> _image;
 };
 
 
@@ -584,6 +586,15 @@ void OSGViewer::TakeScreenshot() {
   strftime(buffer,80,"%Y%m%d-%I%M%S.png",timeinfo);
   std::string filename(buffer);
   TakeScreenshot(filename);
+}
+
+osg::ref_ptr<osg::Image> OSGViewer::GetLastScreenshot()
+{
+  osg::ref_ptr<SnapImageDrawCallback> snapImageDrawCallback = dynamic_cast<SnapImageDrawCallback*> (m_cam->getPostDrawCallback());
+  if(snapImageDrawCallback.get())
+    return snapImageDrawCallback->getImage();
+  else
+    return osg::ref_ptr<osg::Image>();
 }
 
 void OSGViewer::AddMouseCallback(const MouseCallback& cb) {
