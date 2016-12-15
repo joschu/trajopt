@@ -249,17 +249,28 @@ public:
     y = camera.getViewport()->y();
     width = camera.getViewport()->width();
     height = camera.getViewport()->height();
-    _image = new osg::Image;
-    _image->readPixels(x,y,width,height,GL_RGB,GL_UNSIGNED_BYTE);
-    if (_filename != "" && osgDB::writeImageFile(*_image,_filename))
+    osg::ref_ptr<osg::Image> image = new osg::Image;
+    image->readPixels(x,y,width,height,GL_RGB,GL_UNSIGNED_BYTE);
+    // make a local copy
+    unsigned char * p = image->data();
+    unsigned int numBytes = image->computeNumComponents(image->getPixelFormat());
+    _image = std::vector<unsigned char>(p, p + height*width*numBytes / sizeof(unsigned char));
+    _height = height;
+    _width = width;
+    // save file
+    if (_filename != "" && osgDB::writeImageFile(*image,_filename))
       std::cout << "Saved screenshot to `"<<_filename<<"`"<< std::endl;
     _snapImageOnNextFrame = false;
   }
-  osg::ref_ptr<osg::Image> getImage() const { return _image; }
+  std::vector<unsigned char> getImage() const { return _image; }
+  unsigned int getHeight() const { return _height; }
+  unsigned int getWidth() const { return _width; }
 protected:
   std::string _filename;
   mutable bool _snapImageOnNextFrame;
-  mutable osg::ref_ptr<osg::Image> _image;
+  mutable std::vector<unsigned char> _image;
+  mutable unsigned int _height;
+  mutable unsigned int _width;
 };
 
 
@@ -588,13 +599,15 @@ void OSGViewer::TakeScreenshot() {
   TakeScreenshot(filename);
 }
 
-osg::ref_ptr<osg::Image> OSGViewer::GetLastScreenshot()
+bool OSGViewer::GetLastScreenshot(std::vector<unsigned char>& image, unsigned int& height, unsigned int& width)
 {
   osg::ref_ptr<SnapImageDrawCallback> snapImageDrawCallback = dynamic_cast<SnapImageDrawCallback*> (m_cam->getPostDrawCallback());
-  if(snapImageDrawCallback.get())
-    return snapImageDrawCallback->getImage();
-  else
-    return osg::ref_ptr<osg::Image>();
+  if(!snapImageDrawCallback.get())
+    return false;
+  image = snapImageDrawCallback->getImage();
+  height = snapImageDrawCallback->getHeight();
+  width = snapImageDrawCallback->getWidth();
+  return true;
 }
 
 void OSGViewer::AddMouseCallback(const MouseCallback& cb) {

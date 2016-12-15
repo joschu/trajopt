@@ -26,7 +26,7 @@ public:
   void SetBkgndColor(const RaveVectorf& color);
   void TakeScreenshot(const std::string& filename);
   void TakeScreenshot();
-  osg::ref_ptr<osg::Image> GetLastScreenshot();
+  bool GetLastScreenshot(std::vector<unsigned char>& image, unsigned int& height, unsigned int& width);
 
   // return false if you want to disable the default TrackballManipulator handling
   typedef boost::function<bool(const osgGA::GUIEventAdapter &)> MouseCallback;
