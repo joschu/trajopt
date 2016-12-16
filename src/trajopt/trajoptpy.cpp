@@ -351,17 +351,41 @@ public:
     
     return toPyList(f_collisions);
   }
-  py::object CastVsAll(py::object& py_kb, py::object& py_dv0, py::object& py_dv1, string which_dofs="active", bool sort=true) {
+  py::object KinBodyCastVsAll(py::object& py_kb, py::object& py_dv0, py::object& py_dv1, int which_dofs=DOF_X|DOF_Y|DOF_RotationAxis, py::object& rot_axis = PyNone, bool sort=true) {
     EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
     KinBodyPtr cpp_kb = GetCppKinBody(py_kb, env);
     if (!cpp_kb) {
       throw openrave_exception("Kinbody isn't part of environment!");
     }
-    RobotBasePtr robot = boost::dynamic_pointer_cast<RobotBase>(cpp_kb);
-    if (!robot) {
-      throw openrave_exception("Kinbody isn't a robot!");
+    if (cpp_kb->IsRobot()) {
+      throw openrave_exception("Use RobotMultiCastVsAll for Robots!");
     }
-
+    OR::Vector rotation_axis;
+    if (rot_axis == PyNone)
+      rotation_axis = OR::Vector(0,0,1);
+    else
+      rotation_axis = OR::Vector(py::extract<double>(rot_axis[0]), py::extract<double>(rot_axis[1]), py::extract<double>(rot_axis[2]));
+    ConfigurationPtr rad = KinBodyAndDOFPtr(new KinBodyAndDOF(cpp_kb, which_dofs, rotation_axis));
+    vector<Collision> collisions;
+    CastVsAll(rad, py_dv0, py_dv1, collisions, sort);
+    return toPyList(collisions);
+  }
+  py::object RobotCastVsAll(py::object& py_kb, py::object& py_dv0, py::object& py_dv1, string which_dofs="active", bool sort=true) {
+    EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
+    KinBodyPtr cpp_kb = GetCppKinBody(py_kb, env);
+    if (!cpp_kb) {
+      throw openrave_exception("Robot isn't part of environment!");
+    }
+    if (!cpp_kb->IsRobot()) {
+      throw openrave_exception("Use KinBodyMultiCastVsAll for KinBodies!");
+    }
+    RobotBasePtr robot = boost::dynamic_pointer_cast<RobotBase>(cpp_kb);
+    ConfigurationPtr rad = RADFromName(which_dofs, robot);
+    vector<Collision> collisions;
+    CastVsAll(rad, py_dv0, py_dv1, collisions, sort);
+    return toPyList(collisions);
+  }
+  void CastVsAll(ConfigurationPtr rad, py::object& py_dv0, py::object& py_dv1, vector<Collision>& collisions, bool sort) {
     int n_dofs0 = py::extract<int>(py_dv0.attr("__len__")());
     DblVec dofvals0(n_dofs0);
     for (unsigned i=0; i < n_dofs0; ++i) dofvals0[i] = py::extract<double>(py_dv0[i]);
@@ -370,16 +394,13 @@ public:
     DblVec dofvals1(n_dofs1);
     for (unsigned i=0; i < n_dofs1; ++i) dofvals1[i] = py::extract<double>(py_dv1[i]);
 
-    ConfigurationPtr rad = RADFromName(which_dofs, robot);
     vector<int> inds;
     std::vector<KinBody::LinkPtr> links;
     rad->GetAffectedLinks(links,true,inds);
 
-    vector<Collision> collisions;
-    m_cc->CastVsAll(*rad, links, dofvals0, dofvals1, collisions);
+    m_cc->CastVsAll(*rad, links, dofvals0, dofvals1, collisions, -1);
     if (sort)
       std::sort(collisions.begin(), collisions.end(), compareCollisions);
-    return toPyList(collisions);
   }
   py::object KinBodyMultiCastVsAll(py::object& py_kb, py::object& py_dof_list, int which_dofs=DOF_X|DOF_Y|DOF_RotationAxis, py::object& rot_axis = PyNone, bool sort=true) {
     EnvironmentBasePtr env = boost::const_pointer_cast<EnvironmentBase>(m_cc->GetEnv());
@@ -557,7 +578,8 @@ void translate_runtime_error(std::runtime_error const& e)
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsAllDefaults, PyCollisionChecker::BodyVsAll, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(BodyVsBodyDefaults, PyCollisionChecker::BodyVsBody, 2, 3);
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(CastVsAllDefaults, PyCollisionChecker::CastVsAll, 3, 5);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(RobotCastVsAllDefaults, PyCollisionChecker::RobotCastVsAll, 3, 5);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(KinBodyCastVsAllDefaults, PyCollisionChecker::KinBodyCastVsAll, 3, 6);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(RobotMultiCastVsAllDefaults, PyCollisionChecker::RobotMultiCastVsAll, 2, 4);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(KinBodyMultiCastVsAllDefaults, PyCollisionChecker::KinBodyMultiCastVsAll, 2, 5);
 
@@ -602,7 +624,8 @@ BOOST_PYTHON_MODULE(ctrajoptpy) {
       .def("BodyVsAll", &PyCollisionChecker::BodyVsAll, BodyVsAllDefaults())
       .def("BodyVsBody", &PyCollisionChecker::BodyVsBody, BodyVsBodyDefaults())
       .def("BodiesVsBodies", &PyCollisionChecker::BodiesVsBodies)
-      .def("CastVsAll", &PyCollisionChecker::CastVsAll, CastVsAllDefaults())
+      .def("RobotCastVsAll", &PyCollisionChecker::RobotCastVsAll, RobotCastVsAllDefaults())
+      .def("KinBodyCastVsAll", &PyCollisionChecker::KinBodyCastVsAll, KinBodyCastVsAllDefaults())
       .def("RobotMultiCastVsAll", &PyCollisionChecker::RobotMultiCastVsAll, RobotMultiCastVsAllDefaults())
       .def("KinBodyMultiCastVsAll", &PyCollisionChecker::KinBodyMultiCastVsAll, KinBodyMultiCastVsAllDefaults())
       .def("PlotCollisionGeometry", &PyCollisionChecker::PlotCollisionGeometry)
