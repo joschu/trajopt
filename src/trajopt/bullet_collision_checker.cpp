@@ -321,10 +321,10 @@ void RenderCollisionShape(btCollisionShape* shape, const btTransform& tf,
       int num_triangles = hull->numTriangles();
       const unsigned int* indices = hull->getIndexPointer();
       const btVector3* vertices = hull->getVertexPointer();
-      btVector3 tf_vertices[hull->numVertices()];
+      vector<btVector3> tf_vertices(hull->numVertices());
       for (int i=0; i<hull->numVertices(); i++) tf_vertices[i] = tf * vertices[i];
 
-      handles.push_back(OSGViewer::GetOrCreate(env)->drawtrimesh((float*)tf_vertices, 16, (int*) indices, num_triangles, color));
+      handles.push_back(OSGViewer::GetOrCreate(env)->drawtrimesh((float*)(&tf_vertices.front()), 16, (int*) indices, num_triangles, color));
     } else {
       LOG_INFO("not rendering shape of type %i", shape->getShapeType());
     }

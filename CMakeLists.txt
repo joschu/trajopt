@@ -8,7 +8,10 @@ if (DEVEL_MODE)
   set(CMAKE_CXX_FLAGS "-Werror -Wall -Wno-sign-compare")
 endif(DEVEL_MODE)
 
-set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")        
+set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
+if (APPLE)
+    set(CMAKE_CXX_FLAGS "-DGTEST_USE_OWN_TR1_TUPLE=1")
+endif()
 
 # http://cmake.3232098.n2.nabble.com/Default-value-for-CMAKE-BUILD-TYPE-td7550756.html
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -35,6 +38,9 @@ set(JSON_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/json/include)
 set(HACD_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ext/HACD_Lib/inc ${CMAKE_SOURCE_DIR}/ext/HACD_Lib/src)
 
 enable_testing()
+if(NOT DEFINED PYTHON_EXECUTABLE)
+    include(FindPythonInterp) # Need for testing
+endif(NOT DEFINED PYTHON_EXECUTABLE)
 
 option(BUILD_CLOUDPROC "build point cloud processing stuff" OFF)
 option(BUILD_SANDBOX "build sandbox programs" OFF)
