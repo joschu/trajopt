@@ -19,6 +19,11 @@ trajoptpy.SetInteractive(args.interactive) # pause every iteration, until you pr
 
 robot = env.GetRobots()[0]
 manip = robot.GetManipulator("rightarm")
+robot.SetActiveManipulator(manip)
+ikmodel = openravepy.databases.inversekinematics.InverseKinematicsModel(
+    robot, iktype=openravepy.IkParameterization.Type.Transform6D)
+if not ikmodel.load():
+    ikmodel.autogenerate()
 
 xyz_target = [.6,-.6,1]
 
