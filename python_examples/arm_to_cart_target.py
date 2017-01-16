@@ -18,7 +18,7 @@ env.Load("../data/table.xml")
 trajoptpy.SetInteractive(args.interactive) # pause every iteration, until you press 'p'. Press escape to disable further plotting
 
 robot = env.GetRobots()[0]
-joint_start = [-1.832, -0.332, -1.011, -1.437, -1.1  , -2.106,  3.074]
+joint_start = [-1.832, -0.332, -1.011, -1.437, -1.1  , -1.926,  3.074]
 robot.SetDOFValues(joint_start, robot.GetManipulator('rightarm').GetArmIndices())
 
 quat_target = [1,0,0,0] # wxyz
