@@ -996,7 +996,7 @@ btScalar CastCollisionCollector::addSingleResult(btManifoldPoint& cp,
         else if (sup1 - sup0 > SUPPORT_FUNC_TOLERANCE) {
           col.time = 1;
           col.cctype = CCType_Time1;
-          m_collisions.back().mi.alpha.push_back(1);
+          m_collisions.back().mi.alpha.push_back(0);
           m_collisions.back().mi.supportPtsWorld.push_back(toOR(ptWorld1));
         }
         else {
