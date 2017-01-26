@@ -202,6 +202,7 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
       }
       
     }     
+    break;
   }
   default:
     assert(0 && "unrecognized collision shape type");
