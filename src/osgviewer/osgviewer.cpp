@@ -14,6 +14,8 @@
 #include <osg/BlendFunc>
 #include <osg/io_utils>
 #include <iostream>
+#include <osg/CameraNode>
+#include <osgDB/WriteFile>
 #include <osgDB/ReadFile>
 #include "utils/logging.hpp"
 #include "openrave_userdata_utils.hpp"
@@ -230,6 +232,46 @@ void AddLights(osg::Group* group) {
   }
 
 }
+
+
+// http://forum.openscenegraph.org/viewtopic.php?t=7214
+class SnapImageDrawCallback : public osg::CameraNode::DrawCallback {
+public:
+  SnapImageDrawCallback() { _snapImageOnNextFrame = false; }
+  void setFileName(const std::string& filename) { _filename = filename; }
+  const std::string& getFileName() const { return _filename; }
+  void setSnapImageOnNextFrame(bool flag) { _snapImageOnNextFrame = flag; }
+  bool getSnapImageOnNextFrame() const { return _snapImageOnNextFrame; }
+  virtual void operator () (const osg::CameraNode& camera) const {
+    if (!_snapImageOnNextFrame) return;
+    int x,y,width,height;
+    x = camera.getViewport()->x();
+    y = camera.getViewport()->y();
+    width = camera.getViewport()->width();
+    height = camera.getViewport()->height();
+    osg::ref_ptr<osg::Image> image = new osg::Image;
+    image->readPixels(x,y,width,height,GL_RGB,GL_UNSIGNED_BYTE);
+    // make a local copy
+    unsigned char * p = image->data();
+    unsigned int numBytes = image->computeNumComponents(image->getPixelFormat());
+    _image = std::vector<unsigned char>(p, p + height*width*numBytes / sizeof(unsigned char));
+    _height = height;
+    _width = width;
+    // save file
+    if (_filename != "" && osgDB::writeImageFile(*image,_filename))
+      std::cout << "Saved screenshot to `"<<_filename<<"`"<< std::endl;
+    _snapImageOnNextFrame = false;
+  }
+  std::vector<unsigned char> getImage() const { return _image; }
+  unsigned int getHeight() const { return _height; }
+  unsigned int getWidth() const { return _width; }
+protected:
+  std::string _filename;
+  mutable bool _snapImageOnNextFrame;
+  mutable std::vector<unsigned char> _image;
+  mutable unsigned int _height;
+  mutable unsigned int _width;
+};
 
 
 // http://forum.openscenegraph.org/viewtopic.php?t=7806
@@ -461,8 +503,12 @@ OSGViewer::OSGViewer(EnvironmentBasePtr env) : ViewerBase(env), m_idling(false) 
   AddLights(m_root);
   m_cam->setClearColor(osg::Vec4(1,1,1,1));
 
+  osg::ref_ptr<SnapImageDrawCallback> snapImageDrawCallback = new SnapImageDrawCallback();
+  m_cam->setPostDrawCallback (snapImageDrawCallback.get());
+
   AddKeyCallback('h', boost::bind(&OSGViewer::PrintHelp, this), "Display help");
   AddKeyCallback('p', boost::bind(&OSGViewer::Idle, this), "Toggle idle");
+  AddKeyCallback('s', boost::bind(&OSGViewer::TakeScreenshot, this), "Take screenshot");
   AddKeyCallback(osgGA::GUIEventAdapter::KEY_Escape, &throw_runtime_error, "Quit (raise exception)");
   PrintHelp();
   m_viewer.setRunFrameScheme(osgViewer::ViewerBase::ON_DEMAND);
@@ -526,6 +572,42 @@ void OSGViewer::UpdateSceneData() {
     group->update();
   }
   m_viewer.requestRedraw();
+}
+
+void OSGViewer::SetBkgndColor(const RaveVectorf& color) {
+  m_cam->setClearColor(toOsgVec4(color));
+}
+
+void OSGViewer::TakeScreenshot(const std::string& filename) {
+  osg::ref_ptr<SnapImageDrawCallback> snapImageDrawCallback = dynamic_cast<SnapImageDrawCallback*> (m_cam->getPostDrawCallback());
+  if(snapImageDrawCallback.get()) {
+    snapImageDrawCallback->setFileName(filename);
+    snapImageDrawCallback->setSnapImageOnNextFrame(true);
+  } else {
+    std::cout << "Warning: could not take screenshot" << std::endl;
+  }
+}
+
+void OSGViewer::TakeScreenshot() {
+  time_t rawtime;
+  struct tm * timeinfo;
+  char buffer[80];
+  time (&rawtime);
+  timeinfo = localtime(&rawtime);
+  strftime(buffer,80,"%Y%m%d-%I%M%S.png",timeinfo);
+  std::string filename(buffer);
+  TakeScreenshot(filename);
+}
+
+bool OSGViewer::GetLastScreenshot(std::vector<unsigned char>& image, unsigned int& height, unsigned int& width)
+{
+  osg::ref_ptr<SnapImageDrawCallback> snapImageDrawCallback = dynamic_cast<SnapImageDrawCallback*> (m_cam->getPostDrawCallback());
+  if(!snapImageDrawCallback.get())
+    return false;
+  image = snapImageDrawCallback->getImage();
+  height = snapImageDrawCallback->getHeight();
+  width = snapImageDrawCallback->getWidth();
+  return true;
 }
 
 void OSGViewer::AddMouseCallback(const MouseCallback& cb) {

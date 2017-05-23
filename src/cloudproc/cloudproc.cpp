@@ -17,7 +17,7 @@
 #include "pcl/impl/instantiate.hpp"
 #include <boost/filesystem.hpp>
 #include <pcl/features/integral_image_normal.h>
-#if PCL_MINOR_VERSION > 6
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
 #include <pcl/filters/median_filter.h>
 #include <pcl/filters/fast_bilateral.h>
 #endif
@@ -43,10 +43,18 @@ void setWidthToSize(const CloudT& cloud) {
 
 template <class T>
 typename pcl::PointCloud<T>::Ptr readPCD(const std::string& pcdfile) {
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+  pcl::PCLPointCloud2 cloud_blob;
+#else
   sensor_msgs::PointCloud2 cloud_blob;
+#endif
   typename pcl::PointCloud<T>::Ptr cloud (new typename pcl::PointCloud<T>);
   if (pcl::io::loadPCDFile (pcdfile, cloud_blob) != 0) FILE_OPEN_ERROR(pcdfile);
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+  pcl::fromPCLPointCloud2 (cloud_blob, *cloud);
+#else
   pcl::fromROSMsg (cloud_blob, *cloud);
+#endif
   return cloud;
 }
 
@@ -194,7 +202,11 @@ pcl::PolygonMesh::Ptr meshOFM(PointCloud<pcl::PointXYZ>::ConstPtr cloud, int edg
   ofm.setTriangulationType (pcl::OrganizedFastMesh<PointXYZ>::TRIANGLE_ADAPTIVE_CUT);
   pcl::PolygonMeshPtr mesh(new pcl::PolygonMesh());
   ofm.reconstruct(mesh->polygons);
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+  pcl::toPCLPointCloud2(*cloud, mesh->cloud);
+#else
   pcl::toROSMsg(*cloud, mesh->cloud);
+#endif
   mesh->header = cloud->header;
   return mesh;
 }
@@ -287,7 +299,7 @@ typename pcl::PointCloud<T>::Ptr maskFilter(typename pcl::PointCloud<T>::ConstPt
 
 template <class T>
 typename pcl::PointCloud<T>::Ptr medianFilter(typename pcl::PointCloud<T>::ConstPtr in, int windowSize, float maxAllowedMovement) {
-#if PCL_MINOR_VERSION > 6
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
   pcl::MedianFilter<T> mf;
   mf.setWindowSize(windowSize);
   mf.setMaxAllowedMovement(maxAllowedMovement);
@@ -302,7 +314,7 @@ typename pcl::PointCloud<T>::Ptr medianFilter(typename pcl::PointCloud<T>::Const
 
 template <class T>
 typename pcl::PointCloud<T>::Ptr fastBilateralFilter(typename pcl::PointCloud<T>::ConstPtr in, float sigmaS, float sigmaR) {
-#if PCL_MINOR_VERSION > 6
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
   pcl::FastBilateralFilter<T> mf;
   mf.setSigmaS(sigmaS);
   mf.setSigmaR(sigmaR);
@@ -315,8 +327,13 @@ typename pcl::PointCloud<T>::Ptr fastBilateralFilter(typename pcl::PointCloud<T>
 #endif
 }
 
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+void removenans(pcl::PCLPointCloud2& cloud, float fillval=0);
+void removenans(pcl::PCLPointCloud2& cloud, float fillval) {
+#else
 void removenans(sensor_msgs::PointCloud2& cloud, float fillval=0);
 void removenans(sensor_msgs::PointCloud2& cloud, float fillval) {
+#endif
   int npts = cloud.width * cloud.height;
   for (int i=0; i < npts; ++i) {
     float* ptdata = (float*)(cloud.data.data() + cloud.point_step * i);

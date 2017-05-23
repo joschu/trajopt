@@ -97,6 +97,8 @@ public:
   virtual double value(const vector<double>&) = 0;
   /** Convexify at solution vector x*/
   virtual ConvexObjectivePtr convex(const vector<double>& x, Model* model) = 0;
+  /** Get problem variables associated with this cost */
+  virtual VarVector getVars() {return VarVector();}
 
   string name() {return name_;}
   void setName(const string& name) {name_=name;}
@@ -123,6 +125,8 @@ public:
   vector<double> violations(const vector<double>& x);
   /** Sum of violations */
   double violation(const vector<double>& x);
+  /** Get problem variables associated with this constraint */
+  virtual VarVector getVars() {return VarVector();}
 
   string name() {return name_;}
   void setName(const string& name) {name_=name;}

@@ -23,8 +23,10 @@ public:
   void Idle(); // should be called ToggleIdle
   void UpdateSceneData();
   const std::string& GetName() const {return m_name;}
-  void SetBkgndColor(const RaveVectorf &) {printf("warning: SetBkgndColor not implemented\n");}
-
+  void SetBkgndColor(const RaveVectorf& color);
+  void TakeScreenshot(const std::string& filename);
+  void TakeScreenshot();
+  bool GetLastScreenshot(std::vector<unsigned char>& image, unsigned int& height, unsigned int& width);
 
   // return false if you want to disable the default TrackballManipulator handling
   typedef boost::function<bool(const osgGA::GUIEventAdapter &)> MouseCallback;

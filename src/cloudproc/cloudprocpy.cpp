@@ -7,10 +7,14 @@
 #include "utils/stl_to_string.hpp"
  #include "cloudgrabber.hpp"
 #include "cloudproc/mesh_simplification.hpp"
-#include <pcl/ros/conversions.h>
 #include <pcl/point_types.h>
 #include <boost/format.hpp>
 #include "hacd_interface.hpp"
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+#include <pcl/conversions.h>
+#else
+#include <pcl/ros/conversions.h>
+#endif
 
 using namespace Eigen;
 using namespace pcl;
@@ -100,7 +104,11 @@ struct PyCloud {
 
 CloudXYZ::Ptr PolygonMesh_getCloud(const PolygonMesh* mesh) {
   CloudXYZ::Ptr cloud(new CloudXYZ());
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+  pcl::fromPCLPointCloud2(mesh->cloud, *cloud);
+#else
   pcl::fromROSMsg(mesh->cloud, *cloud);
+#endif
   return cloud;
 }
 py::object PolygonMesh_getVertices(const PolygonMesh* mesh) {

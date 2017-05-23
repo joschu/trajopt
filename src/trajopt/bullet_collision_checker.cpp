@@ -202,6 +202,7 @@ btCollisionShape* createShapePrimitive(OR::KinBody::Link::GeometryPtr geom, bool
       }
       
     }     
+    break;
   }
   default:
     assert(0 && "unrecognized collision shape type");
@@ -347,6 +348,15 @@ public:
     m_excludedPairs.erase(LinkPair(&link0, &link1));
     COW *cow0 = GetCow(&link0), *cow1 = GetCow(&link1);
     if (cow0 && cow1) m_allowedCollisionMatrix(cow0->m_index, cow1->m_index) = 1;
+  }
+  virtual bool RayCastCollision(const OpenRAVE::Vector& point1, const OpenRAVE::Vector& point2) {
+    btVector3 btFrom = toBt(point1);
+    btVector3 btTo = toBt(point2);
+    btCollisionWorld::ClosestRayResultCallback res(btFrom, btTo);
+    UpdateBulletFromRave();
+    m_world->updateAabbs();
+    m_world->rayTest(btFrom, btTo, res);
+    return res.hasHit();
   }
   // collision checking
   virtual void AllVsAll(vector<Collision>& collisions);

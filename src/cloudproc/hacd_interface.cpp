@@ -2,8 +2,12 @@
 #include <pcl/PolygonMesh.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/ros/conversions.h>
 #include <hacdHACD.h>
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+#include <pcl/conversions.h>
+#else
+#include <pcl/ros/conversions.h>
+#endif
 using HACD::Vec3;
 using HACD::Real;
 using namespace pcl;
@@ -16,7 +20,11 @@ void polygonMeshFromPointsTriangles(pcl::PolygonMesh& mesh, const vector< Vec3<R
     cloud.points[i].y = points[i].Y();
     cloud.points[i].z = points[i].Z();
   }
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+  pcl::toPCLPointCloud2(cloud, mesh.cloud);
+#else
   pcl::toROSMsg(cloud, mesh.cloud);
+#endif
   mesh.polygons.resize(triangles.size());
   for (int i=0; i < triangles.size(); ++i) {
     vector<uint32_t>& vertices = mesh.polygons[i].vertices;
@@ -28,7 +36,11 @@ void polygonMeshFromPointsTriangles(pcl::PolygonMesh& mesh, const vector< Vec3<R
 }
 void pointsTrianglesFromPolygonMesh(const pcl::PolygonMesh& mesh, vector< Vec3<Real> >& points, vector< Vec3<long> >& triangles) {
   PointCloud<PointXYZ> cloud;
+#if PCL_VERSION_COMPARE(>=, 1, 7, 0)
+  pcl::fromPCLPointCloud2 (mesh.cloud, cloud);
+#else
   pcl::fromROSMsg (mesh.cloud, cloud);
+#endif
   points.resize(cloud.size());
   for (int i=0; i < cloud.size(); ++i) {
     points[i].X() = cloud.points[i].x;
