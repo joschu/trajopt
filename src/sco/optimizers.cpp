@@ -289,8 +289,9 @@ OptStatus BasicTrustRegionSQP::optimize() {
         CvxOptStatus status = model_->optimize();
         ++results_.n_qp_solves;
         if (status != CVX_SOLVED) {
-          LOG_ERROR("convex solver failed! set TRAJOPT_LOG_THRESH=DEBUG to see solver output. saving model to /tmp/fail.lp");
+          LOG_ERROR("convex solver failed! set TRAJOPT_LOG_THRESH=DEBUG to see solver output. saving model to /tmp/fail.lp and IIS to /tmp/fail.ilp");
           model_->writeToFile("/tmp/fail.lp");
+          model_->writeToFile("/tmp/fail.ilp");
           retval = OPT_FAILED;
           goto cleanup;
         }

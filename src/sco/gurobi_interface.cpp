@@ -188,7 +188,10 @@ CvxOptStatus GurobiModel::optimize(){
     LOG_DEBUG("solver objective value: %.3e", objval);
     return CVX_SOLVED;
   }
-  else if (status == GRB_INFEASIBLE) return CVX_INFEASIBLE;
+  else if (status == GRB_INFEASIBLE) {
+    GRBcomputeIIS(m_model);
+    return CVX_INFEASIBLE;
+  }
   else return CVX_FAILED;
 }
 CvxOptStatus GurobiModel::optimizeFeasRelax(){
