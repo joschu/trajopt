@@ -8,7 +8,7 @@ include_directories(
 )
 
 if (NOT APPLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 endif()
 
 add_library(trajopt
